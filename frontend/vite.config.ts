@@ -49,7 +49,7 @@ export default defineConfig(({ mode }) => {
 			allowedHosts: true,
 		},
 		test: {
-			environment: "happy-dom",
+			environment: "node",
 			setupFiles: ["./vitest-setup.js"],
 		},
 		assetsInclude: ["**/*.md", "**/*.png", "**/*.svg"],
