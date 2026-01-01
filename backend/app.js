@@ -13,13 +13,15 @@ import mainRoutes from "./routes/main.js";
  */
 const app = express();
 const fileUploadLimitMb = Number.parseInt(process.env.FILE_UPLOAD_LIMIT_MB || "10", 10);
+const fileUploadLimitFiles = Number.parseInt(process.env.FILE_UPLOAD_LIMIT_FILES || "3", 10);
 const fileUploadLimitBytes =
 	Number.isNaN(fileUploadLimitMb) || fileUploadLimitMb <= 0
 		? 10 * 1024 * 1024
 		: fileUploadLimitMb * 1024 * 1024;
+const fileUploadMaxFiles = Number.isNaN(fileUploadLimitFiles) || fileUploadLimitFiles <= 0 ? 3 : fileUploadLimitFiles;
 app.use(
 	fileUpload({
-		limits: { fileSize: fileUploadLimitBytes },
+		limits: { fileSize: fileUploadLimitBytes, files: fileUploadMaxFiles },
 		abortOnLimit: true,
 		useTempFiles: true,
 		tempFileDir: "/tmp",

@@ -3,7 +3,8 @@ const allowedOrigins = (process.env.CORS_ORIGINS || "")
 	.map((origin) => origin.trim())
 	.filter(Boolean);
 
-const isOriginAllowed = (origin) => allowedOrigins.length === 0 || allowedOrigins.includes(origin);
+const allowAllOrigins = allowedOrigins.includes("*");
+const isOriginAllowed = (origin) => allowAllOrigins || allowedOrigins.includes(origin);
 
 export default (req, res, next) => {
 	if (req.headers.origin) {
