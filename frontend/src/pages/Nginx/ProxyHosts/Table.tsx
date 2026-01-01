@@ -8,6 +8,7 @@ import {
 	DomainsFormatter,
 	EmptyData,
 	GravatarFormatter,
+	RateLimitFormatter,
 	HasPermission,
 	TrueFalseFormatter,
 } from "src/components";
@@ -66,6 +67,21 @@ export default function Table({ data, isFetching, onEdit, onDelete, onDisableTog
 				header: intl.formatMessage({ id: "column.access" }),
 				cell: (info: any) => {
 					return <AccessListFormatter access={info.getValue()} />;
+				},
+			}),
+			columnHelper.accessor((row: any) => row, {
+				id: "rateLimit",
+				header: intl.formatMessage({ id: "column.rate-limit" }),
+				cell: (info: any) => {
+					const value = info.getValue();
+					return (
+						<RateLimitFormatter
+							enabled={value.rateLimitEnabled}
+							rps={value.rateLimitRps}
+							burst={value.rateLimitBurst}
+							nodelay={value.rateLimitNodelay}
+						/>
+					);
 				},
 			}),
 			columnHelper.accessor((row: any) => row.enabled, {

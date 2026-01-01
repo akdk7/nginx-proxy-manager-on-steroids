@@ -203,6 +203,9 @@
 	"column.provider": {
 		"defaultMessage": "Provider"
 	},
+	"column.rate-limit": {
+		"defaultMessage": "Rate Limit"
+	},
 	"column.roles": {
 		"defaultMessage": "Roles"
 	},
@@ -355,6 +358,12 @@
 	},
 	"host.rate-limit": {
 		"defaultMessage": "Rate Limiting"
+	},
+	"host.rate-limit.off": {
+		"defaultMessage": "Off"
+	},
+	"host.rate-limit.summary": {
+		"defaultMessage": "{rps} r/s"
 	},
 	"host.rate-limit.enabled": {
 		"defaultMessage": "Enable Rate Limiting"
