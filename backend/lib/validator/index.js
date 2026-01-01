@@ -1,4 +1,5 @@
 import Ajv from 'ajv/dist/2020.js';
+import addFormats from "ajv-formats";
 import _ from "lodash";
 import commonDefinitions from "../../schema/common.json" with { type: "json" };
 import errs from "../error.js";
@@ -13,6 +14,7 @@ const ajv = new Ajv({
 	strict: false,
 	schemas: [commonDefinitions],
 });
+addFormats(ajv);
 
 /**
  *
