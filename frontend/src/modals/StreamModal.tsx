@@ -143,6 +143,9 @@ const UpstreamSettings = () => {
 	const { values, setFieldValue, errors, submitCount } = useFormikContext<any>();
 	const servers = Array.isArray(values.upstreamServers) ? values.upstreamServers : [];
 	const upstreamInvalid = submitCount > 0 && !!errors.upstreamServers;
+	const [upstreamHeartbeats, setUpstreamHeartbeats] = useState<Record<number, StreamHeartbeatResult>>({});
+	const [upstreamChecking, setUpstreamChecking] = useState(false);
+	const upstreamRequestId = useRef(0);
 
 	useEffect(() => {
 		if (!values.upstreamEnabled || servers.length === 0) {
@@ -160,6 +163,129 @@ const UpstreamSettings = () => {
 			setFieldValue("forwardingPort", nextPort);
 		}
 	}, [servers, setFieldValue, values.forwardingHost, values.forwardingPort, values.upstreamEnabled]);
+
+	useEffect(() => {
+		if (!values.upstreamEnabled || servers.length === 0) {
+			setUpstreamHeartbeats({});
+			setUpstreamChecking(false);
+			return;
+		}
+
+		const tcpForwarding = !!values.tcpForwarding;
+		const udpForwarding = !!values.udpForwarding;
+		if (!tcpForwarding && !udpForwarding) {
+			setUpstreamHeartbeats({});
+			setUpstreamChecking(false);
+			return;
+		}
+
+		const targets = servers
+			.map((server: any, idx: number) => {
+				const host = `${server?.host || ""}`.trim();
+				const port = Number.parseInt(`${server?.port || ""}`, 10);
+				if (!host || !Number.isFinite(port) || port < 1 || port > 65535) {
+					return null;
+				}
+				return {
+					id: idx,
+					forwardingHost: host,
+					forwardingPort: port,
+					tcpForwarding,
+					udpForwarding,
+				};
+			})
+			.filter(Boolean) as {
+			id: number;
+			forwardingHost: string;
+			forwardingPort: number;
+			tcpForwarding: boolean;
+			udpForwarding: boolean;
+		}[];
+
+		if (!targets.length) {
+			setUpstreamHeartbeats({});
+			setUpstreamChecking(false);
+			return;
+		}
+
+		let active = true;
+		const currentRequest = ++upstreamRequestId.current;
+		const abortController = new AbortController();
+		setUpstreamChecking(true);
+
+		const timer = setTimeout(() => {
+			checkStreamHeartbeats(targets, abortController)
+				.then((results) => {
+					if (!active || upstreamRequestId.current !== currentRequest) return;
+					const next: Record<number, StreamHeartbeatResult> = {};
+					results.forEach((result) => {
+						if (typeof result.id === "number") {
+							next[result.id] = result;
+						}
+					});
+					setUpstreamHeartbeats(next);
+				})
+				.catch(() => {
+					if (active) {
+						setUpstreamHeartbeats({});
+					}
+				})
+				.finally(() => {
+					if (active) {
+						setUpstreamChecking(false);
+					}
+				});
+		}, 500);
+
+		return () => {
+			active = false;
+			clearTimeout(timer);
+			abortController.abort();
+		};
+	}, [servers, values.tcpForwarding, values.udpForwarding, values.upstreamEnabled]);
+
+	const renderHeartbeatBadge = (server: any, idx: number) => {
+		const host = `${server?.host || ""}`.trim();
+		const port = Number.parseInt(`${server?.port || ""}`, 10);
+		const validTarget = host && Number.isFinite(port) && port > 0 && port <= 65535;
+		const heartbeat = upstreamHeartbeats[idx];
+		const latencyMs = Number.isFinite(heartbeat?.latencyMs) ? Math.round(heartbeat?.latencyMs || 0) : null;
+		const resolvedStatus =
+			heartbeat?.status ?? (heartbeat ? (heartbeat.ok ? "ok" : "failed") : undefined);
+
+		const badge = (() => {
+			if (!validTarget) {
+				return { color: "secondary", label: <T id="host.heartbeat.status.waiting" /> };
+			}
+			if (upstreamChecking && !heartbeat) {
+				return { color: "yellow", label: <T id="host.heartbeat.status.checking" /> };
+			}
+			if (!heartbeat) {
+				return { color: "secondary", label: <T id="host.heartbeat.status.unknown" /> };
+			}
+			if (resolvedStatus === "unsupported") {
+				return { color: "secondary", label: <T id="host.heartbeat.status.unsupported" /> };
+			}
+			if (heartbeat.ok) {
+				return { color: "lime", label: <T id="host.heartbeat.status.ok" /> };
+			}
+			return { color: "danger", label: <T id="host.heartbeat.status.failed" /> };
+		})();
+
+		const title =
+			!heartbeat?.ok && heartbeat?.error
+				? heartbeat.error
+				: latencyMs !== null
+					? `${latencyMs}ms`
+					: undefined;
+
+		return (
+			<span className={`badge bg-${badge.color}-lt`} title={title}>
+				<T id="host.heartbeat" />: {badge.label}
+				{badge.color === "lime" && latencyMs !== null ? <span> ({latencyMs}ms)</span> : null}
+			</span>
+		);
+	};
 
 	const handleToggle = (checked: boolean) => {
 		setFieldValue("upstreamEnabled", checked);
@@ -345,9 +471,12 @@ const UpstreamSettings = () => {
 											</div>
 										</div>
 										<div className="col-md-8 text-end">
-											<button type="button" className="btn btn-sm" onClick={() => handleRemove(idx)}>
-												<T id="action.delete" />
-											</button>
+											<div className="d-flex justify-content-end align-items-center gap-2">
+												{renderHeartbeatBadge(server, idx)}
+												<button type="button" className="btn btn-sm" onClick={() => handleRemove(idx)}>
+													<T id="action.delete" />
+												</button>
+											</div>
 										</div>
 									</div>
 								</div>
