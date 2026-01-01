@@ -100,7 +100,7 @@ const internalNginx = {
 	 * - create / recreate the config for the host
 	 * - test again
 	 * - IF OK:  update the meta with online status
-	 * - IF BAD: update the meta with offline status and remove the config entirely
+	 * - IF BAD: update the meta with offline status and restore the previous config
 	 * - then reload nginx
 	 *
 	 * @param   {Object|String}  model
@@ -108,81 +108,83 @@ const internalNginx = {
 	 * @param   {Object}         host
 	 * @returns {Promise}
 	 */
-	configure: (model, host_type, host) => {
+	configure: async (model, host_type, host) => {
 		let combined_meta = {};
+		const nice_host_type = internalNginx.getFileFriendlyHostType(host_type);
+		const config_file = internalNginx.getConfigName(nice_host_type, host.id);
+		const err_file = `${config_file}.err`;
+		const backup_file = `${config_file}.bak`;
+		const has_backup = fs.existsSync(config_file);
 
-		return internalNginx
-			.test()
-			.then(() => {
-				// Nginx is OK
-				// We're deleting this config regardless.
-				// Don't throw errors, as the file may not exist at all
-				// Delete the .err file too
-				return internalNginx.deleteConfig(host_type, host, false, true);
-			})
-			.then(() => {
-				return internalNginx.generateConfig(host_type, host);
-			})
-			.then(() => {
-				return internalNginx.updateRateLimitConfig(host_type);
-			})
-			.then(() => {
-				// Test nginx again and update meta with result
-				return internalNginx
-					.test()
-					.then(() => {
-						// nginx is ok
-						combined_meta = _.assign({}, host.meta, {
-							nginx_online: true,
-							nginx_err: null,
-						});
+		await internalNginx.test();
 
-						return model.query().where("id", host.id).patch({
-							meta: combined_meta,
-						});
-					})
-					.catch((err) => {
-						// Remove the error_log line because it's a docker-ism false positive that doesn't need to be reported.
-						// It will always look like this:
-						//   nginx: [alert] could not open error log file: open() "/var/log/nginx/error.log" failed (6: No such device or address)
+		if (has_backup) {
+			fs.copyFileSync(config_file, backup_file);
+		}
 
-						const valid_lines = [];
-						const err_lines = err.message.split("\n");
-						err_lines.map((line) => {
-							if (line.indexOf("/var/log/nginx/error.log") === -1) {
-								valid_lines.push(line);
-							}
-							return true;
-						});
+		const restoreConfig = (saveFailedConfig) => {
+			if (saveFailedConfig && fs.existsSync(config_file)) {
+				fs.renameSync(config_file, err_file);
+			} else if (!saveFailedConfig && !has_backup) {
+				internalNginx.deleteFile(config_file);
+			}
+			if (has_backup && fs.existsSync(backup_file)) {
+				fs.renameSync(backup_file, config_file);
+			} else {
+				internalNginx.deleteFile(backup_file);
+			}
+		};
 
-						debug(logger, "Nginx test failed:", valid_lines.join("\n"));
+		try {
+			await internalNginx.generateConfig(host_type, host);
+			await internalNginx.updateRateLimitConfig(host_type);
+		} catch (err) {
+			restoreConfig(false);
+			throw err;
+		}
 
-						// config is bad, update meta and delete config
-						combined_meta = _.assign({}, host.meta, {
-							nginx_online: false,
-							nginx_err: valid_lines.join("\n"),
-						});
-
-						return model
-							.query()
-							.where("id", host.id)
-							.patch({
-								meta: combined_meta,
-							})
-							.then(() => {
-								internalNginx.renameConfigAsError(host_type, host);
-							})
-							.then(() => {
-								return internalNginx.deleteConfig(host_type, host, true);
-							});
-					});
-			})
-			.then(() => {
-				return internalNginx.reload();
-			})
-			.then(() => {
-				return combined_meta;
+		try {
+			await internalNginx.test();
+			combined_meta = _.assign({}, host.meta, {
+				nginx_online: true,
+				nginx_err: null,
 			});
+
+			await model.query().where("id", host.id).patch({
+				meta: combined_meta,
+			});
+
+			internalNginx.deleteFile(backup_file);
+			internalNginx.deleteFile(err_file);
+			await internalNginx.reload();
+			return combined_meta;
+		} catch (err) {
+			// Remove the error_log line because it's a docker-ism false positive that doesn't need to be reported.
+			// It will always look like this:
+			//   nginx: [alert] could not open error log file: open() "/var/log/nginx/error.log" failed (6: No such device or address)
+			const valid_lines = [];
+			const err_lines = `${err?.message || err}`.split("\n");
+			err_lines.map((line) => {
+				if (line.indexOf("/var/log/nginx/error.log") === -1) {
+					valid_lines.push(line);
+				}
+				return true;
+			});
+
+			debug(logger, "Nginx test failed:", valid_lines.join("\n"));
+
+			combined_meta = _.assign({}, host.meta, {
+				nginx_online: false,
+				nginx_err: valid_lines.join("\n"),
+			});
+
+			await model.query().where("id", host.id).patch({
+				meta: combined_meta,
+			});
+
+			restoreConfig(true);
+			return combined_meta;
+		}
 	},
 
 	/**
@@ -712,65 +714,119 @@ const internalNginx = {
 
 	regenerateAllConfigs: async () => {
 		logger.info("Regenerating all nginx configs...");
-		internalNginx.resetConfigDir("/data/nginx/proxy_host");
-		internalNginx.resetConfigDir("/data/nginx/redirection_host");
-		internalNginx.resetConfigDir("/data/nginx/dead_host");
-		internalNginx.resetConfigDir("/data/nginx/stream");
-		internalNginx.resetConfigDir("/data/nginx/default_host");
+		const backupRoot = `/data/nginx/.backup_${Date.now()}`;
+		const configDirs = ["proxy_host", "redirection_host", "dead_host", "stream", "default_host", "default_www"];
+		const rateLimitConfig = "/etc/nginx/conf.d/include/rate_limit.conf";
+		const rateLimitBackup = `${backupRoot}/rate_limit.conf`;
 
-		const [proxyHosts, redirectionHosts, deadHosts, streams, defaultSite] = await Promise.all([
-			proxyHostModel
-				.query()
-				.where("is_deleted", 0)
-				.andWhere("enabled", 1)
-				.allowGraph("[access_list.[clients,items],certificate]")
-				.withGraphFetched("[access_list.[clients,items],certificate]"),
-			redirectionHostModel
-				.query()
-				.where("is_deleted", 0)
-				.andWhere("enabled", 1)
-				.allowGraph("[certificate]")
-				.withGraphFetched("[certificate]"),
-			deadHostModel
-				.query()
-				.where("is_deleted", 0)
-				.andWhere("enabled", 1)
-				.allowGraph("[certificate]")
-				.withGraphFetched("[certificate]"),
-			streamModel
-				.query()
-				.where("is_deleted", 0)
-				.andWhere("enabled", 1)
-				.allowGraph("[certificate]")
-				.withGraphFetched("[certificate]"),
-			settingModel.query().where("id", "default-site").first(),
-		]);
-
-		if (defaultSite) {
-			if (defaultSite.value === "html" && typeof defaultSite.meta?.html === "string") {
-				fs.mkdirSync("/data/nginx/default_www", { recursive: true });
-				fs.writeFileSync("/data/nginx/default_www/index.html", defaultSite.meta.html, { encoding: "utf8" });
+		const backupConfigs = () => {
+			fs.mkdirSync(backupRoot, { recursive: true });
+			configDirs.forEach((dir) => {
+				const source = `/data/nginx/${dir}`;
+				const dest = `${backupRoot}/${dir}`;
+				if (fs.existsSync(source)) {
+					fs.cpSync(source, dest, { recursive: true });
+				}
+			});
+			if (fs.existsSync(rateLimitConfig)) {
+				fs.copyFileSync(rateLimitConfig, rateLimitBackup);
 			}
-			await internalNginx.generateConfig("default", defaultSite);
-		}
+		};
 
-		if (proxyHosts.length) {
-			await internalNginx.bulkGenerateConfigs("proxy_host", proxyHosts);
-		}
-		if (redirectionHosts.length) {
-			await internalNginx.bulkGenerateConfigs("redirection_host", redirectionHosts);
-		}
-		if (deadHosts.length) {
-			await internalNginx.bulkGenerateConfigs("dead_host", deadHosts);
-		}
-		if (streams.length) {
-			await internalNginx.bulkGenerateConfigs("stream", streams);
-		}
+		const restoreConfigs = () => {
+			configDirs.forEach((dir) => {
+				const source = `${backupRoot}/${dir}`;
+				const dest = `/data/nginx/${dir}`;
+				if (fs.existsSync(source)) {
+					fs.rmSync(dest, { recursive: true, force: true });
+					fs.renameSync(source, dest);
+				} else if (!fs.existsSync(dest)) {
+					fs.mkdirSync(dest, { recursive: true });
+				}
+			});
+			if (fs.existsSync(rateLimitBackup)) {
+				fs.copyFileSync(rateLimitBackup, rateLimitConfig);
+			}
+		};
 
-		await internalNginx.generateRateLimitConfig();
-		await internalNginx.test();
-		await internalNginx.reloadIfRunning();
-		logger.info("Regenerate nginx configs completed");
+		const cleanupBackup = () => {
+			if (fs.existsSync(backupRoot)) {
+				fs.rmSync(backupRoot, { recursive: true, force: true });
+			}
+		};
+
+		let backupReady = false;
+		try {
+			backupConfigs();
+			backupReady = true;
+
+			internalNginx.resetConfigDir("/data/nginx/proxy_host");
+			internalNginx.resetConfigDir("/data/nginx/redirection_host");
+			internalNginx.resetConfigDir("/data/nginx/dead_host");
+			internalNginx.resetConfigDir("/data/nginx/stream");
+			internalNginx.resetConfigDir("/data/nginx/default_host");
+
+			const [proxyHosts, redirectionHosts, deadHosts, streams, defaultSite] = await Promise.all([
+				proxyHostModel
+					.query()
+					.where("is_deleted", 0)
+					.andWhere("enabled", 1)
+					.allowGraph("[access_list.[clients,items],certificate]")
+					.withGraphFetched("[access_list.[clients,items],certificate]"),
+				redirectionHostModel
+					.query()
+					.where("is_deleted", 0)
+					.andWhere("enabled", 1)
+					.allowGraph("[certificate]")
+					.withGraphFetched("[certificate]"),
+				deadHostModel
+					.query()
+					.where("is_deleted", 0)
+					.andWhere("enabled", 1)
+					.allowGraph("[certificate]")
+					.withGraphFetched("[certificate]"),
+				streamModel
+					.query()
+					.where("is_deleted", 0)
+					.andWhere("enabled", 1)
+					.allowGraph("[certificate]")
+					.withGraphFetched("[certificate]"),
+				settingModel.query().where("id", "default-site").first(),
+			]);
+
+			if (defaultSite) {
+				if (defaultSite.value === "html" && typeof defaultSite.meta?.html === "string") {
+					fs.mkdirSync("/data/nginx/default_www", { recursive: true });
+					fs.writeFileSync("/data/nginx/default_www/index.html", defaultSite.meta.html, { encoding: "utf8" });
+				}
+				await internalNginx.generateConfig("default", defaultSite);
+			}
+
+			if (proxyHosts.length) {
+				await internalNginx.bulkGenerateConfigs("proxy_host", proxyHosts);
+			}
+			if (redirectionHosts.length) {
+				await internalNginx.bulkGenerateConfigs("redirection_host", redirectionHosts);
+			}
+			if (deadHosts.length) {
+				await internalNginx.bulkGenerateConfigs("dead_host", deadHosts);
+			}
+			if (streams.length) {
+				await internalNginx.bulkGenerateConfigs("stream", streams);
+			}
+
+			await internalNginx.generateRateLimitConfig();
+			await internalNginx.test();
+			await internalNginx.reloadIfRunning();
+			cleanupBackup();
+			logger.info("Regenerate nginx configs completed");
+		} catch (err) {
+			logger.error("Regenerate nginx configs failed, keeping existing configuration:", err?.message || err);
+			if (backupReady) {
+				restoreConfigs();
+			}
+			cleanupBackup();
+		}
 	},
 };
 
