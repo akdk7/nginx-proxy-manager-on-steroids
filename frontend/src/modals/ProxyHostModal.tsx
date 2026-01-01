@@ -127,6 +127,7 @@ const ForwardHeartbeatCheck = () => {
 const UpstreamSettings = () => {
 	const { values, setFieldValue, errors, submitCount } = useFormikContext<any>();
 	const servers = Array.isArray(values.upstreamServers) ? values.upstreamServers : [];
+	const upstreamInvalid = submitCount > 0 && !!errors.upstreamServers;
 
 	useEffect(() => {
 		if (!values.upstreamEnabled || servers.length === 0) {
@@ -238,7 +239,7 @@ const UpstreamSettings = () => {
 											<input
 												id={`upstream-host-${idx}`}
 												type="text"
-												className="form-control"
+												className={`form-control ${upstreamInvalid ? "is-invalid" : ""}`}
 												placeholder="example.local"
 												value={server.host || ""}
 												onChange={(e) => handleChange(idx, "host", e.target.value)}
@@ -253,7 +254,7 @@ const UpstreamSettings = () => {
 												type="number"
 												min={1}
 												max={65535}
-												className="form-control"
+												className={`form-control ${upstreamInvalid ? "is-invalid" : ""}`}
 												placeholder="80"
 												value={server.port || 0}
 												onChange={(e) =>
@@ -270,7 +271,7 @@ const UpstreamSettings = () => {
 												type="number"
 												min={1}
 												max={100}
-												className="form-control"
+												className={`form-control ${upstreamInvalid ? "is-invalid" : ""}`}
 												placeholder="1"
 												value={server.weight || 1}
 												onChange={(e) =>
@@ -287,7 +288,7 @@ const UpstreamSettings = () => {
 												type="number"
 												min={0}
 												max={100}
-												className="form-control"
+												className={`form-control ${upstreamInvalid ? "is-invalid" : ""}`}
 												placeholder="0"
 												value={server.maxFails || 0}
 												onChange={(e) =>
@@ -304,7 +305,7 @@ const UpstreamSettings = () => {
 												type="number"
 												min={0}
 												max={3600}
-												className="form-control"
+												className={`form-control ${upstreamInvalid ? "is-invalid" : ""}`}
 												placeholder="0"
 												value={server.failTimeout || 0}
 												onChange={(e) =>
@@ -445,30 +446,32 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 					onSubmit={onSubmit}
 				>
 					{({ values, setFieldValue, isSubmitting, errors, submitCount }: any) => {
-						const errorFields = submitCount > 0
-							? Object.keys(errors || {})
-									.map((key) => {
-										switch (key) {
-											case "domainNames":
-												return intl.formatMessage({ id: "domain-names" });
-											case "forwardHost":
-												return intl.formatMessage({ id: "proxy-host.forward-host" });
-											case "forwardPort":
-												return intl.formatMessage({ id: "host.forward-port" });
-											case "forwardScheme":
-												return intl.formatMessage({ id: "host.forward-scheme" });
-											case "rateLimitRps":
-												return intl.formatMessage({ id: "host.rate-limit.rps" });
-											case "rateLimitBurst":
-												return intl.formatMessage({ id: "host.rate-limit.burst" });
-											case "upstreamServers":
-												return intl.formatMessage({ id: "host.upstream" });
-											default:
-												return null;
-										}
-									})
-									.filter((value) => value)
-							: [];
+						const labelForField = (key: string) => {
+							switch (key) {
+								case "domainNames":
+									return intl.formatMessage({ id: "domain-names" });
+								case "forwardHost":
+									return intl.formatMessage({ id: "proxy-host.forward-host" });
+								case "forwardPort":
+									return intl.formatMessage({ id: "host.forward-port" });
+								case "forwardScheme":
+									return intl.formatMessage({ id: "host.forward-scheme" });
+								case "rateLimitRps":
+									return intl.formatMessage({ id: "host.rate-limit.rps" });
+								case "rateLimitBurst":
+									return intl.formatMessage({ id: "host.rate-limit.burst" });
+								case "upstreamServers":
+									return intl.formatMessage({ id: "host.upstream" });
+								case "locations":
+									return intl.formatMessage({ id: "column.custom-locations" });
+								default:
+									return key.replace(/_/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2");
+							}
+						};
+						const errorFields =
+							submitCount > 0 && errors
+								? Object.keys(errors).map((key) => labelForField(key))
+								: [];
 						const errorSummary = errorFields.length ? errorFields.join(", ") : null;
 
 						return (
