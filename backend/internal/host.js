@@ -40,11 +40,10 @@ const internalHost = {
 	 * @returns {Array}
 	 */
 	cleanAllRowsCertificateMeta: (rows) => {
-		rows.map((_, idx) => {
-			if (typeof rows[idx].certificate !== "undefined" && rows[idx].certificate) {
-				rows[idx].certificate.meta = {};
+		rows.forEach((row) => {
+			if (typeof row.certificate !== "undefined" && row.certificate) {
+				row.certificate.meta = {};
 			}
-			return true;
 		});
 
 		return rows;
@@ -176,24 +175,21 @@ const internalHost = {
 	 * @returns {Boolean}
 	 */
 	_checkHostnameRecordsTaken: (hostname, existingRows, ignoreId) => {
-		let isTaken = false;
-
-		if (existingRows?.length) {
-			existingRows.map((existingRow) => {
-				existingRow.domain_names.map((existingHostname) => {
+		const normalizedHostname = `${hostname}`.toLowerCase();
+		return (
+			existingRows?.some((existingRow) => {
+				if (!Array.isArray(existingRow.domain_names)) {
+					return false;
+				}
+				return existingRow.domain_names.some((existingHostname) => {
 					// Does this domain match?
-					if (existingHostname.toLowerCase() === hostname.toLowerCase()) {
-						if (!ignoreId || ignoreId !== existingRow.id) {
-							isTaken = true;
-						}
+					if (`${existingHostname}`.toLowerCase() !== normalizedHostname) {
+						return false;
 					}
-					return true;
+					return !ignoreId || ignoreId !== existingRow.id;
 				});
-				return true;
-			});
-		}
-
-		return isTaken;
+			}) ?? false
+		);
 	},
 
 	/**
@@ -204,30 +200,19 @@ const internalHost = {
 	 * @returns {Array}
 	 */
 	_getHostsWithDomains: (hosts, domainNames) => {
-		const response = [];
-
-		if (hosts?.length) {
-			hosts.map((host) => {
-				let hostMatches = false;
-
-				domainNames.map((domainName) => {
-					host.domain_names.map((hostDomainName) => {
-						if (domainName.toLowerCase() === hostDomainName.toLowerCase()) {
-							hostMatches = true;
-						}
-						return true;
-					});
-					return true;
-				});
-
-				if (hostMatches) {
-					response.push(host);
-				}
-				return true;
-			});
+		if (!Array.isArray(hosts) || !Array.isArray(domainNames) || domainNames.length === 0) {
+			return [];
 		}
 
-		return response;
+		const domainSet = new Set(domainNames.map((domainName) => `${domainName}`.toLowerCase()));
+		return hosts.filter((host) => {
+			if (!Array.isArray(host.domain_names)) {
+				return false;
+			}
+			return host.domain_names.some((hostDomainName) =>
+				domainSet.has(`${hostDomainName}`.toLowerCase()),
+			);
+		});
 	},
 };
 

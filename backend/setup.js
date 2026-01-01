@@ -10,7 +10,7 @@ import userPermissionModel from "./models/user_permission.js";
 export const isSetup = async () => {
 	const row = await userModel.query().select("id").where("is_deleted", 0).first();
 	return row?.id > 0;
-}
+};
 
 /**
  * Creates a default admin users if one doesn't already exist in the database
@@ -27,17 +27,17 @@ const setupDefaultUser = async () => {
 	// I'm keeping this legacy behavior in case some people are automating deployments.
 
 	if (!initialAdminEmail || !initialAdminPassword) {
-		return Promise.resolve();
+		return;
 	}
 
-	const userIsetup = await isSetup();
-	if (!userIsetup) {
+	const isSetupComplete = await isSetup();
+	if (!isSetupComplete) {
 		// Create a new user and set password
 		logger.info(`Creating a new user: ${initialAdminEmail} with password: ${initialAdminPassword}`);
 
 		const data = {
 			is_deleted: 0,
-			email: email,
+			email: initialAdminEmail,
 			name: "Administrator",
 			nickname: "Admin",
 			avatar: "",
@@ -53,7 +53,7 @@ const setupDefaultUser = async () => {
 			.insert({
 				user_id: user.id,
 				type: "password",
-				secret: password,
+				secret: initialAdminPassword,
 				meta: {},
 			});
 

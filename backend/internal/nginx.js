@@ -17,6 +17,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const rateLimitZoneSize = "10m";
 const headerNameRegex = /^[A-Za-z0-9-]+$/;
+const rateLimitOverrideKeys = [
+	"rate_limit_enabled",
+	"rate_limit_rps",
+	"rate_limit_burst",
+	"rate_limit_nodelay",
+];
 
 const sanitizeHeaderValue = (value) => {
 	if (!value) {
@@ -99,7 +105,15 @@ const sanitizeUpstreamServers = (servers) => {
 				backup: server?.backup === true,
 			};
 		})
-		.filter(Boolean);
+			.filter(Boolean);
+};
+
+const readTemplate = (name) => {
+	try {
+		return fs.readFileSync(`${__dirname}/../templates/${name}`, { encoding: "utf8" });
+	} catch (err) {
+		throw new errs.ConfigurationError(err.message);
+	}
 };
 
 const internalNginx = {
@@ -288,73 +302,56 @@ const internalNginx = {
 	 * @param   {Object}  host
 	 * @returns {Promise}
 	 */
-	renderLocations: (host) => {
-		return new Promise((resolve, reject) => {
-			let template;
+	renderLocations: async (host) => {
+		const template = readTemplate("_location.conf");
+		const renderEngine = utils.getRenderEngine();
+		let renderedLocations = "";
 
-			try {
-				template = fs.readFileSync(`${__dirname}/../templates/_location.conf`, { encoding: "utf8" });
-			} catch (err) {
-				reject(new errs.ConfigurationError(err.message));
-				return;
+		for (let i = 0; i < host.locations.length; i++) {
+			const locationCopy = Object.assign(
+				{},
+				{ access_list_id: host.access_list_id },
+				{ certificate_id: host.certificate_id },
+				{ upstream_ssl_certificate_id: host.upstream_ssl_certificate_id },
+				{ upstream_ssl_certificate: host.upstream_ssl_certificate },
+				{ ssl_forced: host.ssl_forced },
+				{ caching_enabled: host.caching_enabled },
+				{ block_exploits: host.block_exploits },
+				{ allow_websocket_upgrade: host.allow_websocket_upgrade },
+				{ http2_support: host.http2_support },
+				{ hsts_enabled: host.hsts_enabled },
+				{ hsts_subdomains: host.hsts_subdomains },
+				{ access_list: host.access_list },
+				{ certificate: host.certificate },
+				host.locations[i],
+			);
+			locationCopy.security_headers = mergeSecurityHeaders(host.security_headers, host.locations[i]?.security_headers);
+			locationCopy.hsts_header_set = hasHeader(locationCopy.security_headers, "Strict-Transport-Security");
+			const locationOverridesRateLimit = rateLimitOverrideKeys.some(
+				(key) => typeof host.locations[i][key] !== "undefined",
+			);
+			const locationId = host.locations[i]?.id ?? i;
+			if (locationOverridesRateLimit) {
+				locationCopy.rate_limit_zone_name = internalNginx.getRateLimitZoneName(host.id, locationId);
+			} else {
+				locationCopy.rate_limit_zone_name = host.rate_limit_zone_name;
 			}
 
-			const renderEngine = utils.getRenderEngine();
-			let renderedLocations = "";
+			if (locationCopy.forward_host.indexOf("/") > -1) {
+				const splitted = locationCopy.forward_host.split("/");
 
-			const locationRendering = async () => {
-				for (let i = 0; i < host.locations.length; i++) {
-					const locationCopy = Object.assign(
-						{},
-						{ access_list_id: host.access_list_id },
-						{ certificate_id: host.certificate_id },
-						{ upstream_ssl_certificate_id: host.upstream_ssl_certificate_id },
-						{ upstream_ssl_certificate: host.upstream_ssl_certificate },
-						{ ssl_forced: host.ssl_forced },
-						{ caching_enabled: host.caching_enabled },
-						{ block_exploits: host.block_exploits },
-						{ allow_websocket_upgrade: host.allow_websocket_upgrade },
-						{ http2_support: host.http2_support },
-						{ hsts_enabled: host.hsts_enabled },
-						{ hsts_subdomains: host.hsts_subdomains },
-						{ access_list: host.access_list },
-						{ certificate: host.certificate },
-						host.locations[i],
-					);
-					locationCopy.security_headers = mergeSecurityHeaders(
-						host.security_headers,
-						host.locations[i]?.security_headers,
-					);
-					locationCopy.hsts_header_set = hasHeader(locationCopy.security_headers, "Strict-Transport-Security");
-					const locationRateLimitKeys = [
-						"rate_limit_enabled",
-						"rate_limit_rps",
-						"rate_limit_burst",
-						"rate_limit_nodelay",
-					];
-					const locationOverridesRateLimit = locationRateLimitKeys.some(
-						(key) => typeof host.locations[i][key] !== "undefined",
-					);
-					const locationId = host.locations[i]?.id ?? i;
-					if (locationOverridesRateLimit) {
-						locationCopy.rate_limit_zone_name = internalNginx.getRateLimitZoneName(host.id, locationId);
-					} else {
-						locationCopy.rate_limit_zone_name = host.rate_limit_zone_name;
-					}
+				locationCopy.forward_host = splitted.shift();
+				locationCopy.forward_path = `/${splitted.join("/")}`;
+			}
 
-					if (locationCopy.forward_host.indexOf("/") > -1) {
-						const splitted = locationCopy.forward_host.split("/");
+			try {
+				renderedLocations += await renderEngine.parseAndRender(template, locationCopy);
+			} catch (err) {
+				throw new errs.ConfigurationError(err.message);
+			}
+		}
 
-						locationCopy.forward_host = splitted.shift();
-						locationCopy.forward_path = `/${splitted.join("/")}`;
-					}
-
-					renderedLocations += await renderEngine.parseAndRender(template, locationCopy);
-				}
-			};
-
-			locationRendering().then(() => resolve(renderedLocations));
-		});
+		return renderedLocations;
 	},
 
 	/**
@@ -362,7 +359,7 @@ const internalNginx = {
 	 * @param   {Object}  host
 	 * @returns {Promise}
 	 */
-	generateConfig: (host_type, host_row) => {
+	generateConfig: async (host_type, host_row) => {
 		// Prevent modifying the original object:
 		const host = JSON.parse(JSON.stringify(host_row));
 		const nice_host_type = internalNginx.getFileFriendlyHostType(host_type);
@@ -370,120 +367,95 @@ const internalNginx = {
 		debug(logger, `Generating ${nice_host_type} Config:`, JSON.stringify(host, null, 2));
 
 		const renderEngine = utils.getRenderEngine();
+		const filename = internalNginx.getConfigName(nice_host_type, host.id);
+		const template = readTemplate(`${nice_host_type}.conf`);
+		const upstreamCertPromise = internalNginx.loadUpstreamSslCertificate(host);
+		let origLocations;
 
-		return new Promise((resolve, reject) => {
-			let template = null;
-			const filename = internalNginx.getConfigName(nice_host_type, host.id);
+		// Manipulate the data a bit before sending it to the template
+		if (nice_host_type !== "default") {
+			host.use_default_location = true;
+			if (typeof host.advanced_config !== "undefined" && host.advanced_config) {
+				host.use_default_location = !internalNginx.advancedConfigHasDefaultLocation(host.advanced_config);
+			}
+		}
 
-			try {
-				template = fs.readFileSync(`${__dirname}/../templates/${nice_host_type}.conf`, { encoding: "utf8" });
-			} catch (err) {
-				reject(new errs.ConfigurationError(err.message));
-				return;
+		host.security_headers = sanitizeSecurityHeaders(host.security_headers);
+		host.hsts_header_set = hasHeader(host.security_headers, "Strict-Transport-Security");
+		const upstreamEnabled = host.upstream_enabled === 1 || host.upstream_enabled === true;
+		const upstreamServers = sanitizeUpstreamServers(host.upstream_servers);
+		const hasExplicitUpstream = upstreamEnabled && upstreamServers.length > 0;
+		const needsStreamUpstream =
+			nice_host_type === "stream" &&
+			!hasExplicitUpstream &&
+			typeof host.forwarding_host === "string" &&
+			host.forwarding_host.trim() &&
+			!isIpAddress(host.forwarding_host.trim());
+		const fallbackStreamServers = needsStreamUpstream
+			? sanitizeUpstreamServers([
+					{
+						host: host.forwarding_host.trim(),
+						port: host.forwarding_port,
+					},
+				])
+			: [];
+
+		if (hasExplicitUpstream || fallbackStreamServers.length > 0) {
+			host.upstream_enabled = true;
+			host.upstream_servers = hasExplicitUpstream ? upstreamServers : fallbackStreamServers;
+			host.upstream_name = internalNginx.getUpstreamName(nice_host_type, host.id);
+		} else {
+			host.upstream_enabled = false;
+			host.upstream_servers = [];
+			host.upstream_name = null;
+		}
+		if (!["round_robin", "least_conn", "ip_hash"].includes(host.upstream_policy)) {
+			host.upstream_policy = "round_robin";
+		}
+
+		if (Array.isArray(host.locations)) {
+			//logger.info ('host.locations = ' + JSON.stringify(host.locations, null, 2));
+			origLocations = [].concat(host.locations);
+			await upstreamCertPromise;
+			host.locations = await internalNginx.renderLocations(host);
+
+			// Allow someone who is using / custom location path to use it, and skip the default / location
+			if (origLocations.some((location) => location.path === "/")) {
+				host.use_default_location = false;
+			}
+		} else {
+			await upstreamCertPromise;
+		}
+
+		// Set the IPv6 setting for the host
+		host.ipv6 = internalNginx.ipv6Enabled();
+		const hostRateLimitEnabled = host.rate_limit_enabled === 1 || host.rate_limit_enabled === true;
+		const hostRateLimitRps = Number.parseInt(host.rate_limit_rps, 10);
+		if (hostRateLimitEnabled && Number.isFinite(hostRateLimitRps) && hostRateLimitRps > 0) {
+			host.rate_limit_zone_name = internalNginx.getRateLimitZoneName(host.id);
+		}
+
+		try {
+			const configText = await renderEngine.parseAndRender(template, host);
+			fs.writeFileSync(filename, configText, { encoding: "utf8" });
+			debug(logger, "Wrote config:", filename, configText);
+
+			// Restore locations array
+			if (origLocations) {
+				host.locations = origLocations;
 			}
 
-			let locationsPromise;
-			let origLocations;
-			const upstreamCertPromise = internalNginx.loadUpstreamSslCertificate(host);
-
-			// Manipulate the data a bit before sending it to the template
-			if (nice_host_type !== "default") {
-				host.use_default_location = true;
-				if (typeof host.advanced_config !== "undefined" && host.advanced_config) {
-					host.use_default_location = !internalNginx.advancedConfigHasDefaultLocation(host.advanced_config);
-				}
-			}
-
-			host.security_headers = sanitizeSecurityHeaders(host.security_headers);
-			host.hsts_header_set = hasHeader(host.security_headers, "Strict-Transport-Security");
-			const upstreamEnabled = host.upstream_enabled === 1 || host.upstream_enabled === true;
-			const upstreamServers = sanitizeUpstreamServers(host.upstream_servers);
-			const hasExplicitUpstream = upstreamEnabled && upstreamServers.length > 0;
-			const needsStreamUpstream =
-				nice_host_type === "stream" &&
-				!hasExplicitUpstream &&
-				typeof host.forwarding_host === "string" &&
-				host.forwarding_host.trim() &&
-				!isIpAddress(host.forwarding_host.trim());
-			const fallbackStreamServers = needsStreamUpstream
-				? sanitizeUpstreamServers([
-						{
-							host: host.forwarding_host.trim(),
-							port: host.forwarding_port,
-						},
-					])
-				: [];
-
-			if (hasExplicitUpstream || fallbackStreamServers.length > 0) {
-				host.upstream_enabled = true;
-				host.upstream_servers = hasExplicitUpstream ? upstreamServers : fallbackStreamServers;
-				host.upstream_name = internalNginx.getUpstreamName(nice_host_type, host.id);
-			} else {
-				host.upstream_enabled = false;
-				host.upstream_servers = [];
-				host.upstream_name = null;
-			}
-			if (!["round_robin", "least_conn", "ip_hash"].includes(host.upstream_policy)) {
-				host.upstream_policy = "round_robin";
-			}
-
-			if (host.locations) {
-				//logger.info ('host.locations = ' + JSON.stringify(host.locations, null, 2));
-				origLocations = [].concat(host.locations);
-				locationsPromise = upstreamCertPromise.then(() =>
-					internalNginx.renderLocations(host).then((renderedLocations) => {
-						host.locations = renderedLocations;
-					}),
-				);
-
-				// Allow someone who is using / custom location path to use it, and skip the default / location
-				_.map(host.locations, (location) => {
-					if (location.path === "/") {
-						host.use_default_location = false;
-					}
-				});
-			} else {
-				locationsPromise = upstreamCertPromise;
-			}
-
-			// Set the IPv6 setting for the host
-			host.ipv6 = internalNginx.ipv6Enabled();
-			const hostRateLimitEnabled = host.rate_limit_enabled === 1 || host.rate_limit_enabled === true;
-			const hostRateLimitRps = Number.parseInt(host.rate_limit_rps, 10);
-			if (hostRateLimitEnabled && Number.isFinite(hostRateLimitRps) && hostRateLimitRps > 0) {
-				host.rate_limit_zone_name = internalNginx.getRateLimitZoneName(host.id);
-			}
-
-			locationsPromise.then(() => {
-				renderEngine
-					.parseAndRender(template, host)
-					.then((config_text) => {
-						fs.writeFileSync(filename, config_text, { encoding: "utf8" });
-						debug(logger, "Wrote config:", filename, config_text);
-
-						// Restore locations array
-						host.locations = origLocations;
-
-						resolve(true);
-					})
-					.catch((err) => {
-						debug(logger, `Could not write ${filename}:`, err.message);
-						reject(new errs.ConfigurationError(err.message));
-					});
-			});
-		});
+			return true;
+		} catch (err) {
+			debug(logger, `Could not write ${filename}:`, err.message);
+			throw new errs.ConfigurationError(err.message);
+		}
 	},
 
 	generateRateLimitConfig: async () => {
 		const renderEngine = utils.getRenderEngine();
-		let template = null;
 		const filename = "/etc/nginx/conf.d/include/rate_limit.conf";
-
-		try {
-			template = fs.readFileSync(`${__dirname}/../templates/rate_limit.conf`, { encoding: "utf8" });
-		} catch (err) {
-			throw new errs.ConfigurationError(err.message);
-		}
+		const template = readTemplate("rate_limit.conf");
 
 		const hosts = await proxyHostModel.query().where("is_deleted", 0);
 		const zones = [];
@@ -513,13 +485,7 @@ const internalNginx = {
 			}
 
 			host.locations.forEach((location, idx) => {
-				const locationRateLimitKeys = [
-					"rate_limit_enabled",
-					"rate_limit_rps",
-					"rate_limit_burst",
-					"rate_limit_nodelay",
-				];
-				const locationOverridesRateLimit = locationRateLimitKeys.some(
+				const locationOverridesRateLimit = rateLimitOverrideKeys.some(
 					(key) => typeof location[key] !== "undefined",
 				);
 				if (!locationOverridesRateLimit) {
@@ -556,35 +522,23 @@ const internalNginx = {
 	 * @param   {Object}  certificate
 	 * @returns {Promise}
 	 */
-	generateLetsEncryptRequestConfig: (certificate) => {
+	generateLetsEncryptRequestConfig: async (certificate) => {
 		debug(logger, "Generating LetsEncrypt Request Config:", certificate);
 		const renderEngine = utils.getRenderEngine();
+		const template = readTemplate("letsencrypt-request.conf");
+		const filename = `/data/nginx/temp/letsencrypt_${certificate.id}.conf`;
 
-		return new Promise((resolve, reject) => {
-			let template = null;
-			const filename = `/data/nginx/temp/letsencrypt_${certificate.id}.conf`;
+		certificate.ipv6 = internalNginx.ipv6Enabled();
 
-			try {
-				template = fs.readFileSync(`${__dirname}/../templates/letsencrypt-request.conf`, { encoding: "utf8" });
-			} catch (err) {
-				reject(new errs.ConfigurationError(err.message));
-				return;
-			}
-
-			certificate.ipv6 = internalNginx.ipv6Enabled();
-
-			renderEngine
-				.parseAndRender(template, certificate)
-				.then((config_text) => {
-					fs.writeFileSync(filename, config_text, { encoding: "utf8" });
-					debug(logger, "Wrote config:", filename, config_text);
-					resolve(true);
-				})
-				.catch((err) => {
-					debug(logger, `Could not write ${filename}:`, err.message);
-					reject(new errs.ConfigurationError(err.message));
-				});
-		});
+		try {
+			const configText = await renderEngine.parseAndRender(template, certificate);
+			fs.writeFileSync(filename, configText, { encoding: "utf8" });
+			debug(logger, "Wrote config:", filename, configText);
+			return true;
+		} catch (err) {
+			debug(logger, `Could not write ${filename}:`, err.message);
+			throw new errs.ConfigurationError(err.message);
+		}
 	},
 
 	/**

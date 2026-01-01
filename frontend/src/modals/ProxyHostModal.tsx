@@ -2,7 +2,7 @@ import { IconSettings } from "@tabler/icons-react";
 import cn from "classnames";
 import EasyModal, { type InnerModalProps } from "ez-modal-react";
 import { Field, Form, Formik, useFormikContext } from "formik";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "react-bootstrap";
 import Modal from "react-bootstrap/Modal";
 import { checkProxyHostHeartbeats, type ProxyHostHeartbeatResult } from "src/api/backend";
@@ -26,6 +26,55 @@ import { showObjectSuccess } from "src/notifications";
 
 const validateForwardHost = validateString(1, 255);
 const validateForwardPort = validateNumber(1, 65535);
+const heartbeatDebounceMs = 500;
+
+type HeartbeatTarget = {
+	id?: number;
+	forwardScheme: string;
+	forwardHost: string;
+	forwardPort: number;
+};
+
+type HeartbeatState = {
+	status: "idle" | "checking" | "success" | "error";
+	results: ProxyHostHeartbeatResult[];
+	error?: string;
+};
+
+const useDebouncedHeartbeats = (targets: HeartbeatTarget[], refreshKey: number) => {
+	const [state, setState] = useState<HeartbeatState>({ status: "idle", results: [] });
+	const requestId = useRef(0);
+
+	useEffect(() => {
+		if (!targets.length) {
+			setState({ status: "idle", results: [], error: undefined });
+			return;
+		}
+
+		const currentRequest = ++requestId.current;
+		const abortController = new AbortController();
+		setState({ status: "checking", results: [], error: undefined });
+
+		const timer = setTimeout(() => {
+			checkProxyHostHeartbeats(targets, abortController)
+				.then((results) => {
+					if (requestId.current !== currentRequest) return;
+					setState({ status: "success", results, error: undefined });
+				})
+				.catch((err: Error) => {
+					if (requestId.current !== currentRequest) return;
+					setState({ status: "error", results: [], error: err.message });
+				});
+		}, heartbeatDebounceMs);
+
+		return () => {
+			clearTimeout(timer);
+			abortController.abort();
+		};
+	}, [targets, refreshKey]);
+
+	return state;
+};
 
 const showProxyHostModal = (id: number | "new") => {
 	EasyModal.show(ProxyHostModal, { id });
@@ -43,87 +92,74 @@ const ForwardHeartbeatCheck = ({
 	onRefresh: () => void;
 }) => {
 	const { values } = useFormikContext<any>();
-	const [state, setState] = useState<{
-		status: "idle" | "checking" | "ok" | "failed";
-		result?: ProxyHostHeartbeatResult;
-		error?: string;
-	}>({ status: "idle" });
-	const requestId = useRef(0);
 
-	useEffect(() => {
-		void refreshKey;
+	const targets = useMemo(() => {
 		const upstreamServers = Array.isArray(values.upstreamServers) ? values.upstreamServers : [];
 		const selectedHost = values.upstreamEnabled && upstreamServers.length ? upstreamServers[0] : null;
 		const forwardHost = `${selectedHost?.host || values.forwardHost || ""}`.trim();
 		const forwardPort = Number.parseInt(`${selectedHost?.port || values.forwardPort || ""}`, 10);
 		const forwardScheme = values.forwardScheme || "http";
 
-		if (
-			!forwardHost ||
-			!Number.isFinite(forwardPort) ||
-			forwardPort < 1 ||
-			forwardPort > 65535
-		) {
-			setState({ status: "idle" });
-			return;
+		if (!forwardHost || !Number.isFinite(forwardPort) || forwardPort < 1 || forwardPort > 65535) {
+			return [];
 		}
 
-		const currentRequest = ++requestId.current;
-		const abortController = new AbortController();
-		setState({ status: "checking" });
-
-		const timer = setTimeout(() => {
-			checkProxyHostHeartbeats(
-				[
-					{
-						forwardScheme,
-						forwardHost,
-						forwardPort,
-					},
-				],
-				abortController,
-			)
-				.then((results) => {
-					if (requestId.current !== currentRequest) return;
-					const result = results[0];
-					if (result?.ok) {
-						setState({ status: "ok", result });
-					} else {
-						setState({ status: "failed", result, error: result?.error });
-					}
-				})
-				.catch((err: Error) => {
-					if (requestId.current !== currentRequest) return;
-					setState({ status: "failed", error: err.message });
-				});
-		}, 500);
-
-		return () => {
-			clearTimeout(timer);
-			abortController.abort();
-		};
+		return [
+			{
+				forwardScheme,
+				forwardHost,
+				forwardPort,
+			},
+		];
 	}, [
 		values.forwardHost,
 		values.forwardPort,
 		values.forwardScheme,
 		values.upstreamEnabled,
 		values.upstreamServers,
-		refreshKey,
 	]);
 
-	const latencyMs = Number.isFinite(state.result?.latencyMs) ? Math.round(state.result?.latencyMs || 0) : null;
+	const heartbeatState = useDebouncedHeartbeats(targets, refreshKey);
+	const result = heartbeatState.results[0];
+	const status = (() => {
+		if (!targets.length) {
+			return "idle";
+		}
+		if (heartbeatState.status === "checking") {
+			return "checking";
+		}
+		if (heartbeatState.status === "error") {
+			return "failed";
+		}
+		if (result?.ok) {
+			return "ok";
+		}
+		if (result) {
+			return "failed";
+		}
+		return "idle";
+	})();
+
+	const latencyMs = Number.isFinite(result?.latencyMs) ? Math.round(result?.latencyMs || 0) : null;
 	const statusClass =
-		state.status === "ok" ? "text-success" : state.status === "failed" ? "text-danger" : "text-muted";
+		status === "ok" ? "text-success" : status === "failed" ? "text-danger" : "text-muted";
 	const statusLabel =
-		state.status === "checking" ? (
+		status === "checking" ? (
 			<T id="host.heartbeat.status.checking" />
-		) : state.status === "ok" ? (
+		) : status === "ok" ? (
 			<T id="host.heartbeat.status.ok" />
-		) : state.status === "failed" ? (
+		) : status === "failed" ? (
 			<T id="host.heartbeat.status.failed" />
 		) : (
 			<T id="host.heartbeat.status.waiting" />
 		);
+
+	const errorMessage =
+		status === "failed"
+			? heartbeatState.status === "error"
+				? heartbeatState.error
+				: result?.error
+			: undefined;
 
 	return (
 		<div className="mb-3">
@@ -133,10 +169,10 @@ const ForwardHeartbeatCheck = ({
 				onClick={onRefresh}
 			>
 				<T id="host.heartbeat" />: {statusLabel}
-				{state.status === "ok" && latencyMs !== null ? <span> ({latencyMs}ms)</span> : null}
+				{status === "ok" && latencyMs !== null ? <span> ({latencyMs}ms)</span> : null}
 			</button>
-			{state.status === "failed" && state.error ? (
-				<div className="small text-muted text-break">{state.error}</div>
+			{status === "failed" && errorMessage ? (
+				<div className="small text-muted text-break">{errorMessage}</div>
 			) : null}
 		</div>
 	);
@@ -146,9 +182,6 @@ const UpstreamSettings = ({ onRequestForwardHeartbeat }: { onRequestForwardHeart
 	const { values, setFieldValue, errors, submitCount } = useFormikContext<any>();
 	const servers = Array.isArray(values.upstreamServers) ? values.upstreamServers : [];
 	const upstreamInvalid = submitCount > 0 && !!errors.upstreamServers;
-	const [upstreamHeartbeats, setUpstreamHeartbeats] = useState<Record<number, ProxyHostHeartbeatResult>>({});
-	const [upstreamChecking, setUpstreamChecking] = useState(false);
-	const upstreamRequestId = useRef(0);
 	const [upstreamRefresh, setUpstreamRefresh] = useState(0);
 
 	useEffect(() => {
@@ -168,16 +201,13 @@ const UpstreamSettings = ({ onRequestForwardHeartbeat }: { onRequestForwardHeart
 		}
 	}, [servers, setFieldValue, values.forwardHost, values.forwardPort, values.upstreamEnabled]);
 
-	useEffect(() => {
-		void upstreamRefresh;
+	const upstreamTargets = useMemo(() => {
 		if (!values.upstreamEnabled || servers.length === 0) {
-			setUpstreamHeartbeats({});
-			setUpstreamChecking(false);
-			return;
+			return [];
 		}
 
 		const forwardScheme = values.forwardScheme || "http";
-		const targets = servers
+		return servers
 			.map((server: any, idx: number) => {
 				const host = `${server?.host || ""}`.trim();
 				const port = Number.parseInt(`${server?.port || ""}`, 10);
@@ -191,53 +221,24 @@ const UpstreamSettings = ({ onRequestForwardHeartbeat }: { onRequestForwardHeart
 					forwardPort: port,
 				};
 			})
-			.filter(Boolean) as { id: number; forwardScheme: string; forwardHost: string; forwardPort: number }[];
+			.filter(Boolean) as HeartbeatTarget[];
+	}, [servers, values.forwardScheme, values.upstreamEnabled]);
 
-		if (!targets.length) {
-			setUpstreamHeartbeats({});
-			setUpstreamChecking(false);
-			return;
-		}
-
-		let active = true;
-		const currentRequest = ++upstreamRequestId.current;
-		const abortController = new AbortController();
-		setUpstreamChecking(true);
-
-		const timer = setTimeout(() => {
-			checkProxyHostHeartbeats(targets, abortController)
-				.then((results) => {
-					if (!active || upstreamRequestId.current !== currentRequest) return;
-					const next: Record<number, ProxyHostHeartbeatResult> = {};
-					results.forEach((result) => {
-						if (typeof result.id !== "number") {
-							return;
-						}
-						const index = result.id - 1;
-						if (index >= 0) {
-							next[index] = result;
-						}
-					});
-					setUpstreamHeartbeats(next);
-				})
-				.catch(() => {
-					if (active) {
-						setUpstreamHeartbeats({});
-					}
-				})
-				.finally(() => {
-					if (active) {
-						setUpstreamChecking(false);
-					}
-				});
-		}, 500);
-
-		return () => {
-			active = false;
-			clearTimeout(timer);
-			abortController.abort();
-		};
-	}, [servers, values.forwardScheme, values.upstreamEnabled, upstreamRefresh]);
+	const upstreamState = useDebouncedHeartbeats(upstreamTargets, upstreamRefresh);
+	const upstreamChecking = upstreamTargets.length > 0 && upstreamState.status === "checking";
+	const upstreamHeartbeats = useMemo(() => {
+		const next: Record<number, ProxyHostHeartbeatResult> = {};
+		upstreamState.results.forEach((result) => {
+			if (typeof result.id !== "number") {
+				return;
+			}
+			const index = result.id - 1;
+			if (index >= 0) {
+				next[index] = result;
+			}
+		});
+		return next;
+	}, [upstreamState.results]);
 
 	const handleUpstreamRefresh = () => {
 		setUpstreamRefresh((prev) => prev + 1);
