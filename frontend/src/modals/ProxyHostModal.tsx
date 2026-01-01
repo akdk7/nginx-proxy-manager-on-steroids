@@ -46,6 +46,8 @@ const useDebouncedHeartbeats = (targets: HeartbeatTarget[], refreshKey: number) 
 	const requestId = useRef(0);
 
 	useEffect(() => {
+		// refreshKey exists to force a re-check even if targets are unchanged.
+		void refreshKey;
 		if (!targets.length) {
 			setState({ status: "idle", results: [], error: undefined });
 			return;
