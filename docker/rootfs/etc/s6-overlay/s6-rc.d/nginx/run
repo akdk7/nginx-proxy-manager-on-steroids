@@ -6,4 +6,15 @@ set -e
 . /usr/bin/common.sh
 
 log_info 'Starting nginx ...'
-exec s6-setuidgid "$PUID:$PGID" nginx
+while true; do
+	if nginx -t -g "error_log off;" >/tmp/nginx-test.log 2>&1; then
+		exec s6-setuidgid "$PUID:$PGID" nginx
+	fi
+	log_error "Nginx config test failed, retrying in 5s."
+	if [ -s /tmp/nginx-test.log ]; then
+		while IFS= read -r line; do
+			log_error "$line"
+		done < /tmp/nginx-test.log
+	fi
+	sleep 5
+done

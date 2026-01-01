@@ -399,9 +399,25 @@ const internalNginx = {
 			host.hsts_header_set = hasHeader(host.security_headers, "Strict-Transport-Security");
 			const upstreamEnabled = host.upstream_enabled === 1 || host.upstream_enabled === true;
 			const upstreamServers = sanitizeUpstreamServers(host.upstream_servers);
-			if (upstreamEnabled && upstreamServers.length > 0) {
+			const hasExplicitUpstream = upstreamEnabled && upstreamServers.length > 0;
+			const needsStreamUpstream =
+				nice_host_type === "stream" &&
+				!hasExplicitUpstream &&
+				typeof host.forwarding_host === "string" &&
+				host.forwarding_host.trim() &&
+				!isIpAddress(host.forwarding_host.trim());
+			const fallbackStreamServers = needsStreamUpstream
+				? sanitizeUpstreamServers([
+						{
+							host: host.forwarding_host.trim(),
+							port: host.forwarding_port,
+						},
+					])
+				: [];
+
+			if (hasExplicitUpstream || fallbackStreamServers.length > 0) {
 				host.upstream_enabled = true;
-				host.upstream_servers = upstreamServers;
+				host.upstream_servers = hasExplicitUpstream ? upstreamServers : fallbackStreamServers;
 				host.upstream_name = internalNginx.getUpstreamName(nice_host_type, host.id);
 			} else {
 				host.upstream_enabled = false;
