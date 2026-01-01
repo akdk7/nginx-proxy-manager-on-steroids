@@ -29,7 +29,7 @@ export function DomainNamesField({
 	dnsProviderWildcardSupported = false,
 	onChange,
 }: Props) {
-	const { setFieldValue } = useFormikContext();
+	const { setFieldValue, submitCount } = useFormikContext();
 
 	const handleChange = (v: MultiValue<SelectOption>, _actionMeta: ActionMeta<SelectOption>) => {
 		const doms = v?.map((i: SelectOption) => {
@@ -69,7 +69,7 @@ export function DomainNamesField({
 						onChange={handleChange}
 						value={field.value?.map((d: string) => ({ label: d, value: d }))}
 					/>
-					{form.errors[field.name] && form.touched[field.name] ? (
+					{form.errors[field.name] && (form.touched[field.name] || submitCount > 0) ? (
 						<small className="text-danger">{form.errors[field.name]}</small>
 					) : helperTexts.length ? (
 						helperTexts.map((i, idx) => (

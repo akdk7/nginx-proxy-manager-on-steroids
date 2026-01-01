@@ -338,6 +338,9 @@
 	"error.required": {
 		"defaultMessage": "This is required"
 	},
+	"error.upstream-required": {
+		"defaultMessage": "At least one upstream server is required"
+	},
 	"expires.on": {
 		"defaultMessage": "Expires: {date}"
 	},

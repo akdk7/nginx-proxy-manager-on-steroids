@@ -24,6 +24,9 @@ import { MANAGE, PROXY_HOSTS } from "src/modules/Permissions";
 import { validateNumber, validateString } from "src/modules/Validations";
 import { showObjectSuccess } from "src/notifications";
 
+const validateForwardHost = validateString(1, 255);
+const validateForwardPort = validateNumber(1, 65535);
+
 const showProxyHostModal = (id: number | "new") => {
 	EasyModal.show(ProxyHostModal, { id });
 };
@@ -122,7 +125,7 @@ const ForwardHeartbeatCheck = () => {
 };
 
 const UpstreamSettings = () => {
-	const { values, setFieldValue } = useFormikContext<any>();
+	const { values, setFieldValue, errors, submitCount } = useFormikContext<any>();
 	const servers = Array.isArray(values.upstreamServers) ? values.upstreamServers : [];
 
 	useEffect(() => {
@@ -341,6 +344,11 @@ const UpstreamSettings = () => {
 						<button type="button" className="btn btn-sm" onClick={handleAdd}>
 							<T id="host.upstream.add" />
 						</button>
+						{submitCount > 0 && errors.upstreamServers ? (
+							<div className="text-danger small mt-2">
+								<T id={errors.upstreamServers as string} />
+							</div>
+						) : null}
 					</div>
 				</>
 			) : null}
@@ -421,6 +429,21 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 							meta: data?.meta || {},
 						} as any
 					}
+					validate={(values: any) => {
+						const errors: Record<string, string> = {};
+						if (values.upstreamEnabled) {
+							const servers = Array.isArray(values.upstreamServers) ? values.upstreamServers : [];
+							const hasValidServer = servers.some((server: any) => {
+								const host = `${server?.host || ""}`.trim();
+								const port = Number.parseInt(`${server?.port || ""}`, 10);
+								return host && Number.isFinite(port) && port > 0;
+							});
+							if (!hasValidServer) {
+								errors.upstreamServers = "error.upstream-required";
+							}
+						}
+						return errors;
+					}}
 					onSubmit={onSubmit}
 				>
 					{({ values, setFieldValue }: any) => (
@@ -524,7 +547,12 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 														</Field>
 													</div>
 													<div className="col-md-6">
-														<Field name="forwardHost" validate={validateString(1, 255)}>
+													<Field
+														name="forwardHost"
+														validate={(value: string) =>
+															values.upstreamEnabled ? undefined : validateForwardHost(value)
+														}
+													>
 															{({ field, form }: any) => (
 																<div className="mb-3">
 																	<label className="form-label" htmlFor="forwardHost">
@@ -539,10 +567,11 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 																	{...field}
 																	disabled={form.values.upstreamEnabled}
 																/>
-																	{form.errors.forwardHost ? (
+																	{form.errors.forwardHost &&
+																	(form.touched.forwardHost || form.submitCount > 0) ? (
 																		<div className="invalid-feedback">
 																			{form.errors.forwardHost &&
-																			form.touched.forwardHost
+																			(form.touched.forwardHost || form.submitCount > 0)
 																				? form.errors.forwardHost
 																				: null}
 																		</div>
@@ -552,7 +581,12 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 														</Field>
 													</div>
 													<div className="col-md-3">
-														<Field name="forwardPort" validate={validateNumber(1, 65535)}>
+													<Field
+														name="forwardPort"
+														validate={(value: string) =>
+															values.upstreamEnabled ? undefined : validateForwardPort(value)
+														}
+													>
 															{({ field, form }: any) => (
 																<div className="mb-3">
 																	<label className="form-label" htmlFor="forwardPort">
@@ -569,10 +603,11 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 																	{...field}
 																	disabled={form.values.upstreamEnabled}
 																/>
-																	{form.errors.forwardPort ? (
+																	{form.errors.forwardPort &&
+																	(form.touched.forwardPort || form.submitCount > 0) ? (
 																		<div className="invalid-feedback">
 																			{form.errors.forwardPort &&
-																			form.touched.forwardPort
+																			(form.touched.forwardPort || form.submitCount > 0)
 																				? form.errors.forwardPort
 																				: null}
 																		</div>
