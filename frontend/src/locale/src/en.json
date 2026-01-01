@@ -356,6 +356,42 @@
 	"host.forward-scheme": {
 		"defaultMessage": "Scheme"
 	},
+	"host.heartbeat": {
+		"defaultMessage": "Heartbeat"
+	},
+	"host.heartbeat.status.waiting": {
+		"defaultMessage": "Waiting for input"
+	},
+	"host.heartbeat.status.checking": {
+		"defaultMessage": "Checking"
+	},
+	"host.heartbeat.status.ok": {
+		"defaultMessage": "OK"
+	},
+	"host.heartbeat.status.failed": {
+		"defaultMessage": "Failed"
+	},
+	"host.heartbeat.status.unknown": {
+		"defaultMessage": "Not checked"
+	},
+	"host.heartbeat.status.disabled": {
+		"defaultMessage": "Disabled"
+	},
+	"host.heartbeat.detail.status": {
+		"defaultMessage": "Status"
+	},
+	"host.heartbeat.detail.status-code": {
+		"defaultMessage": "HTTP Status"
+	},
+	"host.heartbeat.detail.latency": {
+		"defaultMessage": "Latency"
+	},
+	"host.heartbeat.detail.checked-at": {
+		"defaultMessage": "Checked at"
+	},
+	"host.heartbeat.detail.error": {
+		"defaultMessage": "Error"
+	},
 	"host.rate-limit": {
 		"defaultMessage": "Rate Limiting"
 	},

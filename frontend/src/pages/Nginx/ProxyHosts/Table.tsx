@@ -1,16 +1,16 @@
 import { IconDotsVertical, IconEdit, IconPower, IconTrash } from "@tabler/icons-react";
 import { createColumnHelper, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useMemo } from "react";
-import type { ProxyHost } from "src/api/backend";
+import type { ProxyHost, ProxyHostHeartbeatResult } from "src/api/backend";
 import {
 	AccessListFormatter,
 	CertificateFormatter,
 	DomainsFormatter,
 	EmptyData,
+	HeartbeatStatusFormatter,
 	GravatarFormatter,
 	RateLimitFormatter,
 	HasPermission,
-	TrueFalseFormatter,
 } from "src/components";
 import { TableLayout } from "src/components/Table/TableLayout";
 import { intl, T } from "src/locale";
@@ -24,8 +24,20 @@ interface Props {
 	onDelete?: (id: number) => void;
 	onDisableToggle?: (id: number, enabled: boolean) => void;
 	onNew?: () => void;
+	heartbeats?: Record<number, ProxyHostHeartbeatResult>;
+	heartbeatsLoading?: boolean;
 }
-export default function Table({ data, isFetching, onEdit, onDelete, onDisableToggle, onNew, isFiltered }: Props) {
+export default function Table({
+	data,
+	isFetching,
+	onEdit,
+	onDelete,
+	onDisableToggle,
+	onNew,
+	isFiltered,
+	heartbeats,
+	heartbeatsLoading,
+}: Props) {
 	const columnHelper = createColumnHelper<ProxyHost>();
 	const columns = useMemo(
 		() => [
@@ -88,7 +100,15 @@ export default function Table({ data, isFetching, onEdit, onDelete, onDisableTog
 				id: "enabled",
 				header: intl.formatMessage({ id: "column.status" }),
 				cell: (info: any) => {
-					return <TrueFalseFormatter value={info.getValue()} trueLabel="online" falseLabel="offline" />;
+					const host = info.row.original;
+					const heartbeat = heartbeats?.[host.id];
+					return (
+						<HeartbeatStatusFormatter
+							enabled={info.getValue()}
+							heartbeat={heartbeat}
+							isChecking={heartbeatsLoading}
+						/>
+					);
 				},
 			}),
 			columnHelper.display({
@@ -157,7 +177,7 @@ export default function Table({ data, isFetching, onEdit, onDelete, onDisableTog
 				},
 			}),
 		],
-		[columnHelper, onEdit, onDisableToggle, onDelete],
+		[columnHelper, onEdit, onDisableToggle, onDelete, heartbeats, heartbeatsLoading],
 	);
 
 	const tableInstance = useReactTable<ProxyHost>({

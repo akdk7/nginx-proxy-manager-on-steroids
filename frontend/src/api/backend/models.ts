@@ -141,6 +141,22 @@ export interface ProxyHost {
 	certificate?: Certificate;
 }
 
+export interface ProxyHostHeartbeatRequest {
+	id?: number;
+	forwardScheme: string;
+	forwardHost: string;
+	forwardPort: number;
+}
+
+export interface ProxyHostHeartbeatResult {
+	id?: number;
+	ok: boolean;
+	statusCode?: number | null;
+	error?: string;
+	latencyMs?: number;
+	checkedAt?: string;
+}
+
 export interface DeadHost {
 	id: number;
 	createdOn: string;

@@ -1,4 +1,5 @@
 import express from "express";
+import internalHeartbeat from "../../internal/heartbeat.js";
 import internalProxyHost from "../../internal/proxy-host.js";
 import jwtdecode from "../../lib/express/jwt-decode.js";
 import apiValidator from "../../lib/validator/api.js";
@@ -66,6 +67,33 @@ router
 			res.status(201).send(result);
 		} catch (err) {
 			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err} ${JSON.stringify(err.debug, null, 2)}`);
+			next(err);
+		}
+	});
+
+/**
+ * Heartbeat check
+ *
+ * /api/nginx/proxy-hosts/heartbeat
+ */
+router
+	.route("/heartbeat")
+	.options((_, res) => {
+		res.sendStatus(204);
+	})
+	.all(jwtdecode())
+
+	/**
+	 * POST /api/nginx/proxy-hosts/heartbeat
+	 */
+	.post(async (req, res, next) => {
+		try {
+			const payload = await apiValidator(getValidationSchema("/nginx/proxy-hosts/heartbeat", "post"), req.body);
+			await res.locals.access.can("proxy_hosts:list");
+			const results = await internalHeartbeat.checkProxyHosts(payload.hosts);
+			res.status(200).send(results);
+		} catch (err) {
+			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err}`);
 			next(err);
 		}
 	});

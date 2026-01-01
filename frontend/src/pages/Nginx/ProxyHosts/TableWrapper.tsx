@@ -1,8 +1,8 @@
 import { IconHelp, IconSearch } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Alert from "react-bootstrap/Alert";
-import { deleteProxyHost, toggleProxyHost } from "src/api/backend";
+import { checkProxyHostHeartbeats, deleteProxyHost, toggleProxyHost, type ProxyHostHeartbeatResult } from "src/api/backend";
 import { Button, HasPermission, LoadingPage } from "src/components";
 import { useProxyHosts } from "src/hooks";
 import { T } from "src/locale";
@@ -14,7 +14,72 @@ import Table from "./Table";
 export default function TableWrapper() {
 	const queryClient = useQueryClient();
 	const [search, setSearch] = useState("");
+	const [heartbeats, setHeartbeats] = useState<Record<number, ProxyHostHeartbeatResult>>({});
+	const [heartbeatsLoading, setHeartbeatsLoading] = useState(false);
 	const { isFetching, isLoading, isError, error, data } = useProxyHosts(["owner", "access_list", "certificate"]);
+
+	const heartbeatTargets = useMemo(() => {
+		if (!data?.length) {
+			return [];
+		}
+		return data
+			.filter((host) => host.enabled)
+			.map((host) => ({
+				id: host.id,
+				forwardScheme: host.forwardScheme,
+				forwardHost: host.forwardHost,
+				forwardPort: host.forwardPort,
+			}));
+	}, [data]);
+
+	const heartbeatKey = useMemo(
+		() =>
+			heartbeatTargets
+				.map(
+					(target) => `${target.id}:${target.forwardScheme}:${target.forwardHost}:${target.forwardPort}`,
+				)
+				.join("|"),
+		[heartbeatTargets],
+	);
+
+	useEffect(() => {
+		if (!heartbeatTargets.length) {
+			setHeartbeats({});
+			setHeartbeatsLoading(false);
+			return;
+		}
+
+		let active = true;
+		const abortController = new AbortController();
+		setHeartbeatsLoading(true);
+
+		checkProxyHostHeartbeats(heartbeatTargets, abortController)
+			.then((results) => {
+				if (!active) return;
+				const next: Record<number, ProxyHostHeartbeatResult> = {};
+				results.forEach((result) => {
+					if (typeof result.id === "number") {
+						next[result.id] = result;
+					}
+				});
+				setHeartbeats(next);
+			})
+			.catch(() => {
+				if (active) {
+					setHeartbeats({});
+				}
+			})
+			.finally(() => {
+				if (active) {
+					setHeartbeatsLoading(false);
+				}
+			});
+
+		return () => {
+			active = false;
+			abortController.abort();
+		};
+	}, [heartbeatKey, heartbeatTargets]);
 
 	if (isLoading) {
 		return <LoadingPage />;
@@ -98,6 +163,8 @@ export default function TableWrapper() {
 					data={filtered ?? data ?? []}
 					isFiltered={!!search}
 					isFetching={isFetching}
+					heartbeats={heartbeats}
+					heartbeatsLoading={heartbeatsLoading}
 					onEdit={(id: number) => showProxyHostModal(id)}
 					onDelete={(id: number) =>
 						showDeleteConfirmModal({

@@ -154,6 +154,11 @@
 				"$ref": "./paths/nginx/proxy-hosts/post.json"
 			}
 		},
+		"/nginx/proxy-hosts/heartbeat": {
+			"post": {
+				"$ref": "./paths/nginx/proxy-hosts/heartbeat/post.json"
+			}
+		},
 		"/nginx/proxy-hosts/{hostID}": {
 			"get": {
 				"$ref": "./paths/nginx/proxy-hosts/hostID/get.json"

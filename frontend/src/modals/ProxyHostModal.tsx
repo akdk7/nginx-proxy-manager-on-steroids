@@ -1,10 +1,11 @@
 import { IconSettings } from "@tabler/icons-react";
 import cn from "classnames";
 import EasyModal, { type InnerModalProps } from "ez-modal-react";
-import { Field, Form, Formik } from "formik";
-import { type ReactNode, useState } from "react";
+import { Field, Form, Formik, useFormikContext } from "formik";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Alert } from "react-bootstrap";
 import Modal from "react-bootstrap/Modal";
+import { checkProxyHostHeartbeats, type ProxyHostHeartbeatResult } from "src/api/backend";
 import {
 	AccessField,
 	Button,
@@ -29,6 +30,94 @@ const showProxyHostModal = (id: number | "new") => {
 interface Props extends InnerModalProps {
 	id: number | "new";
 }
+
+const ForwardHeartbeatCheck = () => {
+	const { values } = useFormikContext<any>();
+	const [state, setState] = useState<{
+		status: "idle" | "checking" | "ok" | "failed";
+		result?: ProxyHostHeartbeatResult;
+		error?: string;
+	}>({ status: "idle" });
+	const requestId = useRef(0);
+
+	useEffect(() => {
+		const forwardHost = `${values.forwardHost || ""}`.trim();
+		const forwardPort = Number.parseInt(`${values.forwardPort || ""}`, 10);
+		const forwardScheme = values.forwardScheme || "http";
+
+		if (
+			!forwardHost ||
+			!Number.isFinite(forwardPort) ||
+			forwardPort < 1 ||
+			forwardPort > 65535
+		) {
+			setState({ status: "idle" });
+			return;
+		}
+
+		const currentRequest = ++requestId.current;
+		const abortController = new AbortController();
+		setState({ status: "checking" });
+
+		const timer = setTimeout(() => {
+			checkProxyHostHeartbeats(
+				[
+					{
+						forwardScheme,
+						forwardHost,
+						forwardPort,
+					},
+				],
+				abortController,
+			)
+				.then((results) => {
+					if (requestId.current !== currentRequest) return;
+					const result = results[0];
+					if (result?.ok) {
+						setState({ status: "ok", result });
+					} else {
+						setState({ status: "failed", result, error: result?.error });
+					}
+				})
+				.catch((err: Error) => {
+					if (requestId.current !== currentRequest) return;
+					setState({ status: "failed", error: err.message });
+				});
+		}, 500);
+
+		return () => {
+			clearTimeout(timer);
+			abortController.abort();
+		};
+	}, [values.forwardHost, values.forwardPort, values.forwardScheme]);
+
+	const latencyMs = Number.isFinite(state.result?.latencyMs) ? Math.round(state.result?.latencyMs || 0) : null;
+	const statusClass =
+		state.status === "ok" ? "text-success" : state.status === "failed" ? "text-danger" : "text-muted";
+	const statusLabel =
+		state.status === "checking" ? (
+			<T id="host.heartbeat.status.checking" />
+		) : state.status === "ok" ? (
+			<T id="host.heartbeat.status.ok" />
+		) : state.status === "failed" ? (
+			<T id="host.heartbeat.status.failed" />
+		) : (
+			<T id="host.heartbeat.status.waiting" />
+		);
+
+	return (
+		<div className="mb-3">
+			<div className={`small ${statusClass}`}>
+				<T id="host.heartbeat" />: {statusLabel}
+				{state.status === "ok" && latencyMs !== null ? <span> ({latencyMs}ms)</span> : null}
+			</div>
+			{state.status === "failed" && state.error ? (
+				<div className="small text-muted text-break">{state.error}</div>
+			) : null}
+		</div>
+	);
+};
+
 const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 	const { data: currentUser, isLoading: userIsLoading, error: userError } = useUser("me");
 	const { data, isLoading, error } = useProxyHost(id);
@@ -256,6 +345,7 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 														</Field>
 													</div>
 												</div>
+												<ForwardHeartbeatCheck />
 												<AccessField />
 												<div className="my-3">
 													<h4 className="py-2">
