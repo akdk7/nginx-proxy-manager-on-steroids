@@ -187,7 +187,7 @@ const UpstreamSettings = () => {
 					return null;
 				}
 				return {
-					id: idx,
+					id: idx + 1,
 					forwardingHost: host,
 					forwardingPort: port,
 					tcpForwarding,
@@ -219,8 +219,12 @@ const UpstreamSettings = () => {
 					if (!active || upstreamRequestId.current !== currentRequest) return;
 					const next: Record<number, StreamHeartbeatResult> = {};
 					results.forEach((result) => {
-						if (typeof result.id === "number") {
-							next[result.id] = result;
+						if (typeof result.id !== "number") {
+							return;
+						}
+						const index = result.id - 1;
+						if (index >= 0) {
+							next[index] = result;
 						}
 					});
 					setUpstreamHeartbeats(next);
