@@ -341,6 +341,9 @@
 	"error.upstream-required": {
 		"defaultMessage": "At least one upstream server is required"
 	},
+	"error.fix-validation": {
+		"defaultMessage": "Please fix the highlighted fields before saving"
+	},
 	"expires.on": {
 		"defaultMessage": "Expires: {date}"
 	},

@@ -361,11 +361,8 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 	const { data, isLoading, error } = useProxyHost(id);
 	const { mutate: setProxyHost } = useSetProxyHost();
 	const [errorMsg, setErrorMsg] = useState<ReactNode | null>(null);
-	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const onSubmit = async (values: any, { setSubmitting }: any) => {
-		if (isSubmitting) return;
-		setIsSubmitting(true);
 		setErrorMsg(null);
 
 		const { ...payload } = {
@@ -373,6 +370,7 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 			...values,
 		};
 
+		setSubmitting(true);
 		setProxyHost(payload, {
 			onError: (err: any) => setErrorMsg(<T id={err.message} />),
 			onSuccess: () => {
@@ -380,7 +378,6 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 				remove();
 			},
 			onSettled: () => {
-				setIsSubmitting(false);
 				setSubmitting(false);
 			},
 		});
@@ -396,6 +393,7 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 			{isLoading || (userIsLoading && <Loading noLogo />)}
 			{!isLoading && !userIsLoading && data && currentUser && (
 				<Formik
+					enableReinitialize
 					initialValues={
 						{
 							// Details tab
@@ -446,7 +444,7 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 					}}
 					onSubmit={onSubmit}
 				>
-					{({ values, setFieldValue }: any) => (
+					{({ values, setFieldValue, isSubmitting, errors, submitCount }: any) => (
 						<Form noValidate>
 							<Modal.Header closeButton>
 								<Modal.Title>
@@ -511,6 +509,11 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 										</ul>
 									</div>
 									<div className="card-body">
+										{submitCount > 0 && Object.keys(errors).length ? (
+											<Alert variant="warning">
+												<T id="error.fix-validation" />
+											</Alert>
+										) : null}
 										<div className="tab-content">
 											<div className="tab-pane active show" id="tab-details" role="tabpanel">
 												<DomainNamesField isWildcardPermitted dnsProviderWildcardSupported />
