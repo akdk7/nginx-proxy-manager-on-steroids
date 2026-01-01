@@ -180,6 +180,7 @@ router
 		}
 
 		try {
+			await res.locals.access.can("certificates:create");
 			const result = await internalCertificate.validate({
 				files: req.files,
 			});

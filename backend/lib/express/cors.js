@@ -1,9 +1,21 @@
+const allowedOrigins = (process.env.CORS_ORIGINS || "")
+	.split(",")
+	.map((origin) => origin.trim())
+	.filter(Boolean);
+
+const isOriginAllowed = (origin) => allowedOrigins.length === 0 || allowedOrigins.includes(origin);
+
 export default (req, res, next) => {
 	if (req.headers.origin) {
+		res.set({ Vary: "Origin" });
+		if (!isOriginAllowed(req.headers.origin)) {
+			next();
+			return;
+		}
 		res.set({
 			"Access-Control-Allow-Origin": req.headers.origin,
 			"Access-Control-Allow-Credentials": true,
-			"Access-Control-Allow-Methods": "OPTIONS, GET, POST",
+			"Access-Control-Allow-Methods": "OPTIONS, GET, POST, PUT, DELETE, PATCH",
 			"Access-Control-Allow-Headers":
 				"Content-Type, Cache-Control, Pragma, Expires, Authorization, X-Dataset-Total, X-Dataset-Offset, X-Dataset-Limit",
 			"Access-Control-Max-Age": 5 * 60,

@@ -12,7 +12,19 @@ import mainRoutes from "./routes/main.js";
  * App
  */
 const app = express();
-app.use(fileUpload());
+const fileUploadLimitMb = Number.parseInt(process.env.FILE_UPLOAD_LIMIT_MB || "10", 10);
+const fileUploadLimitBytes =
+	Number.isNaN(fileUploadLimitMb) || fileUploadLimitMb <= 0
+		? 10 * 1024 * 1024
+		: fileUploadLimitMb * 1024 * 1024;
+app.use(
+	fileUpload({
+		limits: { fileSize: fileUploadLimitBytes },
+		abortOnLimit: true,
+		useTempFiles: true,
+		tempFileDir: "/tmp",
+	}),
+);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
