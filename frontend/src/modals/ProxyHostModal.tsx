@@ -2,10 +2,10 @@ import { IconSettings } from "@tabler/icons-react";
 import cn from "classnames";
 import EasyModal, { type InnerModalProps } from "ez-modal-react";
 import { Field, Form, Formik, useFormikContext } from "formik";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-bootstrap";
 import Modal from "react-bootstrap/Modal";
-import { checkProxyHostHeartbeats, type ProxyHostHeartbeatResult } from "src/api/backend";
+import { type ProxyHostHeartbeatResult } from "src/api/backend";
 import {
 	AccessField,
 	Button,
@@ -18,6 +18,8 @@ import {
 	SSLCertificateField,
 	SSLOptionsFields,
 } from "src/components";
+import { type HeartbeatTarget, useDebouncedHeartbeats } from "src/hooks/useDebouncedHeartbeats";
+import { validateUpstreamServers } from "./proxyHostValidation";
 import { useProxyHost, useSetProxyHost, useUser } from "src/hooks";
 import { intl, T } from "src/locale";
 import { MANAGE, PROXY_HOSTS } from "src/modules/Permissions";
@@ -26,57 +28,6 @@ import { showObjectSuccess } from "src/notifications";
 
 const validateForwardHost = validateString(1, 255);
 const validateForwardPort = validateNumber(1, 65535);
-const heartbeatDebounceMs = 500;
-
-type HeartbeatTarget = {
-	id?: number;
-	forwardScheme: string;
-	forwardHost: string;
-	forwardPort: number;
-};
-
-type HeartbeatState = {
-	status: "idle" | "checking" | "success" | "error";
-	results: ProxyHostHeartbeatResult[];
-	error?: string;
-};
-
-const useDebouncedHeartbeats = (targets: HeartbeatTarget[], refreshKey: number) => {
-	const [state, setState] = useState<HeartbeatState>({ status: "idle", results: [] });
-	const requestId = useRef(0);
-
-	useEffect(() => {
-		// refreshKey exists to force a re-check even if targets are unchanged.
-		void refreshKey;
-		if (!targets.length) {
-			setState({ status: "idle", results: [], error: undefined });
-			return;
-		}
-
-		const currentRequest = ++requestId.current;
-		const abortController = new AbortController();
-		setState({ status: "checking", results: [], error: undefined });
-
-		const timer = setTimeout(() => {
-			checkProxyHostHeartbeats(targets, abortController)
-				.then((results) => {
-					if (requestId.current !== currentRequest) return;
-					setState({ status: "success", results, error: undefined });
-				})
-				.catch((err: Error) => {
-					if (requestId.current !== currentRequest) return;
-					setState({ status: "error", results: [], error: err.message });
-				});
-		}, heartbeatDebounceMs);
-
-		return () => {
-			clearTimeout(timer);
-			abortController.abort();
-		};
-	}, [targets, refreshKey]);
-
-	return state;
-};
 
 const showProxyHostModal = (id: number | "new") => {
 	EasyModal.show(ProxyHostModal, { id });
@@ -582,21 +533,7 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 							meta: data?.meta || {},
 						} as any
 					}
-					validate={(values: any) => {
-						const errors: Record<string, string> = {};
-						if (values.upstreamEnabled) {
-							const servers = Array.isArray(values.upstreamServers) ? values.upstreamServers : [];
-							const hasValidServer = servers.some((server: any) => {
-								const host = `${server?.host || ""}`.trim();
-								const port = Number.parseInt(`${server?.port || ""}`, 10);
-								return host && Number.isFinite(port) && port > 0;
-							});
-							if (!hasValidServer) {
-								errors.upstreamServers = "error.upstream-required";
-							}
-						}
-						return errors;
-					}}
+					validate={validateUpstreamServers}
 					onSubmit={onSubmit}
 				>
 					{({ values, setFieldValue, isSubmitting, errors, submitCount }: any) => {

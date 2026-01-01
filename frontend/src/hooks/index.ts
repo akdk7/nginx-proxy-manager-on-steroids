@@ -6,6 +6,7 @@ export * from "./useCertificate";
 export * from "./useCertificates";
 export * from "./useDeadHost";
 export * from "./useDeadHosts";
+export * from "./useDebouncedHeartbeats";
 export * from "./useDnsProviders";
 export * from "./useHealth";
 export * from "./useHostReport";

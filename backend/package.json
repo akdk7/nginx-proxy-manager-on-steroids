@@ -9,6 +9,7 @@
 	"scripts": {
 		"lint": "biome lint",
 		"prettier": "biome format --write .",
+		"test": "node --test",
 		"validate-schema": "node validate-schema.js"
 	},
 	"dependencies": {
