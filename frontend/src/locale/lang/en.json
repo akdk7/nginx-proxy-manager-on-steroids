@@ -114,6 +114,7 @@
   "error.required": "This is required",
   "error.upstream-required": "At least one upstream server is required",
   "error.fix-validation": "Please fix the highlighted fields before saving",
+  "error.fix-validation-fields": "Please fill: {fields}",
   "expires.on": "Expires: {date}",
   "footer.github-fork": "Fork me on Github",
   "host.flags.block-exploits": "Block Common Exploits",

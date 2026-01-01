@@ -344,6 +344,9 @@
 	"error.fix-validation": {
 		"defaultMessage": "Please fix the highlighted fields before saving"
 	},
+	"error.fix-validation-fields": {
+		"defaultMessage": "Please fill: {fields}"
+	},
 	"expires.on": {
 		"defaultMessage": "Expires: {date}"
 	},

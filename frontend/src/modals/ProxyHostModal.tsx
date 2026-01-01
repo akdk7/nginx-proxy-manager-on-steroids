@@ -19,7 +19,7 @@ import {
 	SSLOptionsFields,
 } from "src/components";
 import { useProxyHost, useSetProxyHost, useUser } from "src/hooks";
-import { T } from "src/locale";
+import { intl, T } from "src/locale";
 import { MANAGE, PROXY_HOSTS } from "src/modules/Permissions";
 import { validateNumber, validateString } from "src/modules/Validations";
 import { showObjectSuccess } from "src/notifications";
@@ -444,7 +444,30 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 					}}
 					onSubmit={onSubmit}
 				>
-					{({ values, setFieldValue, isSubmitting, errors, submitCount }: any) => (
+					{({ values, setFieldValue, isSubmitting, errors, submitCount }: any) => {
+						const errorFields = submitCount > 0
+							? Object.keys(errors || {})
+									.map((key) => {
+										switch (key) {
+											case "domainNames":
+												return intl.formatMessage({ id: "domain-names" });
+											case "forwardHost":
+												return intl.formatMessage({ id: "proxy-host.forward-host" });
+											case "forwardPort":
+												return intl.formatMessage({ id: "host.forward-port" });
+											case "forwardScheme":
+												return intl.formatMessage({ id: "host.forward-scheme" });
+											case "upstreamServers":
+												return intl.formatMessage({ id: "host.upstream" });
+											default:
+												return null;
+										}
+									})
+									.filter((value) => value)
+							: [];
+						const errorSummary = errorFields.length ? errorFields.join(", ") : null;
+
+						return (
 						<Form noValidate>
 							<Modal.Header closeButton>
 								<Modal.Title>
@@ -511,7 +534,11 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 									<div className="card-body">
 										{submitCount > 0 && Object.keys(errors).length ? (
 											<Alert variant="warning">
-												<T id="error.fix-validation" />
+												{errorSummary ? (
+													<T id="error.fix-validation-fields" tData={{ fields: errorSummary }} />
+												) : (
+													<T id="error.fix-validation" />
+												)}
 											</Alert>
 										) : null}
 										<div className="tab-content">
@@ -856,7 +883,8 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 								</HasPermission>
 							</Modal.Footer>
 						</Form>
-					)}
+						);
+					}}
 				</Formik>
 			)}
 		</Modal>
