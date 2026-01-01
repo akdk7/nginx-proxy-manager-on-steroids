@@ -1,8 +1,8 @@
 import { IconHelp, IconSearch } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Alert from "react-bootstrap/Alert";
-import { deleteStream, toggleStream } from "src/api/backend";
+import { checkStreamHeartbeats, deleteStream, toggleStream, type StreamHeartbeatResult } from "src/api/backend";
 import { Button, HasPermission, LoadingPage } from "src/components";
 import { useStreams } from "src/hooks";
 import { T } from "src/locale";
@@ -14,8 +14,63 @@ import Table from "./Table";
 export default function TableWrapper() {
 	const queryClient = useQueryClient();
 	const [search, setSearch] = useState("");
-	const [_deleteId, _setDeleteIdd] = useState(0);
+	const [heartbeats, setHeartbeats] = useState<Record<number, StreamHeartbeatResult>>({});
+	const [heartbeatsLoading, setHeartbeatsLoading] = useState(false);
 	const { isFetching, isLoading, isError, error, data } = useStreams(["owner", "certificate"]);
+
+	const heartbeatTargets = useMemo(() => {
+		if (!data?.length) {
+			return [];
+		}
+		return data
+			.filter((stream) => stream.enabled)
+			.map((stream) => ({
+				id: stream.id,
+				forwardingHost: stream.forwardingHost,
+				forwardingPort: stream.forwardingPort,
+				tcpForwarding: stream.tcpForwarding,
+				udpForwarding: stream.udpForwarding,
+			}));
+	}, [data]);
+
+	useEffect(() => {
+		if (!heartbeatTargets.length) {
+			setHeartbeats({});
+			setHeartbeatsLoading(false);
+			return;
+		}
+
+		let active = true;
+		const abortController = new AbortController();
+		setHeartbeatsLoading(true);
+
+		checkStreamHeartbeats(heartbeatTargets, abortController)
+			.then((results) => {
+				if (!active) return;
+				const next: Record<number, StreamHeartbeatResult> = {};
+				results.forEach((result) => {
+					if (typeof result.id === "number") {
+						next[result.id] = result;
+					}
+				});
+				setHeartbeats(next);
+			})
+			.catch(() => {
+				if (active) {
+					setHeartbeats({});
+				}
+			})
+			.finally(() => {
+				if (active) {
+					setHeartbeatsLoading(false);
+				}
+			});
+
+		return () => {
+			active = false;
+			abortController.abort();
+		};
+	}, [heartbeatTargets]);
 
 	if (isLoading) {
 		return <LoadingPage />;
@@ -96,6 +151,8 @@ export default function TableWrapper() {
 					data={filtered ?? data ?? []}
 					isFetching={isFetching}
 					isFiltered={!!filtered}
+					heartbeats={heartbeats}
+					heartbeatsLoading={heartbeatsLoading}
 					onEdit={(id: number) => showStreamModal(id)}
 					onDelete={(id: number) =>
 						showDeleteConfirmModal({

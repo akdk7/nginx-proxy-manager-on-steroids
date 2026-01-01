@@ -246,6 +246,11 @@
 				"$ref": "./paths/nginx/streams/post.json"
 			}
 		},
+		"/nginx/streams/heartbeat": {
+			"post": {
+				"$ref": "./paths/nginx/streams/heartbeat/post.json"
+			}
+		},
 		"/nginx/streams/{streamID}": {
 			"get": {
 				"$ref": "./paths/nginx/streams/streamID/get.json"

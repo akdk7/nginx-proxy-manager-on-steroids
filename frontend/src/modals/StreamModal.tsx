@@ -1,8 +1,9 @@
 import EasyModal, { type InnerModalProps } from "ez-modal-react";
-import { Field, Form, Formik } from "formik";
-import { type ReactNode, useState } from "react";
+import { Field, Form, Formik, useFormikContext } from "formik";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Alert } from "react-bootstrap";
 import Modal from "react-bootstrap/Modal";
+import { checkStreamHeartbeats, type StreamHeartbeatResult } from "src/api/backend";
 import { Button, Loading, SSLCertificateField, SSLOptionsFields } from "src/components";
 import { useSetStream, useStream } from "src/hooks";
 import { T } from "src/locale";
@@ -16,6 +17,116 @@ const showStreamModal = (id: number | "new") => {
 interface Props extends InnerModalProps {
 	id: number | "new";
 }
+
+const ForwardStreamHeartbeatCheck = () => {
+	const { values } = useFormikContext<any>();
+	const [state, setState] = useState<{
+		status: "idle" | "checking" | "ok" | "failed" | "unsupported";
+		result?: StreamHeartbeatResult;
+		error?: string;
+	}>({ status: "idle" });
+	const requestId = useRef(0);
+
+	useEffect(() => {
+		const forwardingHost = `${values.forwardingHost || ""}`.trim();
+		const forwardingPort = Number.parseInt(`${values.forwardingPort || ""}`, 10);
+		const tcpForwarding = !!values.tcpForwarding;
+		const udpForwarding = !!values.udpForwarding;
+
+		if (
+			!forwardingHost ||
+			!Number.isFinite(forwardingPort) ||
+			forwardingPort < 1 ||
+			forwardingPort > 65535
+		) {
+			setState({ status: "idle" });
+			return;
+		}
+
+		if (!tcpForwarding && udpForwarding) {
+			setState({ status: "unsupported" });
+			return;
+		}
+
+		if (!tcpForwarding && !udpForwarding) {
+			setState({ status: "idle" });
+			return;
+		}
+
+		const currentRequest = ++requestId.current;
+		const abortController = new AbortController();
+		setState({ status: "checking" });
+
+		const timer = setTimeout(() => {
+			checkStreamHeartbeats(
+				[
+					{
+						forwardingHost,
+						forwardingPort,
+						tcpForwarding,
+						udpForwarding,
+					},
+				],
+				abortController,
+			)
+				.then((results) => {
+					if (requestId.current !== currentRequest) return;
+					const result = results[0];
+					if (result?.status === "unsupported") {
+						setState({ status: "unsupported", result, error: result?.error });
+					} else if (result?.ok) {
+						setState({ status: "ok", result });
+					} else {
+						setState({ status: "failed", result, error: result?.error });
+					}
+				})
+				.catch((err: Error) => {
+					if (requestId.current !== currentRequest) return;
+					setState({ status: "failed", error: err.message });
+				});
+		}, 500);
+
+		return () => {
+			clearTimeout(timer);
+			abortController.abort();
+		};
+	}, [values.forwardingHost, values.forwardingPort, values.tcpForwarding, values.udpForwarding]);
+
+	const latencyMs = Number.isFinite(state.result?.latencyMs) ? Math.round(state.result?.latencyMs || 0) : null;
+	const statusClass =
+		state.status === "ok"
+			? "text-success"
+			: state.status === "failed"
+				? "text-danger"
+				: state.status === "unsupported"
+					? "text-muted"
+					: "text-muted";
+	const statusLabel =
+		state.status === "checking" ? (
+			<T id="host.heartbeat.status.checking" />
+		) : state.status === "ok" ? (
+			<T id="host.heartbeat.status.ok" />
+		) : state.status === "failed" ? (
+			<T id="host.heartbeat.status.failed" />
+		) : state.status === "unsupported" ? (
+			<T id="host.heartbeat.status.unsupported" />
+		) : (
+			<T id="host.heartbeat.status.waiting" />
+		);
+
+	return (
+		<div className="mb-3">
+			<div className={`small ${statusClass}`}>
+				<T id="host.heartbeat" />: {statusLabel}
+				{state.status === "ok" && latencyMs !== null ? <span> ({latencyMs}ms)</span> : null}
+			</div>
+			{state.status === "failed" && state.error ? (
+				<div className="small text-muted text-break">{state.error}</div>
+			) : null}
+		</div>
+	);
+};
+
 const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 	const { data, isLoading, error } = useStream(id);
 	const { mutate: setStream } = useSetStream();
@@ -203,11 +314,12 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 																</div>
 															)}
 														</Field>
-													</div>
-												</div>
-												<div className="my-3">
-													<h3 className="py-2">
-														<T id="host.flags.protocols" />
+										</div>
+									</div>
+									<ForwardStreamHeartbeatCheck />
+									<div className="my-3">
+										<h3 className="py-2">
+											<T id="host.flags.protocols" />
 													</h3>
 													<div className="divide-y">
 														<div>

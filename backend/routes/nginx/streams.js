@@ -1,4 +1,5 @@
 import express from "express";
+import internalHeartbeat from "../../internal/heartbeat.js";
 import internalStream from "../../internal/stream.js";
 import jwtdecode from "../../lib/express/jwt-decode.js";
 import apiValidator from "../../lib/validator/api.js";
@@ -64,6 +65,33 @@ router
 			const payload = await apiValidator(getValidationSchema("/nginx/streams", "post"), req.body);
 			const result = await internalStream.create(res.locals.access, payload);
 			res.status(201).send(result);
+		} catch (err) {
+			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err}`);
+			next(err);
+		}
+	});
+
+/**
+ * Heartbeat check
+ *
+ * /api/nginx/streams/heartbeat
+ */
+router
+	.route("/heartbeat")
+	.options((_, res) => {
+		res.sendStatus(204);
+	})
+	.all(jwtdecode())
+
+	/**
+	 * POST /api/nginx/streams/heartbeat
+	 */
+	.post(async (req, res, next) => {
+		try {
+			const payload = await apiValidator(getValidationSchema("/nginx/streams/heartbeat", "post"), req.body);
+			await res.locals.access.can("streams:list");
+			const results = await internalHeartbeat.checkStreams(payload.streams);
+			res.status(200).send(results);
 		} catch (err) {
 			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err}`);
 			next(err);

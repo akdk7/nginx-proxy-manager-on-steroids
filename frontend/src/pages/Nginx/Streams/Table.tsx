@@ -1,13 +1,13 @@
 import { IconDotsVertical, IconEdit, IconPower, IconTrash } from "@tabler/icons-react";
 import { createColumnHelper, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useMemo } from "react";
-import type { Stream } from "src/api/backend";
+import type { Stream, StreamHeartbeatResult } from "src/api/backend";
 import {
 	CertificateFormatter,
 	EmptyData,
+	HeartbeatStatusFormatter,
 	GravatarFormatter,
 	HasPermission,
-	TrueFalseFormatter,
 	ValueWithDateFormatter,
 } from "src/components";
 import { TableLayout } from "src/components/Table/TableLayout";
@@ -22,8 +22,20 @@ interface Props {
 	onDelete?: (id: number) => void;
 	onDisableToggle?: (id: number, enabled: boolean) => void;
 	onNew?: () => void;
+	heartbeats?: Record<number, StreamHeartbeatResult>;
+	heartbeatsLoading?: boolean;
 }
-export default function Table({ data, isFetching, isFiltered, onEdit, onDelete, onDisableToggle, onNew }: Props) {
+export default function Table({
+	data,
+	isFetching,
+	isFiltered,
+	onEdit,
+	onDelete,
+	onDisableToggle,
+	onNew,
+	heartbeats,
+	heartbeatsLoading,
+}: Props) {
 	const columnHelper = createColumnHelper<Stream>();
 	const columns = useMemo(
 		() => [
@@ -85,7 +97,15 @@ export default function Table({ data, isFetching, isFiltered, onEdit, onDelete, 
 				id: "enabled",
 				header: intl.formatMessage({ id: "column.status" }),
 				cell: (info: any) => {
-					return <TrueFalseFormatter value={info.getValue()} trueLabel="online" falseLabel="offline" />;
+					const stream = info.row.original;
+					const heartbeat = heartbeats?.[stream.id];
+					return (
+						<HeartbeatStatusFormatter
+							enabled={info.getValue()}
+							heartbeat={heartbeat}
+							isChecking={heartbeatsLoading}
+						/>
+					);
 				},
 			}),
 			columnHelper.display({
@@ -154,7 +174,7 @@ export default function Table({ data, isFetching, isFiltered, onEdit, onDelete, 
 				},
 			}),
 		],
-		[columnHelper, onEdit, onDisableToggle, onDelete],
+		[columnHelper, onEdit, onDisableToggle, onDelete, heartbeats, heartbeatsLoading],
 	);
 
 	const tableInstance = useReactTable<Stream>({

@@ -3,8 +3,9 @@ import CodeEditor from "@uiw/react-textarea-code-editor";
 import cn from "classnames";
 import { useFormikContext } from "formik";
 import { useState } from "react";
-import type { ProxyLocation } from "src/api/backend";
+import type { ProxyLocation, SecurityHeader } from "src/api/backend";
 import { intl, T } from "src/locale";
+import { SecurityHeadersFields } from "./SecurityHeadersFields";
 import styles from "./LocationsFields.module.css";
 
 interface Props {
@@ -26,6 +27,7 @@ export function LocationsFields({ initialValues, name = "locations" }: Props) {
 		rateLimitRps: 0,
 		rateLimitBurst: 0,
 		rateLimitNodelay: false,
+		securityHeaders: [],
 	};
 
 	const toggleAdvVisible = (idx: number) => {
@@ -42,7 +44,7 @@ export function LocationsFields({ initialValues, name = "locations" }: Props) {
 		setFormField(newValues);
 	};
 
-	const handleChange = (idx: number, field: string, fieldValue: string | number | boolean) => {
+	const handleChange = (idx: number, field: string, fieldValue: string | number | boolean | SecurityHeader[]) => {
 		const newValues = values.map((v: ProxyLocation, i: number) => (i === idx ? { ...v, [field]: fieldValue } : v));
 		setValues(newValues);
 		setFormField(newValues);
@@ -146,7 +148,7 @@ export function LocationsFields({ initialValues, name = "locations" }: Props) {
 							</div>
 						</div>
 						{advVisible.includes(idx) && (
-							<div className="">
+								<div className="">
 								<div className="mb-3">
 									<h5 className="mb-2">
 										<T id="host.rate-limit" />
@@ -214,6 +216,16 @@ export function LocationsFields({ initialValues, name = "locations" }: Props) {
 											</div>
 										</div>
 									</div>
+								</div>
+								<div className="mb-3">
+									<h5 className="mb-2">
+										<T id="host.headers" />
+									</h5>
+									<SecurityHeadersFields
+										headers={item.securityHeaders || []}
+										onChange={(headers) => handleChange(idx, "securityHeaders", headers)}
+										prefix={`location-${idx}-headers`}
+									/>
 								</div>
 								<CodeEditor
 									language="nginx"

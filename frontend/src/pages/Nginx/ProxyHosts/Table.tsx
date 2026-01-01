@@ -71,7 +71,8 @@ export default function Table({
 				id: "certificate",
 				header: intl.formatMessage({ id: "column.ssl" }),
 				cell: (info: any) => {
-					return <CertificateFormatter certificate={info.getValue()} />;
+					const row = info.row.original;
+					return <CertificateFormatter certificate={info.getValue()} domainNames={row.domainNames} />;
 				},
 			}),
 			columnHelper.accessor((row: any) => row.accessList, {

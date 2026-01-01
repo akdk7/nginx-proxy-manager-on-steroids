@@ -110,6 +110,15 @@
 	"certificates.custom.warning": {
 		"defaultMessage": "Key files protected with a passphrase are not supported."
 	},
+	"certificates.expires-in-days": {
+		"defaultMessage": "{days}d"
+	},
+	"certificates.expired": {
+		"defaultMessage": "expired"
+	},
+	"certificates.san-mismatch": {
+		"defaultMessage": "SAN mismatch"
+	},
 	"certificates.dns.credentials": {
 		"defaultMessage": "Credentials File Content"
 	},
@@ -377,6 +386,9 @@
 	"host.heartbeat.status.disabled": {
 		"defaultMessage": "Disabled"
 	},
+	"host.heartbeat.status.unsupported": {
+		"defaultMessage": "Not supported"
+	},
 	"host.heartbeat.detail.status": {
 		"defaultMessage": "Status"
 	},
@@ -391,6 +403,27 @@
 	},
 	"host.heartbeat.detail.error": {
 		"defaultMessage": "Error"
+	},
+	"host.heartbeat.detail.redirect": {
+		"defaultMessage": "Redirects to {scheme}"
+	},
+	"host.headers": {
+		"defaultMessage": "Security Headers"
+	},
+	"host.headers.add": {
+		"defaultMessage": "Add Header"
+	},
+	"host.headers.empty": {
+		"defaultMessage": "No headers configured"
+	},
+	"host.headers.preset.basic": {
+		"defaultMessage": "Add Basics"
+	},
+	"host.headers.preset.strict": {
+		"defaultMessage": "Add CSP (Strict)"
+	},
+	"host.headers.preset.hsts": {
+		"defaultMessage": "Add HSTS"
 	},
 	"host.rate-limit": {
 		"defaultMessage": "Rate Limiting"
@@ -412,6 +445,39 @@
 	},
 	"host.rate-limit.nodelay": {
 		"defaultMessage": "No delay (nodelay)"
+	},
+	"host.upstream": {
+		"defaultMessage": "Upstream Pool"
+	},
+	"host.upstream.enabled": {
+		"defaultMessage": "Enable Load Balancing"
+	},
+	"host.upstream.policy": {
+		"defaultMessage": "Load Balancing Policy"
+	},
+	"host.upstream.policy.round-robin": {
+		"defaultMessage": "Round Robin"
+	},
+	"host.upstream.policy.least-conn": {
+		"defaultMessage": "Least Connections"
+	},
+	"host.upstream.policy.ip-hash": {
+		"defaultMessage": "IP Hash"
+	},
+	"host.upstream.add": {
+		"defaultMessage": "Add Upstream"
+	},
+	"host.upstream.empty": {
+		"defaultMessage": "No upstreams configured"
+	},
+	"host.upstream.backup": {
+		"defaultMessage": "Backup"
+	},
+	"host.upstream.mtls": {
+		"defaultMessage": "Upstream mTLS"
+	},
+	"host.upstream.mtls.certificate": {
+		"defaultMessage": "Client Certificate"
 	},
 	"hosts": {
 		"defaultMessage": "Hosts"

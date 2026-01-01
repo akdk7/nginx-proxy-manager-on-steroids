@@ -97,6 +97,20 @@ export interface Certificate {
 	redirectionHosts?: RedirectionHost[];
 }
 
+export interface SecurityHeader {
+	name: string;
+	value: string;
+}
+
+export interface UpstreamServer {
+	host: string;
+	port: number;
+	weight?: number;
+	maxFails?: number;
+	failTimeout?: number;
+	backup?: boolean;
+}
+
 export interface ProxyLocation {
 	path: string;
 	advancedConfig: string;
@@ -107,6 +121,7 @@ export interface ProxyLocation {
 	rateLimitRps?: number;
 	rateLimitBurst?: number;
 	rateLimitNodelay?: boolean;
+	securityHeaders?: SecurityHeader[];
 }
 
 export interface ProxyHost {
@@ -127,6 +142,11 @@ export interface ProxyHost {
 	rateLimitRps: number;
 	rateLimitBurst: number;
 	rateLimitNodelay: boolean;
+	upstreamEnabled: boolean;
+	upstreamPolicy: string;
+	upstreamServers: UpstreamServer[];
+	upstreamSslCertificateId: number;
+	securityHeaders: SecurityHeader[];
 	advancedConfig: string;
 	meta: Record<string, any>;
 	allowWebsocketUpgrade: boolean;
@@ -141,6 +161,17 @@ export interface ProxyHost {
 	certificate?: Certificate;
 }
 
+export interface HeartbeatResult {
+	id?: number;
+	ok: boolean;
+	status?: "ok" | "failed" | "unsupported";
+	statusCode?: number | null;
+	redirectedToScheme?: string | null;
+	error?: string;
+	latencyMs?: number;
+	checkedAt?: string;
+}
+
 export interface ProxyHostHeartbeatRequest {
 	id?: number;
 	forwardScheme: string;
@@ -148,14 +179,17 @@ export interface ProxyHostHeartbeatRequest {
 	forwardPort: number;
 }
 
-export interface ProxyHostHeartbeatResult {
+export type ProxyHostHeartbeatResult = HeartbeatResult;
+
+export interface StreamHeartbeatRequest {
 	id?: number;
-	ok: boolean;
-	statusCode?: number | null;
-	error?: string;
-	latencyMs?: number;
-	checkedAt?: string;
+	forwardingHost: string;
+	forwardingPort: number;
+	tcpForwarding: boolean;
+	udpForwarding: boolean;
 }
+
+export type StreamHeartbeatResult = HeartbeatResult;
 
 export interface DeadHost {
 	id: number;

@@ -14,6 +14,7 @@ import {
 	Loading,
 	LocationsFields,
 	NginxConfigField,
+	SecurityHeadersFields,
 	SSLCertificateField,
 	SSLOptionsFields,
 } from "src/components";
@@ -41,8 +42,10 @@ const ForwardHeartbeatCheck = () => {
 	const requestId = useRef(0);
 
 	useEffect(() => {
-		const forwardHost = `${values.forwardHost || ""}`.trim();
-		const forwardPort = Number.parseInt(`${values.forwardPort || ""}`, 10);
+		const upstreamServers = Array.isArray(values.upstreamServers) ? values.upstreamServers : [];
+		const selectedHost = values.upstreamEnabled && upstreamServers.length ? upstreamServers[0] : null;
+		const forwardHost = `${selectedHost?.host || values.forwardHost || ""}`.trim();
+		const forwardPort = Number.parseInt(`${selectedHost?.port || values.forwardPort || ""}`, 10);
 		const forwardScheme = values.forwardScheme || "http";
 
 		if (
@@ -89,7 +92,7 @@ const ForwardHeartbeatCheck = () => {
 			clearTimeout(timer);
 			abortController.abort();
 		};
-	}, [values.forwardHost, values.forwardPort, values.forwardScheme]);
+	}, [values.forwardHost, values.forwardPort, values.forwardScheme, values.upstreamEnabled, values.upstreamServers]);
 
 	const latencyMs = Number.isFinite(state.result?.latencyMs) ? Math.round(state.result?.latencyMs || 0) : null;
 	const statusClass =
@@ -113,6 +116,212 @@ const ForwardHeartbeatCheck = () => {
 			</div>
 			{state.status === "failed" && state.error ? (
 				<div className="small text-muted text-break">{state.error}</div>
+			) : null}
+		</div>
+	);
+};
+
+const UpstreamSettings = () => {
+	const { values, setFieldValue } = useFormikContext<any>();
+	const servers = Array.isArray(values.upstreamServers) ? values.upstreamServers : [];
+
+	useEffect(() => {
+		if (!values.upstreamEnabled || servers.length === 0) {
+			return;
+		}
+		const primary = servers[0] || {};
+		const nextHost = `${primary.host || ""}`.trim();
+		const parsedPort = Number.parseInt(`${primary.port || ""}`, 10);
+		const nextPort = Number.isFinite(parsedPort) ? parsedPort : 0;
+
+		if (values.forwardHost !== nextHost) {
+			setFieldValue("forwardHost", nextHost);
+		}
+		if (values.forwardPort !== nextPort) {
+			setFieldValue("forwardPort", nextPort);
+		}
+	}, [servers, setFieldValue, values.forwardHost, values.forwardPort, values.upstreamEnabled]);
+
+	const handleToggle = (checked: boolean) => {
+		setFieldValue("upstreamEnabled", checked);
+		if (checked && servers.length === 0 && values.forwardHost && values.forwardPort) {
+			setFieldValue("upstreamServers", [
+				{
+					host: values.forwardHost,
+					port: Number.parseInt(`${values.forwardPort}`, 10) || 80,
+					weight: 1,
+					maxFails: 0,
+					failTimeout: 0,
+					backup: false,
+				},
+			]);
+		}
+	};
+
+	const handleAdd = () => {
+		setFieldValue("upstreamServers", [
+			...servers,
+			{ host: "", port: 80, weight: 1, maxFails: 0, failTimeout: 0, backup: false },
+		]);
+	};
+
+	const handleRemove = (idx: number) => {
+		setFieldValue(
+			"upstreamServers",
+			servers.filter((_: any, i: number) => i !== idx),
+		);
+	};
+
+	const handleChange = (idx: number, field: string, value: string | number | boolean) => {
+		const next = servers.map((server: any, i: number) => (i === idx ? { ...server, [field]: value } : server));
+		setFieldValue("upstreamServers", next);
+	};
+
+	return (
+		<div className="my-3">
+			<h4 className="py-2">
+				<T id="host.upstream" />
+			</h4>
+			<label className="row" htmlFor="upstreamEnabled">
+				<span className="col">
+					<T id="host.upstream.enabled" />
+				</span>
+				<span className="col-auto">
+					<input
+						id="upstreamEnabled"
+						type="checkbox"
+						className="form-check-input"
+						checked={!!values.upstreamEnabled}
+						onChange={(e) => handleToggle(e.target.checked)}
+					/>
+				</span>
+			</label>
+
+			{values.upstreamEnabled ? (
+				<>
+					<div className="row mt-3">
+						<div className="col-md-6">
+							<label className="form-label" htmlFor="upstreamPolicy">
+								<T id="host.upstream.policy" />
+							</label>
+							<select
+								id="upstreamPolicy"
+								className="form-control"
+								value={values.upstreamPolicy || "round_robin"}
+								onChange={(e) => setFieldValue("upstreamPolicy", e.target.value)}
+							>
+								<option value="round_robin">
+									<T id="host.upstream.policy.round-robin" />
+								</option>
+								<option value="least_conn">
+									<T id="host.upstream.policy.least-conn" />
+								</option>
+								<option value="ip_hash">
+									<T id="host.upstream.policy.ip-hash" />
+								</option>
+							</select>
+						</div>
+					</div>
+
+					<div className="mt-3">
+						{servers.length ? (
+							servers.map((server: any, idx: number) => (
+								<div key={`upstream-${idx}`} className="mb-3">
+									<div className="row g-2 align-items-center">
+										<div className="col-md-4">
+											<input
+												type="text"
+												className="form-control"
+												placeholder="example.local"
+												value={server.host || ""}
+												onChange={(e) => handleChange(idx, "host", e.target.value)}
+											/>
+										</div>
+										<div className="col-md-2">
+											<input
+												type="number"
+												min={1}
+												max={65535}
+												className="form-control"
+												placeholder="80"
+												value={server.port || 0}
+												onChange={(e) =>
+													handleChange(idx, "port", Number.parseInt(e.target.value, 10) || 0)
+												}
+											/>
+										</div>
+										<div className="col-md-2">
+											<input
+												type="number"
+												min={1}
+												max={100}
+												className="form-control"
+												placeholder="1"
+												value={server.weight || 1}
+												onChange={(e) =>
+													handleChange(idx, "weight", Number.parseInt(e.target.value, 10) || 1)
+												}
+											/>
+										</div>
+										<div className="col-md-2">
+											<input
+												type="number"
+												min={0}
+												max={100}
+												className="form-control"
+												placeholder="0"
+												value={server.maxFails || 0}
+												onChange={(e) =>
+													handleChange(idx, "maxFails", Number.parseInt(e.target.value, 10) || 0)
+												}
+											/>
+										</div>
+										<div className="col-md-2">
+											<input
+												type="number"
+												min={0}
+												max={3600}
+												className="form-control"
+												placeholder="0"
+												value={server.failTimeout || 0}
+												onChange={(e) =>
+													handleChange(idx, "failTimeout", Number.parseInt(e.target.value, 10) || 0)
+												}
+											/>
+										</div>
+									</div>
+									<div className="row g-2 align-items-center mt-2">
+										<div className="col-md-4">
+											<div className="form-check">
+												<input
+													className="form-check-input"
+													type="checkbox"
+													checked={!!server.backup}
+													onChange={(e) => handleChange(idx, "backup", e.target.checked)}
+												/>
+												<label className="form-check-label">
+													<T id="host.upstream.backup" />
+												</label>
+											</div>
+										</div>
+										<div className="col-md-8 text-end">
+											<button type="button" className="btn btn-sm" onClick={() => handleRemove(idx)}>
+												<T id="action.delete" />
+											</button>
+										</div>
+									</div>
+								</div>
+							))
+						) : (
+							<div className="text-muted small mb-2">
+								<T id="host.upstream.empty" />
+							</div>
+						)}
+						<button type="button" className="btn btn-sm" onClick={handleAdd}>
+							<T id="host.upstream.add" />
+						</button>
+					</div>
+				</>
 			) : null}
 		</div>
 	);
@@ -172,6 +381,11 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 							rateLimitRps: data?.rateLimitRps || 0,
 							rateLimitBurst: data?.rateLimitBurst || 0,
 							rateLimitNodelay: data?.rateLimitNodelay || false,
+							upstreamEnabled: data?.upstreamEnabled || false,
+							upstreamPolicy: data?.upstreamPolicy || "round_robin",
+							upstreamServers: data?.upstreamServers || [],
+							upstreamSslCertificateId: data?.upstreamSslCertificateId || 0,
+							securityHeaders: data?.securityHeaders || [],
 							allowWebsocketUpgrade: data?.allowWebsocketUpgrade || false,
 							// Locations tab
 							locations: data?.locations || [],
@@ -188,7 +402,7 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 					}
 					onSubmit={onSubmit}
 				>
-					{() => (
+					{({ values, setFieldValue }: any) => (
 						<Form>
 							<Modal.Header closeButton>
 								<Modal.Title>
@@ -295,14 +509,15 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 																	<label className="form-label" htmlFor="forwardHost">
 																		<T id="proxy-host.forward-host" />
 																	</label>
-																	<input
-																		id="forwardHost"
-																		type="text"
-																		className={`form-control ${form.errors.forwardHost && form.touched.forwardHost ? "is-invalid" : ""}`}
-																		required
-																		placeholder="example.com"
-																		{...field}
-																	/>
+																<input
+																	id="forwardHost"
+																	type="text"
+																	className={`form-control ${form.errors.forwardHost && form.touched.forwardHost ? "is-invalid" : ""}`}
+																	required
+																	placeholder="example.com"
+																	{...field}
+																	disabled={form.values.upstreamEnabled}
+																/>
 																	{form.errors.forwardHost ? (
 																		<div className="invalid-feedback">
 																			{form.errors.forwardHost &&
@@ -322,16 +537,17 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 																	<label className="form-label" htmlFor="forwardPort">
 																		<T id="host.forward-port" />
 																	</label>
-																	<input
-																		id="forwardPort"
-																		type="number"
-																		min={1}
-																		max={65535}
-																		className={`form-control ${form.errors.forwardPort && form.touched.forwardPort ? "is-invalid" : ""}`}
-																		required
-																		placeholder="eg: 8081"
-																		{...field}
-																	/>
+																<input
+																	id="forwardPort"
+																	type="number"
+																	min={1}
+																	max={65535}
+																	className={`form-control ${form.errors.forwardPort && form.touched.forwardPort ? "is-invalid" : ""}`}
+																	required
+																	placeholder="eg: 8081"
+																	{...field}
+																	disabled={form.values.upstreamEnabled}
+																/>
 																	{form.errors.forwardPort ? (
 																		<div className="invalid-feedback">
 																			{form.errors.forwardPort &&
@@ -343,10 +559,11 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 																</div>
 															)}
 														</Field>
-													</div>
 												</div>
-												<ForwardHeartbeatCheck />
-												<AccessField />
+											</div>
+											<ForwardHeartbeatCheck />
+											<UpstreamSettings />
+											<AccessField />
 												<div className="my-3">
 													<h4 className="py-2">
 														<T id="options" />
@@ -525,6 +742,26 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 															</label>
 														</div>
 													</div>
+												</div>
+												<div className="mb-3">
+													<h4 className="py-2">
+														<T id="host.headers" />
+													</h4>
+													<SecurityHeadersFields
+														headers={values.securityHeaders}
+														onChange={(headers) => setFieldValue("securityHeaders", headers)}
+														prefix="proxy-host-headers"
+													/>
+												</div>
+												<div className="mb-3">
+													<h4 className="py-2">
+														<T id="host.upstream.mtls" />
+													</h4>
+													<SSLCertificateField
+														name="upstreamSslCertificateId"
+														label="host.upstream.mtls.certificate"
+														allowNew
+													/>
 												</div>
 												<NginxConfigField />
 											</div>

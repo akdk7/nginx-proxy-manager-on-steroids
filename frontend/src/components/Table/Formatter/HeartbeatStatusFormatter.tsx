@@ -1,13 +1,13 @@
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Popover from "react-bootstrap/Popover";
 import type { ReactNode } from "react";
-import type { ProxyHostHeartbeatResult } from "src/api/backend";
+import type { HeartbeatResult } from "src/api/backend";
 import { formatDateTime, T } from "src/locale";
 import { TrueFalseFormatter } from "./TrueFalseFormatter";
 
 interface Props {
 	enabled: boolean;
-	heartbeat?: ProxyHostHeartbeatResult;
+	heartbeat?: HeartbeatResult;
 	isChecking?: boolean;
 }
 
@@ -19,6 +19,8 @@ export function HeartbeatStatusFormatter({ enabled, heartbeat, isChecking }: Pro
 	const checkedAt = heartbeat?.checkedAt ? formatDateTime(heartbeat.checkedAt) : null;
 	const latencyMs = Number.isFinite(heartbeat?.latencyMs) ? Math.round(heartbeat?.latencyMs || 0) : null;
 	const statusCode = Number.isFinite(heartbeat?.statusCode) ? heartbeat?.statusCode : null;
+	const resolvedStatus =
+		heartbeat?.status ?? (heartbeat ? (heartbeat.ok ? "ok" : "failed") : undefined);
 
 	const badgeContent = (() => {
 		if (!enabled) {
@@ -39,6 +41,13 @@ export function HeartbeatStatusFormatter({ enabled, heartbeat, isChecking }: Pro
 			return (
 				<Badge color="secondary">
 					<T id="host.heartbeat" />: <T id="host.heartbeat.status.unknown" />
+				</Badge>
+			);
+		}
+		if (resolvedStatus === "unsupported") {
+			return (
+				<Badge color="secondary">
+					<T id="host.heartbeat" />: <T id="host.heartbeat.status.unsupported" />
 				</Badge>
 			);
 		}
@@ -68,11 +77,27 @@ export function HeartbeatStatusFormatter({ enabled, heartbeat, isChecking }: Pro
 						</div>
 						<div className="ms-1">
 							<T id="host.heartbeat.detail.status" />:{" "}
-							<T id={heartbeat.ok ? "host.heartbeat.status.ok" : "host.heartbeat.status.failed"} />
+							<T
+								id={
+									resolvedStatus === "unsupported"
+										? "host.heartbeat.status.unsupported"
+										: heartbeat.ok
+											? "host.heartbeat.status.ok"
+											: "host.heartbeat.status.failed"
+								}
+							/>
 						</div>
 						{statusCode ? (
 							<div className="ms-1">
 								<T id="host.heartbeat.detail.status-code" />: {statusCode}
+							</div>
+						) : null}
+						{heartbeat.redirectedToScheme ? (
+							<div className="ms-1">
+								<T
+									id="host.heartbeat.detail.redirect"
+									tData={{ scheme: heartbeat.redirectedToScheme }}
+								/>
 							</div>
 						) : null}
 						{latencyMs !== null ? (

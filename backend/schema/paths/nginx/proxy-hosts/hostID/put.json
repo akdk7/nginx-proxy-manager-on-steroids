@@ -74,6 +74,21 @@
 						"rate_limit_nodelay": {
 							"$ref": "../../../../components/proxy-host-object.json#/properties/rate_limit_nodelay"
 						},
+						"upstream_enabled": {
+							"$ref": "../../../../components/proxy-host-object.json#/properties/upstream_enabled"
+						},
+						"upstream_policy": {
+							"$ref": "../../../../components/proxy-host-object.json#/properties/upstream_policy"
+						},
+						"upstream_servers": {
+							"$ref": "../../../../components/proxy-host-object.json#/properties/upstream_servers"
+						},
+						"upstream_ssl_certificate_id": {
+							"$ref": "../../../../components/proxy-host-object.json#/properties/upstream_ssl_certificate_id"
+						},
+						"security_headers": {
+							"$ref": "../../../../components/proxy-host-object.json#/properties/security_headers"
+						},
 						"caching_enabled": {
 							"$ref": "../../../../components/proxy-host-object.json#/properties/caching_enabled"
 						},

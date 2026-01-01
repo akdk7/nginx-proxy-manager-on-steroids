@@ -23,6 +23,7 @@ const boolFields = [
 	"hsts_subdomains",
 	"rate_limit_enabled",
 	"rate_limit_nodelay",
+	"upstream_enabled",
 ];
 
 class ProxyHost extends Model {
@@ -71,7 +72,7 @@ class ProxyHost extends Model {
 	}
 
 	static get jsonAttributes() {
-		return ["domain_names", "meta", "locations"];
+		return ["domain_names", "meta", "locations", "upstream_servers", "security_headers"];
 	}
 
 	static get relationMappings() {

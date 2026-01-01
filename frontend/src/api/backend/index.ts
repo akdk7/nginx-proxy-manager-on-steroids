@@ -6,6 +6,7 @@ export * from "./createRedirectionHost";
 export * from "./createStream";
 export * from "./createUser";
 export * from "./checkProxyHostHeartbeats";
+export * from "./checkStreamHeartbeats";
 export * from "./deleteAccessList";
 export * from "./deleteCertificate";
 export * from "./deleteDeadHost";

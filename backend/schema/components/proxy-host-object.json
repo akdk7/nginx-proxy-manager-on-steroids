@@ -87,6 +87,79 @@
 			"type": "boolean",
 			"example": false
 		},
+		"upstream_enabled": {
+			"type": "boolean",
+			"example": false
+		},
+		"upstream_policy": {
+			"type": "string",
+			"enum": ["round_robin", "least_conn", "ip_hash"],
+			"example": "round_robin"
+		},
+		"upstream_servers": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["host", "port"],
+				"properties": {
+					"host": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 255
+					},
+					"port": {
+						"type": "integer",
+						"minimum": 1,
+						"maximum": 65535
+					},
+					"weight": {
+						"type": "integer",
+						"minimum": 1,
+						"maximum": 100
+					},
+					"max_fails": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 100
+					},
+					"fail_timeout": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 3600
+					},
+					"backup": {
+						"type": "boolean"
+					}
+				}
+			}
+		},
+		"upstream_ssl_certificate_id": {
+			"description": "Client certificate used for upstream TLS",
+			"type": "integer",
+			"minimum": 0,
+			"example": 0
+		},
+		"security_headers": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["name", "value"],
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 64
+					},
+					"value": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 2048
+					}
+				}
+			}
+		},
 		"advanced_config": {
 			"type": "string",
 			"example": ""
@@ -152,6 +225,9 @@
 					},
 					"rate_limit_nodelay": {
 						"$ref": "#/properties/rate_limit_nodelay"
+					},
+					"security_headers": {
+						"$ref": "#/properties/security_headers"
 					},
 					"advanced_config": {
 						"type": "string"

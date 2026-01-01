@@ -5,6 +5,7 @@ import _ from "lodash";
 import errs from "../lib/error.js";
 import utils from "../lib/utils.js";
 import { debug, nginx as logger } from "../logger.js";
+import certificateModel from "../models/certificate.js";
 import proxyHostModel from "../models/proxy_host.js";
 import redirectionHostModel from "../models/redirection_host.js";
 import deadHostModel from "../models/dead_host.js";
@@ -14,6 +15,83 @@ import settingModel from "../models/setting.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const rateLimitZoneSize = "10m";
+const headerNameRegex = /^[A-Za-z0-9-]+$/;
+
+const sanitizeHeaderValue = (value) => {
+	if (!value) {
+		return "";
+	}
+	return `${value}`.replace(/[\r\n]/g, " ").replace(/"/g, '\\"').trim();
+};
+
+const sanitizeSecurityHeaders = (headers) => {
+	if (!Array.isArray(headers)) {
+		return [];
+	}
+	const result = [];
+	const seen = new Map();
+
+	headers.forEach((header) => {
+		const name = `${header?.name || ""}`.trim();
+		const value = sanitizeHeaderValue(header?.value || "");
+		if (!name || !value || !headerNameRegex.test(name)) {
+			return;
+		}
+		const key = name.toLowerCase();
+		if (seen.has(key)) {
+			result[seen.get(key)].value = value;
+			return;
+		}
+		seen.set(key, result.length);
+		result.push({ name, value });
+	});
+
+	return result;
+};
+
+const mergeSecurityHeaders = (base, overrides) => {
+	const merged = sanitizeSecurityHeaders(base);
+	const overrideHeaders = sanitizeSecurityHeaders(overrides);
+	overrideHeaders.forEach((header) => {
+		const key = header.name.toLowerCase();
+		const idx = merged.findIndex((existing) => existing.name.toLowerCase() === key);
+		if (idx >= 0) {
+			merged[idx] = header;
+		} else {
+			merged.push(header);
+		}
+	});
+	return merged;
+};
+
+const hasHeader = (headers, name) =>
+	Array.isArray(headers) && headers.some((header) => header?.name?.toLowerCase() === name.toLowerCase());
+
+const sanitizeUpstreamServers = (servers) => {
+	if (!Array.isArray(servers)) {
+		return [];
+	}
+	return servers
+		.map((server) => {
+			const host = `${server?.host || ""}`.trim();
+			const port = Number.parseInt(`${server?.port || ""}`, 10);
+			if (!host || !Number.isFinite(port) || port <= 0) {
+				return null;
+			}
+			const weight = Number.parseInt(`${server?.weight || ""}`, 10);
+			const maxFails = Number.parseInt(`${server?.max_fails ?? server?.maxFails ?? ""}`, 10);
+			const failTimeout = Number.parseInt(`${server?.fail_timeout ?? server?.failTimeout ?? ""}`, 10);
+			return {
+				host,
+				port,
+				weight: Number.isFinite(weight) && weight > 0 ? weight : null,
+				max_fails: Number.isFinite(maxFails) && maxFails >= 0 ? maxFails : null,
+				fail_timeout: Number.isFinite(failTimeout) && failTimeout >= 0 ? failTimeout : null,
+				backup: server?.backup === true,
+			};
+		})
+		.filter(Boolean);
+};
 
 const internalNginx = {
 	/**
@@ -164,6 +242,28 @@ const internalNginx = {
 		return `proxy_host_${host_id}_rate_limit`;
 	},
 
+	getUpstreamName: (host_id) => `proxy_host_${host_id}_upstream`,
+
+	loadUpstreamSslCertificate: async (host) => {
+		if (!host?.upstream_ssl_certificate_id || host.upstream_ssl_certificate_id <= 0) {
+			return null;
+		}
+		try {
+			const cert = await certificateModel
+				.query()
+				.where("is_deleted", 0)
+				.andWhere("id", host.upstream_ssl_certificate_id)
+				.first();
+			if (cert) {
+				host.upstream_ssl_certificate = cert;
+			}
+			return cert;
+		} catch (err) {
+			debug(logger, "Failed to load upstream SSL certificate:", err.message);
+			return null;
+		}
+	},
+
 	updateRateLimitConfig: (host_type) => {
 		if (internalNginx.getFileFriendlyHostType(host_type) !== "proxy_host") {
 			return Promise.resolve(true);
@@ -196,6 +296,8 @@ const internalNginx = {
 						{},
 						{ access_list_id: host.access_list_id },
 						{ certificate_id: host.certificate_id },
+						{ upstream_ssl_certificate_id: host.upstream_ssl_certificate_id },
+						{ upstream_ssl_certificate: host.upstream_ssl_certificate },
 						{ ssl_forced: host.ssl_forced },
 						{ caching_enabled: host.caching_enabled },
 						{ block_exploits: host.block_exploits },
@@ -207,6 +309,11 @@ const internalNginx = {
 						{ certificate: host.certificate },
 						host.locations[i],
 					);
+					locationCopy.security_headers = mergeSecurityHeaders(
+						host.security_headers,
+						host.locations[i]?.security_headers,
+					);
+					locationCopy.hsts_header_set = hasHeader(locationCopy.security_headers, "Strict-Transport-Security");
 					const locationRateLimitKeys = [
 						"rate_limit_enabled",
 						"rate_limit_rps",
@@ -265,6 +372,7 @@ const internalNginx = {
 
 			let locationsPromise;
 			let origLocations;
+			const upstreamCertPromise = internalNginx.loadUpstreamSslCertificate(host);
 
 			// Manipulate the data a bit before sending it to the template
 			if (nice_host_type !== "default") {
@@ -274,12 +382,31 @@ const internalNginx = {
 				}
 			}
 
+			host.security_headers = sanitizeSecurityHeaders(host.security_headers);
+			host.hsts_header_set = hasHeader(host.security_headers, "Strict-Transport-Security");
+			const upstreamEnabled = host.upstream_enabled === 1 || host.upstream_enabled === true;
+			const upstreamServers = sanitizeUpstreamServers(host.upstream_servers);
+			if (upstreamEnabled && upstreamServers.length > 0) {
+				host.upstream_enabled = true;
+				host.upstream_servers = upstreamServers;
+				host.upstream_name = internalNginx.getUpstreamName(host.id);
+			} else {
+				host.upstream_enabled = false;
+				host.upstream_servers = [];
+				host.upstream_name = null;
+			}
+			if (!["round_robin", "least_conn", "ip_hash"].includes(host.upstream_policy)) {
+				host.upstream_policy = "round_robin";
+			}
+
 			if (host.locations) {
 				//logger.info ('host.locations = ' + JSON.stringify(host.locations, null, 2));
 				origLocations = [].concat(host.locations);
-				locationsPromise = internalNginx.renderLocations(host).then((renderedLocations) => {
-					host.locations = renderedLocations;
-				});
+				locationsPromise = upstreamCertPromise.then(() =>
+					internalNginx.renderLocations(host).then((renderedLocations) => {
+						host.locations = renderedLocations;
+					}),
+				);
 
 				// Allow someone who is using / custom location path to use it, and skip the default / location
 				_.map(host.locations, (location) => {
@@ -288,7 +415,7 @@ const internalNginx = {
 					}
 				});
 			} else {
-				locationsPromise = Promise.resolve();
+				locationsPromise = upstreamCertPromise;
 			}
 
 			// Set the IPv6 setting for the host
