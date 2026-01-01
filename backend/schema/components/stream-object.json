@@ -59,6 +59,18 @@
 			"maximum": 65535,
 			"example": 80
 		},
+		"upstream_enabled": {
+			"type": "boolean",
+			"example": false
+		},
+		"upstream_policy": {
+			"type": "string",
+			"enum": ["round_robin", "least_conn", "ip_hash"],
+			"example": "round_robin"
+		},
+		"upstream_servers": {
+			"$ref": "./proxy-host-object.json#/properties/upstream_servers"
+		},
 		"tcp_forwarding": {
 			"type": "boolean",
 			"example": true

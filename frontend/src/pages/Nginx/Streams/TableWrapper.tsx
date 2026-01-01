@@ -24,13 +24,16 @@ export default function TableWrapper() {
 		}
 		return data
 			.filter((stream) => stream.enabled)
-			.map((stream) => ({
-				id: stream.id,
-				forwardingHost: stream.forwardingHost,
-				forwardingPort: stream.forwardingPort,
-				tcpForwarding: stream.tcpForwarding,
-				udpForwarding: stream.udpForwarding,
-			}));
+			.map((stream) => {
+				const upstream = stream.upstreamEnabled && stream.upstreamServers?.length ? stream.upstreamServers[0] : null;
+				return {
+					id: stream.id,
+					forwardingHost: upstream?.host || stream.forwardingHost,
+					forwardingPort: upstream?.port || stream.forwardingPort,
+					tcpForwarding: stream.tcpForwarding,
+					udpForwarding: stream.udpForwarding,
+				};
+			});
 	}, [data]);
 
 	useEffect(() => {

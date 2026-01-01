@@ -7,7 +7,7 @@ import User from "./user.js";
 
 Model.knex(db());
 
-const boolFields = ["is_deleted", "enabled", "tcp_forwarding", "udp_forwarding"];
+const boolFields = ["is_deleted", "enabled", "tcp_forwarding", "udp_forwarding", "upstream_enabled"];
 
 class Stream extends Model {
 	$beforeInsert() {
@@ -43,7 +43,7 @@ class Stream extends Model {
 	}
 
 	static get jsonAttributes() {
-		return ["meta"];
+		return ["meta", "upstream_servers"];
 	}
 
 	static get relationMappings() {

@@ -39,6 +39,15 @@
 						"forwarding_port": {
 							"$ref": "../../../../components/stream-object.json#/properties/forwarding_port"
 						},
+						"upstream_enabled": {
+							"$ref": "../../../../components/stream-object.json#/properties/upstream_enabled"
+						},
+						"upstream_policy": {
+							"$ref": "../../../../components/stream-object.json#/properties/upstream_policy"
+						},
+						"upstream_servers": {
+							"$ref": "../../../../components/stream-object.json#/properties/upstream_servers"
+						},
 						"tcp_forwarding": {
 							"$ref": "../../../../components/stream-object.json#/properties/tcp_forwarding"
 						},

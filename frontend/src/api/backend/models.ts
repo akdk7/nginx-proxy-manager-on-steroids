@@ -242,6 +242,9 @@ export interface Stream {
 	incomingPort: number;
 	forwardingHost: string;
 	forwardingPort: number;
+	upstreamEnabled: boolean;
+	upstreamPolicy: string;
+	upstreamServers: UpstreamServer[];
 	tcpForwarding: boolean;
 	udpForwarding: boolean;
 	meta: Record<string, any>;

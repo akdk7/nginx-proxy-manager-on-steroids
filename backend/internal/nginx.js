@@ -242,7 +242,8 @@ const internalNginx = {
 		return `proxy_host_${host_id}_rate_limit`;
 	},
 
-	getUpstreamName: (host_id) => `proxy_host_${host_id}_upstream`,
+	getUpstreamName: (host_type, host_id) =>
+		`${internalNginx.getFileFriendlyHostType(host_type)}_${host_id}_upstream`,
 
 	loadUpstreamSslCertificate: async (host) => {
 		if (!host?.upstream_ssl_certificate_id || host.upstream_ssl_certificate_id <= 0) {
@@ -389,7 +390,7 @@ const internalNginx = {
 			if (upstreamEnabled && upstreamServers.length > 0) {
 				host.upstream_enabled = true;
 				host.upstream_servers = upstreamServers;
-				host.upstream_name = internalNginx.getUpstreamName(host.id);
+				host.upstream_name = internalNginx.getUpstreamName(nice_host_type, host.id);
 			} else {
 				host.upstream_enabled = false;
 				host.upstream_servers = [];
