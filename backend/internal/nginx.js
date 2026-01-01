@@ -6,6 +6,10 @@ import errs from "../lib/error.js";
 import utils from "../lib/utils.js";
 import { debug, nginx as logger } from "../logger.js";
 import proxyHostModel from "../models/proxy_host.js";
+import redirectionHostModel from "../models/redirection_host.js";
+import deadHostModel from "../models/dead_host.js";
+import streamModel from "../models/stream.js";
+import settingModel from "../models/setting.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -425,6 +429,19 @@ const internalNginx = {
 		}
 	},
 
+	resetConfigDir: (directory) => {
+		if (!fs.existsSync(directory)) {
+			fs.mkdirSync(directory, { recursive: true });
+			return;
+		}
+		const files = fs.readdirSync(directory);
+		files.forEach((file) => {
+			if (file.endsWith(".conf") || file.endsWith(".err")) {
+				internalNginx.deleteFile(`${directory}/${file}`);
+			}
+		});
+	},
+
 	/**
 	 *
 	 * @param   {String} host_type
@@ -543,6 +560,69 @@ const internalNginx = {
 		}
 
 		return true;
+	},
+
+	regenerateAllConfigs: async () => {
+		logger.info("Regenerating all nginx configs...");
+		internalNginx.resetConfigDir("/data/nginx/proxy_host");
+		internalNginx.resetConfigDir("/data/nginx/redirection_host");
+		internalNginx.resetConfigDir("/data/nginx/dead_host");
+		internalNginx.resetConfigDir("/data/nginx/stream");
+		internalNginx.resetConfigDir("/data/nginx/default_host");
+
+		const [proxyHosts, redirectionHosts, deadHosts, streams, defaultSite] = await Promise.all([
+			proxyHostModel
+				.query()
+				.where("is_deleted", 0)
+				.andWhere("enabled", 1)
+				.allowGraph("[access_list.[clients,items],certificate]")
+				.withGraphFetched("[access_list.[clients,items],certificate]"),
+			redirectionHostModel
+				.query()
+				.where("is_deleted", 0)
+				.andWhere("enabled", 1)
+				.allowGraph("[certificate]")
+				.withGraphFetched("[certificate]"),
+			deadHostModel
+				.query()
+				.where("is_deleted", 0)
+				.andWhere("enabled", 1)
+				.allowGraph("[certificate]")
+				.withGraphFetched("[certificate]"),
+			streamModel
+				.query()
+				.where("is_deleted", 0)
+				.andWhere("enabled", 1)
+				.allowGraph("[certificate]")
+				.withGraphFetched("[certificate]"),
+			settingModel.query().where("id", "default-site").first(),
+		]);
+
+		if (defaultSite) {
+			if (defaultSite.value === "html" && typeof defaultSite.meta?.html === "string") {
+				fs.mkdirSync("/data/nginx/default_www", { recursive: true });
+				fs.writeFileSync("/data/nginx/default_www/index.html", defaultSite.meta.html, { encoding: "utf8" });
+			}
+			await internalNginx.generateConfig("default", defaultSite);
+		}
+
+		if (proxyHosts.length) {
+			await internalNginx.bulkGenerateConfigs("proxy_host", proxyHosts);
+		}
+		if (redirectionHosts.length) {
+			await internalNginx.bulkGenerateConfigs("redirection_host", redirectionHosts);
+		}
+		if (deadHosts.length) {
+			await internalNginx.bulkGenerateConfigs("dead_host", deadHosts);
+		}
+		if (streams.length) {
+			await internalNginx.bulkGenerateConfigs("stream", streams);
+		}
+
+		await internalNginx.generateRateLimitConfig();
+		await internalNginx.test();
+		await internalNginx.reload();
+		logger.info("Regenerate nginx configs completed");
 	},
 };
 
