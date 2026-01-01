@@ -95,7 +95,14 @@ const ForwardStreamHeartbeatCheck = () => {
 			clearTimeout(timer);
 			abortController.abort();
 		};
-	}, [values.forwardingHost, values.forwardingPort, values.tcpForwarding, values.udpForwarding]);
+	}, [
+		values.forwardingHost,
+		values.forwardingPort,
+		values.tcpForwarding,
+		values.udpForwarding,
+		values.upstreamEnabled,
+		values.upstreamServers,
+	]);
 
 	const latencyMs = Number.isFinite(state.result?.latencyMs) ? Math.round(state.result?.latencyMs || 0) : null;
 	const statusClass =
