@@ -5,7 +5,7 @@ import { Field, Form, Formik, useFormikContext } from "formik";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-bootstrap";
 import Modal from "react-bootstrap/Modal";
-import { type ProxyHostHeartbeatResult } from "src/api/backend";
+import type { ProxyHostHeartbeatResult } from "src/api/backend";
 import {
 	AccessField,
 	Button,
