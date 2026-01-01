@@ -125,6 +125,26 @@ const internalNginx = {
 		});
 	},
 
+	isNginxRunning: () => {
+		const pidFile = "/run/nginx/nginx.pid";
+		if (!fs.existsSync(pidFile)) {
+			return false;
+		}
+		const pid = Number.parseInt(fs.readFileSync(pidFile, { encoding: "utf8" }).trim(), 10);
+		if (!Number.isFinite(pid) || pid <= 0) {
+			return false;
+		}
+		return fs.existsSync(`/proc/${pid}`);
+	},
+
+	reloadIfRunning: () => {
+		if (!internalNginx.isNginxRunning()) {
+			logger.info("Skipping nginx reload because it is not running yet");
+			return Promise.resolve(true);
+		}
+		return internalNginx.reload();
+	},
+
 	/**
 	 * @param   {String}  host_type
 	 * @param   {Integer} host_id
@@ -621,7 +641,7 @@ const internalNginx = {
 
 		await internalNginx.generateRateLimitConfig();
 		await internalNginx.test();
-		await internalNginx.reload();
+		await internalNginx.reloadIfRunning();
 		logger.info("Regenerate nginx configs completed");
 	},
 };
