@@ -26,8 +26,11 @@ const validateNumber = (min = -1, max = -1) => {
 	}
 
 	return (value: string): string | undefined => {
-		const int: number = +value;
-		if (min > -1 && !int) {
+		if (min > -1 && (value === "" || typeof value === "undefined" || value === null)) {
+			return intl.formatMessage({ id: "error.required" });
+		}
+		const int: number = Number(value);
+		if (!Number.isFinite(int)) {
 			return intl.formatMessage({ id: "error.required" });
 		}
 		if (min > -1 && int < min) {

@@ -457,6 +457,10 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 												return intl.formatMessage({ id: "host.forward-port" });
 											case "forwardScheme":
 												return intl.formatMessage({ id: "host.forward-scheme" });
+											case "rateLimitRps":
+												return intl.formatMessage({ id: "host.rate-limit.rps" });
+											case "rateLimitBurst":
+												return intl.formatMessage({ id: "host.rate-limit.burst" });
 											case "upstreamServers":
 												return intl.formatMessage({ id: "host.upstream" });
 											default:
@@ -792,7 +796,12 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 																			type="number"
 																			min={0}
 																			max={100000}
-																			className="form-control"
+																			className={`form-control ${
+																				form.errors.rateLimitRps &&
+																				(form.touched.rateLimitRps || form.submitCount > 0)
+																					? "is-invalid"
+																					: ""
+																			}`}
 																			disabled={!form.values.rateLimitEnabled}
 																		/>
 																	</div>
@@ -812,7 +821,12 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 																			type="number"
 																			min={0}
 																			max={100000}
-																			className="form-control"
+																			className={`form-control ${
+																				form.errors.rateLimitBurst &&
+																				(form.touched.rateLimitBurst || form.submitCount > 0)
+																					? "is-invalid"
+																					: ""
+																			}`}
 																			disabled={!form.values.rateLimitEnabled}
 																		/>
 																	</div>
