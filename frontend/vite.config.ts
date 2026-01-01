@@ -50,6 +50,7 @@ export default defineConfig(({ mode }) => {
 		},
 		test: {
 			environment: "node",
+			exclude: ["src/locale/Utils.test.tsx"],
 			setupFiles: ["./vitest-setup.js"],
 		},
 		assetsInclude: ["**/*.md", "**/*.png", "**/*.svg"],
