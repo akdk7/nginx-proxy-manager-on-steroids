@@ -353,6 +353,21 @@
 	"host.forward-scheme": {
 		"defaultMessage": "Scheme"
 	},
+	"host.rate-limit": {
+		"defaultMessage": "Rate Limiting"
+	},
+	"host.rate-limit.enabled": {
+		"defaultMessage": "Enable Rate Limiting"
+	},
+	"host.rate-limit.rps": {
+		"defaultMessage": "Requests per second"
+	},
+	"host.rate-limit.burst": {
+		"defaultMessage": "Burst"
+	},
+	"host.rate-limit.nodelay": {
+		"defaultMessage": "No delay (nodelay)"
+	},
 	"hosts": {
 		"defaultMessage": "Hosts"
 	},

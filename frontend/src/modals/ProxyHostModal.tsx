@@ -79,6 +79,10 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 							accessListId: data?.accessListId || 0,
 							cachingEnabled: data?.cachingEnabled || false,
 							blockExploits: data?.blockExploits || false,
+							rateLimitEnabled: data?.rateLimitEnabled || false,
+							rateLimitRps: data?.rateLimitRps || 0,
+							rateLimitBurst: data?.rateLimitBurst || 0,
+							rateLimitNodelay: data?.rateLimitNodelay || false,
 							allowWebsocketUpgrade: data?.allowWebsocketUpgrade || false,
 							// Locations tab
 							locations: data?.locations || [],
@@ -342,6 +346,96 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 												<SSLOptionsFields color="bg-lime" />
 											</div>
 											<div className="tab-pane" id="tab-advanced" role="tabpanel">
+												<div className="mb-3">
+													<h4 className="py-2">
+														<T id="host.rate-limit" />
+													</h4>
+													<div className="divide-y">
+														<div>
+															<label className="row" htmlFor="rateLimitEnabled">
+																<span className="col">
+																	<T id="host.rate-limit.enabled" />
+																</span>
+																<span className="col-auto">
+																	<Field name="rateLimitEnabled" type="checkbox">
+																		{({ field }: any) => (
+																			<label className="form-check form-check-single form-switch">
+																				<input
+																					{...field}
+																					id="rateLimitEnabled"
+																					className={cn("form-check-input", {
+																						"bg-lime": field.checked,
+																					})}
+																					type="checkbox"
+																				/>
+																			</label>
+																		)}
+																	</Field>
+																</span>
+															</label>
+														</div>
+													</div>
+													<div className="row mt-3">
+														<div className="col-md-4">
+															<Field name="rateLimitRps" validate={validateNumber(0, 100000)}>
+																{({ field, form }: any) => (
+																	<div className="mb-3">
+																		<label className="form-label" htmlFor="rateLimitRps">
+																			<T id="host.rate-limit.rps" />
+																		</label>
+																		<input
+																			{...field}
+																			id="rateLimitRps"
+																			type="number"
+																			min={0}
+																			max={100000}
+																			className="form-control"
+																			disabled={!form.values.rateLimitEnabled}
+																		/>
+																	</div>
+																)}
+															</Field>
+														</div>
+														<div className="col-md-4">
+															<Field name="rateLimitBurst" validate={validateNumber(0, 100000)}>
+																{({ field, form }: any) => (
+																	<div className="mb-3">
+																		<label className="form-label" htmlFor="rateLimitBurst">
+																			<T id="host.rate-limit.burst" />
+																		</label>
+																		<input
+																			{...field}
+																			id="rateLimitBurst"
+																			type="number"
+																			min={0}
+																			max={100000}
+																			className="form-control"
+																			disabled={!form.values.rateLimitEnabled}
+																		/>
+																	</div>
+																)}
+															</Field>
+														</div>
+														<div className="col-md-4">
+															<label className="form-check form-switch mt-4" htmlFor="rateLimitNodelay">
+																<Field name="rateLimitNodelay" type="checkbox">
+																	{({ field, form }: any) => (
+																		<input
+																			{...field}
+																			id="rateLimitNodelay"
+																			className="form-check-input"
+																			type="checkbox"
+																			disabled={!form.values.rateLimitEnabled}
+																		/>
+																	)}
+																</Field>
+																<span className="form-check-label">
+																	<T id="host.rate-limit.nodelay" />
+																</span>
+															</label>
+														</div>
+													</div>
+												</div>
 												<NginxConfigField />
 											</div>
 										</div>

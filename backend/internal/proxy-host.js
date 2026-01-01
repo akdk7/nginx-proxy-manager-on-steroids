@@ -292,9 +292,10 @@ const internalProxyHost = {
 					})
 					.then(() => {
 						// Delete Nginx Config
-						return internalNginx.deleteConfig("proxy_host", row).then(() => {
-							return internalNginx.reload();
-						});
+						return internalNginx
+							.deleteConfig("proxy_host", row)
+							.then(() => internalNginx.updateRateLimitConfig("proxy_host"))
+							.then(() => internalNginx.reload());
 					})
 					.then(() => {
 						// Add to audit log
@@ -393,9 +394,10 @@ const internalProxyHost = {
 					})
 					.then(() => {
 						// Delete Nginx Config
-						return internalNginx.deleteConfig("proxy_host", row).then(() => {
-							return internalNginx.reload();
-						});
+						return internalNginx
+							.deleteConfig("proxy_host", row)
+							.then(() => internalNginx.updateRateLimitConfig("proxy_host"))
+							.then(() => internalNginx.reload());
 					})
 					.then(() => {
 						// Add to audit log

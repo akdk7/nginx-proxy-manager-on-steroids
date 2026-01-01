@@ -21,6 +21,8 @@ const boolFields = [
 	"enabled",
 	"hsts_enabled",
 	"hsts_subdomains",
+	"rate_limit_enabled",
+	"rate_limit_nodelay",
 ];
 
 class ProxyHost extends Model {

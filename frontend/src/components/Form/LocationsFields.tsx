@@ -22,6 +22,10 @@ export function LocationsFields({ initialValues, name = "locations" }: Props) {
 		forwardScheme: "http",
 		forwardHost: "",
 		forwardPort: 80,
+		rateLimitEnabled: false,
+		rateLimitRps: 0,
+		rateLimitBurst: 0,
+		rateLimitNodelay: false,
 	};
 
 	const toggleAdvVisible = (idx: number) => {
@@ -38,7 +42,7 @@ export function LocationsFields({ initialValues, name = "locations" }: Props) {
 		setFormField(newValues);
 	};
 
-	const handleChange = (idx: number, field: string, fieldValue: string) => {
+	const handleChange = (idx: number, field: string, fieldValue: string | number | boolean) => {
 		const newValues = values.map((v: ProxyLocation, i: number) => (i === idx ? { ...v, [field]: fieldValue } : v));
 		setValues(newValues);
 		setFormField(newValues);
@@ -143,6 +147,74 @@ export function LocationsFields({ initialValues, name = "locations" }: Props) {
 						</div>
 						{advVisible.includes(idx) && (
 							<div className="">
+								<div className="mb-3">
+									<h5 className="mb-2">
+										<T id="host.rate-limit" />
+									</h5>
+									<div className="form-check form-switch mb-2">
+										<input
+											className="form-check-input"
+											type="checkbox"
+											id={`rateLimitEnabled-${idx}`}
+											checked={item.rateLimitEnabled || false}
+											onChange={(e) => handleChange(idx, "rateLimitEnabled", e.target.checked)}
+										/>
+										<label className="form-check-label" htmlFor={`rateLimitEnabled-${idx}`}>
+											<T id="host.rate-limit.enabled" />
+										</label>
+									</div>
+									<div className="row">
+										<div className="col-md-4">
+											<label className="form-label" htmlFor={`rateLimitRps-${idx}`}>
+												<T id="host.rate-limit.rps" />
+											</label>
+											<input
+												id={`rateLimitRps-${idx}`}
+												type="number"
+												min={0}
+												max={100000}
+												className="form-control"
+												disabled={!item.rateLimitEnabled}
+												value={item.rateLimitRps || 0}
+												onChange={(e) =>
+													handleChange(idx, "rateLimitRps", Number.parseInt(e.target.value, 10) || 0)
+												}
+											/>
+										</div>
+										<div className="col-md-4">
+											<label className="form-label" htmlFor={`rateLimitBurst-${idx}`}>
+												<T id="host.rate-limit.burst" />
+											</label>
+											<input
+												id={`rateLimitBurst-${idx}`}
+												type="number"
+												min={0}
+												max={100000}
+												className="form-control"
+												disabled={!item.rateLimitEnabled}
+												value={item.rateLimitBurst || 0}
+												onChange={(e) =>
+													handleChange(idx, "rateLimitBurst", Number.parseInt(e.target.value, 10) || 0)
+												}
+											/>
+										</div>
+										<div className="col-md-4">
+											<div className="form-check form-switch mt-4">
+												<input
+													className="form-check-input"
+													type="checkbox"
+													id={`rateLimitNodelay-${idx}`}
+													checked={item.rateLimitNodelay || false}
+													disabled={!item.rateLimitEnabled}
+													onChange={(e) => handleChange(idx, "rateLimitNodelay", e.target.checked)}
+												/>
+												<label className="form-check-label" htmlFor={`rateLimitNodelay-${idx}`}>
+													<T id="host.rate-limit.nodelay" />
+												</label>
+											</div>
+										</div>
+									</div>
+								</div>
 								<CodeEditor
 									language="nginx"
 									placeholder={intl.formatMessage({ id: "nginx-config.placeholder" })}

@@ -67,6 +67,26 @@
 		"block_exploits": {
 			"$ref": "../common.json#/properties/block_exploits"
 		},
+		"rate_limit_enabled": {
+			"type": "boolean",
+			"example": false
+		},
+		"rate_limit_rps": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 100000,
+			"example": 10
+		},
+		"rate_limit_burst": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 100000,
+			"example": 20
+		},
+		"rate_limit_nodelay": {
+			"type": "boolean",
+			"example": false
+		},
 		"advanced_config": {
 			"type": "string",
 			"example": ""
@@ -120,6 +140,18 @@
 					},
 					"forward_path": {
 						"type": "string"
+					},
+					"rate_limit_enabled": {
+						"$ref": "#/properties/rate_limit_enabled"
+					},
+					"rate_limit_rps": {
+						"$ref": "#/properties/rate_limit_rps"
+					},
+					"rate_limit_burst": {
+						"$ref": "#/properties/rate_limit_burst"
+					},
+					"rate_limit_nodelay": {
+						"$ref": "#/properties/rate_limit_nodelay"
 					},
 					"advanced_config": {
 						"type": "string"

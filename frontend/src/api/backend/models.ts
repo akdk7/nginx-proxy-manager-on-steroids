@@ -103,6 +103,10 @@ export interface ProxyLocation {
 	forwardScheme: string;
 	forwardHost: string;
 	forwardPort: number;
+	rateLimitEnabled?: boolean;
+	rateLimitRps?: number;
+	rateLimitBurst?: number;
+	rateLimitNodelay?: boolean;
 }
 
 export interface ProxyHost {
@@ -119,6 +123,10 @@ export interface ProxyHost {
 	sslForced: boolean;
 	cachingEnabled: boolean;
 	blockExploits: boolean;
+	rateLimitEnabled: boolean;
+	rateLimitRps: number;
+	rateLimitBurst: number;
+	rateLimitNodelay: boolean;
 	advancedConfig: string;
 	meta: Record<string, any>;
 	allowWebsocketUpgrade: boolean;

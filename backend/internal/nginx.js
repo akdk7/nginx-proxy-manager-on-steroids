@@ -5,9 +5,11 @@ import _ from "lodash";
 import errs from "../lib/error.js";
 import utils from "../lib/utils.js";
 import { debug, nginx as logger } from "../logger.js";
+import proxyHostModel from "../models/proxy_host.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const rateLimitZoneSize = "10m";
 
 const internalNginx = {
 	/**
@@ -38,6 +40,9 @@ const internalNginx = {
 			})
 			.then(() => {
 				return internalNginx.generateConfig(host_type, host);
+			})
+			.then(() => {
+				return internalNginx.updateRateLimitConfig(host_type);
 			})
 			.then(() => {
 				// Test nginx again and update meta with result
@@ -128,6 +133,20 @@ const internalNginx = {
 		return `/data/nginx/${internalNginx.getFileFriendlyHostType(host_type)}/${host_id}.conf`;
 	},
 
+	getRateLimitZoneName: (host_id, location_id) => {
+		if (typeof location_id !== "undefined" && location_id !== null) {
+			return `proxy_host_${host_id}_loc_${location_id}_rate_limit`;
+		}
+		return `proxy_host_${host_id}_rate_limit`;
+	},
+
+	updateRateLimitConfig: (host_type) => {
+		if (internalNginx.getFileFriendlyHostType(host_type) !== "proxy_host") {
+			return Promise.resolve(true);
+		}
+		return internalNginx.generateRateLimitConfig();
+	},
+
 	/**
 	 * Generates custom locations
 	 * @param   {Object}  host
@@ -164,6 +183,21 @@ const internalNginx = {
 						{ certificate: host.certificate },
 						host.locations[i],
 					);
+					const locationRateLimitKeys = [
+						"rate_limit_enabled",
+						"rate_limit_rps",
+						"rate_limit_burst",
+						"rate_limit_nodelay",
+					];
+					const locationOverridesRateLimit = locationRateLimitKeys.some(
+						(key) => typeof host.locations[i][key] !== "undefined",
+					);
+					const locationId = host.locations[i]?.id ?? i;
+					if (locationOverridesRateLimit) {
+						locationCopy.rate_limit_zone_name = internalNginx.getRateLimitZoneName(host.id, locationId);
+					} else {
+						locationCopy.rate_limit_zone_name = host.rate_limit_zone_name;
+					}
 
 					if (locationCopy.forward_host.indexOf("/") > -1) {
 						const splitted = locationCopy.forward_host.split("/");
@@ -235,6 +269,11 @@ const internalNginx = {
 
 			// Set the IPv6 setting for the host
 			host.ipv6 = internalNginx.ipv6Enabled();
+			const hostRateLimitEnabled = host.rate_limit_enabled === 1 || host.rate_limit_enabled === true;
+			const hostRateLimitRps = Number.parseInt(host.rate_limit_rps, 10);
+			if (hostRateLimitEnabled && Number.isFinite(hostRateLimitRps) && hostRateLimitRps > 0) {
+				host.rate_limit_zone_name = internalNginx.getRateLimitZoneName(host.id);
+			}
 
 			locationsPromise.then(() => {
 				renderEngine
@@ -254,6 +293,80 @@ const internalNginx = {
 					});
 			});
 		});
+	},
+
+	generateRateLimitConfig: async () => {
+		const renderEngine = utils.getRenderEngine();
+		let template = null;
+		const filename = "/etc/nginx/conf.d/include/rate_limit.conf";
+
+		try {
+			template = fs.readFileSync(`${__dirname}/../templates/rate_limit.conf`, { encoding: "utf8" });
+		} catch (err) {
+			throw new errs.ConfigurationError(err.message);
+		}
+
+		const hosts = await proxyHostModel.query().where("is_deleted", 0);
+		const zones = [];
+		const zoneNames = new Set();
+
+		const addZone = (name, rate) => {
+			if (!name || !rate || zoneNames.has(name)) {
+				return;
+			}
+			zoneNames.add(name);
+			zones.push({
+				name: name,
+				size: rateLimitZoneSize,
+				rate: rate,
+			});
+		};
+
+		hosts.forEach((host) => {
+			const hostRateLimitEnabled = host.rate_limit_enabled === 1 || host.rate_limit_enabled === true;
+			const hostRateLimitRps = Number.parseInt(host.rate_limit_rps, 10);
+			if (hostRateLimitEnabled && Number.isFinite(hostRateLimitRps) && hostRateLimitRps > 0) {
+				addZone(internalNginx.getRateLimitZoneName(host.id), hostRateLimitRps);
+			}
+
+			if (!Array.isArray(host.locations)) {
+				return;
+			}
+
+			host.locations.forEach((location, idx) => {
+				const locationRateLimitKeys = [
+					"rate_limit_enabled",
+					"rate_limit_rps",
+					"rate_limit_burst",
+					"rate_limit_nodelay",
+				];
+				const locationOverridesRateLimit = locationRateLimitKeys.some(
+					(key) => typeof location[key] !== "undefined",
+				);
+				if (!locationOverridesRateLimit) {
+					return;
+				}
+
+				const locationRateLimitEnabled =
+					location.rate_limit_enabled === 1 || location.rate_limit_enabled === true;
+				const locationRateLimitRps = Number.parseInt(location.rate_limit_rps, 10);
+				if (
+					locationRateLimitEnabled &&
+					Number.isFinite(locationRateLimitRps) &&
+					locationRateLimitRps > 0
+				) {
+					const locationId = location?.id ?? idx;
+					addZone(internalNginx.getRateLimitZoneName(host.id, locationId), locationRateLimitRps);
+				}
+			});
+		});
+
+		try {
+			const configText = await renderEngine.parseAndRender(template, { zones: zones });
+			fs.writeFileSync(filename, configText, { encoding: "utf8" });
+		} catch (err) {
+			throw new errs.ConfigurationError(err.message);
+		}
 	},
 
 	/**
@@ -392,7 +505,9 @@ const internalNginx = {
 			return true;
 		});
 
-		return Promise.all(promises);
+		return Promise.all(promises).then(() => {
+			return internalNginx.updateRateLimitConfig(hostType);
+		});
 	},
 
 	/**
@@ -407,7 +522,9 @@ const internalNginx = {
 			return true;
 		});
 
-		return Promise.all(promises);
+		return Promise.all(promises).then(() => {
+			return internalNginx.updateRateLimitConfig(host_type);
+		});
 	},
 
 	/**
