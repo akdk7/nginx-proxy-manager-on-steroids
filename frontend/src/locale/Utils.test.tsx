@@ -1,13 +1,23 @@
-import { formatDateTime } from "src/locale";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 describe("DateFormatter", () => {
+	let formatDateTime: (value: string | number) => string;
 	// Keep a reference to the real Intl to restore later
 	const RealIntl = global.Intl;
 	const desiredTimeZone = "Europe/London";
 	const desiredLocale = "en-GB";
 
-	beforeAll(() => {
+	beforeAll(async () => {
+		const localStorage = {
+			getItem: vi.fn().mockReturnValue(null),
+			setItem: vi.fn(),
+			removeItem: vi.fn(),
+		};
+
+		vi.stubGlobal("window", { localStorage });
+		vi.stubGlobal("document", { documentElement: { lang: desiredLocale } });
+		vi.stubGlobal("navigator", { language: desiredLocale });
+
 		// Ensure Node-based libs using TZ behave deterministically
 		try {
 			process.env.TZ = desiredTimeZone;
@@ -29,11 +39,15 @@ describe("DateFormatter", () => {
 			...RealIntl,
 			DateTimeFormat: MockedDateTimeFormat,
 		};
+
+		const localeModule = await import("src/locale");
+		formatDateTime = localeModule.formatDateTime;
 	});
 
 	afterAll(() => {
 		// Restore original Intl after tests
 		global.Intl = RealIntl;
+		vi.unstubAllGlobals();
 	});
 
 	it("format date from iso date", () => {
