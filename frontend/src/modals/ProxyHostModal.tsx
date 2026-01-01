@@ -379,7 +379,7 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 	};
 
 	return (
-		<Modal show={visible} onHide={remove}>
+		<Modal show={visible} onHide={remove} size="xl">
 			{!isLoading && (error || userError) && (
 				<Alert variant="danger" className="m-3">
 					{error?.message || userError?.message || "Unknown error"}
