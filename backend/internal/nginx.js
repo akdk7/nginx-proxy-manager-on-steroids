@@ -97,7 +97,6 @@ const sanitizeUpstreamServers = (servers) => {
 				max_fails: Number.isFinite(maxFails) && maxFails >= 0 ? maxFails : null,
 				fail_timeout: Number.isFinite(failTimeout) && failTimeout >= 0 ? failTimeout : null,
 				backup: server?.backup === true,
-				resolve: !isIpAddress(host),
 			};
 		})
 		.filter(Boolean);

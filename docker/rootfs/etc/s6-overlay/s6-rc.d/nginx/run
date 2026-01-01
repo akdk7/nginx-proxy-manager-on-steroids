@@ -16,5 +16,11 @@ while true; do
 			log_error "$line"
 		done < /tmp/nginx-test.log
 	fi
+	bad_file=$(sed -n 's/.* in \\(\\/data\\/nginx\\/[^:]*\\.conf\\):.*/\\1/p' /tmp/nginx-test.log | head -n 1)
+	if [ -n "$bad_file" ] && [ -f "$bad_file" ]; then
+		log_error "Quarantining bad config: $bad_file"
+		mv "$bad_file" "${bad_file}.err"
+		continue
+	fi
 	sleep 5
 done
