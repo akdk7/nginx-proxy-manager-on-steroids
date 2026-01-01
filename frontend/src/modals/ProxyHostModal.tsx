@@ -296,10 +296,11 @@ const UpstreamSettings = () => {
 												<input
 													className="form-check-input"
 													type="checkbox"
+													id={`upstream-backup-${idx}`}
 													checked={!!server.backup}
 													onChange={(e) => handleChange(idx, "backup", e.target.checked)}
 												/>
-												<label className="form-check-label">
+												<label className="form-check-label" htmlFor={`upstream-backup-${idx}`}>
 													<T id="host.upstream.backup" />
 												</label>
 											</div>
