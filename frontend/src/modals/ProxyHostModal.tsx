@@ -424,7 +424,7 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 					onSubmit={onSubmit}
 				>
 					{({ values, setFieldValue }: any) => (
-						<Form>
+						<Form noValidate>
 							<Modal.Header closeButton>
 								<Modal.Title>
 									<T id={data?.id ? "object.edit" : "object.add"} tData={{ object: "proxy-host" }} />
