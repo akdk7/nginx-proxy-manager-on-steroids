@@ -229,7 +229,11 @@ const UpstreamSettings = () => {
 								<div key={`upstream-${idx}`} className="mb-3">
 									<div className="row g-2 align-items-center">
 										<div className="col-md-4">
+											<label className="form-label small" htmlFor={`upstream-host-${idx}`}>
+												<T id="host.upstream.server" />
+											</label>
 											<input
+												id={`upstream-host-${idx}`}
 												type="text"
 												className="form-control"
 												placeholder="example.local"
@@ -238,7 +242,11 @@ const UpstreamSettings = () => {
 											/>
 										</div>
 										<div className="col-md-2">
+											<label className="form-label small" htmlFor={`upstream-port-${idx}`}>
+												<T id="host.upstream.port" />
+											</label>
 											<input
+												id={`upstream-port-${idx}`}
 												type="number"
 												min={1}
 												max={65535}
@@ -251,7 +259,11 @@ const UpstreamSettings = () => {
 											/>
 										</div>
 										<div className="col-md-2">
+											<label className="form-label small" htmlFor={`upstream-weight-${idx}`}>
+												<T id="host.upstream.weight" />
+											</label>
 											<input
+												id={`upstream-weight-${idx}`}
 												type="number"
 												min={1}
 												max={100}
@@ -264,7 +276,11 @@ const UpstreamSettings = () => {
 											/>
 										</div>
 										<div className="col-md-2">
+											<label className="form-label small" htmlFor={`upstream-max-fails-${idx}`}>
+												<T id="host.upstream.max-fails" />
+											</label>
 											<input
+												id={`upstream-max-fails-${idx}`}
 												type="number"
 												min={0}
 												max={100}
@@ -277,7 +293,11 @@ const UpstreamSettings = () => {
 											/>
 										</div>
 										<div className="col-md-2">
+											<label className="form-label small" htmlFor={`upstream-fail-timeout-${idx}`}>
+												<T id="host.upstream.fail-timeout" />
+											</label>
 											<input
+												id={`upstream-fail-timeout-${idx}`}
 												type="number"
 												min={0}
 												max={3600}

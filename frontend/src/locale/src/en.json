@@ -473,6 +473,21 @@
 	"host.upstream.backup": {
 		"defaultMessage": "Backup"
 	},
+	"host.upstream.server": {
+		"defaultMessage": "Upstream Host"
+	},
+	"host.upstream.port": {
+		"defaultMessage": "Port"
+	},
+	"host.upstream.weight": {
+		"defaultMessage": "Weight"
+	},
+	"host.upstream.max-fails": {
+		"defaultMessage": "Max Fails"
+	},
+	"host.upstream.fail-timeout": {
+		"defaultMessage": "Fail Timeout (s)"
+	},
 	"host.upstream.mtls": {
 		"defaultMessage": "Upstream mTLS"
 	},
