@@ -37,6 +37,7 @@ const ForwardStreamHeartbeatCheck = ({
 	const requestId = useRef(0);
 
 	useEffect(() => {
+		void refreshKey;
 		const upstreamServers = Array.isArray(values.upstreamServers) ? values.upstreamServers : [];
 		const selectedHost = values.upstreamEnabled && upstreamServers.length ? upstreamServers[0] : null;
 		const forwardingHost = `${selectedHost?.host || values.forwardingHost || ""}`.trim();
@@ -177,6 +178,7 @@ const UpstreamSettings = ({ onRequestForwardHeartbeat }: { onRequestForwardHeart
 	}, [servers, setFieldValue, values.forwardingHost, values.forwardingPort, values.upstreamEnabled]);
 
 	useEffect(() => {
+		void upstreamRefresh;
 		if (!values.upstreamEnabled || servers.length === 0) {
 			setUpstreamHeartbeats({});
 			setUpstreamChecking(false);
