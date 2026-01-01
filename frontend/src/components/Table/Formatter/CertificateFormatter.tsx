@@ -50,7 +50,11 @@ export function CertificateFormatter({ certificate, domainNames }: Props) {
 				const badgeClass = expired ? "bg-danger-lt" : daysLeft <= 30 ? "bg-yellow-lt" : "bg-lime-lt";
 				expiryBadge = (
 					<span className={`badge ${badgeClass}`}>
-						{expired ? <T id="certificates.expired" /> : <T id="certificates.expires-in-days" tData={{ days: daysLeft }} />}
+						{expired ? (
+							<T id="certificates.expired" />
+						) : (
+							<T id="certificates.expires-in-days" tData={{ days: `${daysLeft}` }} />
+						)}
 					</span>
 				);
 			}
