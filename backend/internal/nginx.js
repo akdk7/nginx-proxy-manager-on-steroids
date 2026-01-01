@@ -317,7 +317,7 @@ const internalNginx = {
 			zoneNames.add(name);
 			zones.push({
 				name: name,
-				size: rateLimitZoneSize,
+				shm_size: rateLimitZoneSize,
 				rate: rate,
 			});
 		};
