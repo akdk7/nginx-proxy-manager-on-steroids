@@ -57,7 +57,11 @@ export function DomainNamesField({
 						<T id={label} />
 					</label>
 					<CreatableSelect
-						className="react-select-container"
+						className={`react-select-container ${
+							form.errors[field.name] && (form.touched[field.name] || submitCount > 0)
+								? "is-invalid"
+								: ""
+						}`}
 						classNamePrefix="react-select"
 						name={field.name}
 						id={id}

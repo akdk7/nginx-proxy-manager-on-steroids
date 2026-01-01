@@ -564,7 +564,12 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 																<input
 																	id="forwardHost"
 																	type="text"
-																	className={`form-control ${form.errors.forwardHost && form.touched.forwardHost ? "is-invalid" : ""}`}
+																	className={`form-control ${
+																		form.errors.forwardHost &&
+																		(form.touched.forwardHost || form.submitCount > 0)
+																			? "is-invalid"
+																			: ""
+																	}`}
 																	required
 																	placeholder="example.com"
 																	{...field}
@@ -600,7 +605,12 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 																	type="number"
 																	min={1}
 																	max={65535}
-																	className={`form-control ${form.errors.forwardPort && form.touched.forwardPort ? "is-invalid" : ""}`}
+																	className={`form-control ${
+																		form.errors.forwardPort &&
+																		(form.touched.forwardPort || form.submitCount > 0)
+																			? "is-invalid"
+																			: ""
+																	}`}
 																	required
 																	placeholder="eg: 8081"
 																	{...field}
