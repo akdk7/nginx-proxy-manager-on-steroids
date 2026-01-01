@@ -394,7 +394,7 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 			{isLoading || (userIsLoading && <Loading noLogo />)}
 			{!isLoading && !userIsLoading && data && currentUser && (
 				<Formik
-					enableReinitialize
+					key={id === "new" ? "new" : data?.id}
 					initialValues={
 						{
 							// Details tab
