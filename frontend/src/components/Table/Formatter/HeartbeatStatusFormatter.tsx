@@ -9,13 +9,14 @@ interface Props {
 	enabled: boolean;
 	heartbeat?: HeartbeatResult;
 	isChecking?: boolean;
+	onRefresh?: () => void;
 }
 
 const Badge = ({ color, children }: { color: string; children: ReactNode }) => (
 	<span className={`badge bg-${color}-lt`}>{children}</span>
 );
 
-export function HeartbeatStatusFormatter({ enabled, heartbeat, isChecking }: Props) {
+export function HeartbeatStatusFormatter({ enabled, heartbeat, isChecking, onRefresh }: Props) {
 	const checkedAt = heartbeat?.checkedAt ? formatDateTime(heartbeat.checkedAt) : null;
 	const latencyMs = Number.isFinite(heartbeat?.latencyMs) ? Math.round(heartbeat?.latencyMs || 0) : null;
 	const statusCode = Number.isFinite(heartbeat?.statusCode) ? heartbeat?.statusCode : null;
@@ -30,7 +31,7 @@ export function HeartbeatStatusFormatter({ enabled, heartbeat, isChecking }: Pro
 				</Badge>
 			);
 		}
-		if (isChecking && !heartbeat) {
+		if (isChecking) {
 			return (
 				<Badge color="yellow">
 					<T id="host.heartbeat" />: <T id="host.heartbeat.status.checking" />
@@ -64,6 +65,18 @@ export function HeartbeatStatusFormatter({ enabled, heartbeat, isChecking }: Pro
 			</Badge>
 		);
 	})();
+
+	const clickableBadge = onRefresh ? (
+		<button
+			type="button"
+			className="btn btn-link p-0 text-decoration-none"
+			onClick={onRefresh}
+		>
+			{badgeContent}
+		</button>
+	) : (
+		badgeContent
+	);
 
 	const popover =
 		heartbeat ?
@@ -125,10 +138,10 @@ export function HeartbeatStatusFormatter({ enabled, heartbeat, isChecking }: Pro
 			<TrueFalseFormatter value={enabled} trueLabel="online" falseLabel="offline" />
 			{popover ? (
 				<OverlayTrigger trigger={["hover", "click", "focus"]} placement="bottom" overlay={popover}>
-					<span>{badgeContent}</span>
+					<span>{clickableBadge}</span>
 				</OverlayTrigger>
 			) : (
-				badgeContent
+				clickableBadge
 			)}
 		</div>
 	);

@@ -16,6 +16,7 @@ export default function TableWrapper() {
 	const [search, setSearch] = useState("");
 	const [heartbeats, setHeartbeats] = useState<Record<number, StreamHeartbeatResult>>({});
 	const [heartbeatsLoading, setHeartbeatsLoading] = useState(false);
+	const [heartbeatRefreshIds, setHeartbeatRefreshIds] = useState<Record<number, boolean>>({});
 	const { isFetching, isLoading, isError, error, data } = useStreams(["owner", "certificate"]);
 
 	const heartbeatTargets = useMemo(() => {
@@ -95,6 +96,40 @@ export default function TableWrapper() {
 		showObjectSuccess("stream", enabled ? "enabled" : "disabled");
 	};
 
+	const handleHeartbeatRefresh = async (id: number) => {
+		const stream = data?.find((item) => item.id === id);
+		if (!stream) {
+			return;
+		}
+		const upstream =
+			stream.upstreamEnabled && stream.upstreamServers?.length ? stream.upstreamServers[0] : null;
+		setHeartbeatRefreshIds((prev) => ({ ...prev, [id]: true }));
+		try {
+			const results = await checkStreamHeartbeats([
+				{
+					id: stream.id,
+					forwardingHost: upstream?.host || stream.forwardingHost,
+					forwardingPort: upstream?.port || stream.forwardingPort,
+					tcpForwarding: stream.tcpForwarding,
+					udpForwarding: stream.udpForwarding,
+				},
+			]);
+			const result = results?.[0];
+			if (result) {
+				setHeartbeats((prev) => ({
+					...prev,
+					[id]: result,
+				}));
+			}
+		} finally {
+			setHeartbeatRefreshIds((prev) => {
+				const next = { ...prev };
+				delete next[id];
+				return next;
+			});
+		}
+	};
+
 	let filtered = null;
 	if (search && data) {
 		filtered = data?.filter((item) => {
@@ -156,6 +191,8 @@ export default function TableWrapper() {
 					isFiltered={!!filtered}
 					heartbeats={heartbeats}
 					heartbeatsLoading={heartbeatsLoading}
+					heartbeatRefreshIds={heartbeatRefreshIds}
+					onHeartbeatRefresh={handleHeartbeatRefresh}
 					onEdit={(id: number) => showStreamModal(id)}
 					onDelete={(id: number) =>
 						showDeleteConfirmModal({

@@ -22,8 +22,10 @@ interface Props {
 	onDelete?: (id: number) => void;
 	onDisableToggle?: (id: number, enabled: boolean) => void;
 	onNew?: () => void;
+	onHeartbeatRefresh?: (id: number) => void;
 	heartbeats?: Record<number, StreamHeartbeatResult>;
 	heartbeatsLoading?: boolean;
+	heartbeatRefreshIds?: Record<number, boolean>;
 }
 export default function Table({
 	data,
@@ -33,8 +35,10 @@ export default function Table({
 	onDelete,
 	onDisableToggle,
 	onNew,
+	onHeartbeatRefresh,
 	heartbeats,
 	heartbeatsLoading,
+	heartbeatRefreshIds,
 }: Props) {
 	const columnHelper = createColumnHelper<Stream>();
 	const columns = useMemo(
@@ -103,7 +107,8 @@ export default function Table({
 						<HeartbeatStatusFormatter
 							enabled={info.getValue()}
 							heartbeat={heartbeat}
-							isChecking={heartbeatsLoading}
+							isChecking={heartbeatsLoading || !!heartbeatRefreshIds?.[stream.id]}
+							onRefresh={onHeartbeatRefresh ? () => onHeartbeatRefresh(stream.id) : undefined}
 						/>
 					);
 				},
@@ -174,7 +179,16 @@ export default function Table({
 				},
 			}),
 		],
-		[columnHelper, onEdit, onDisableToggle, onDelete, heartbeats, heartbeatsLoading],
+		[
+			columnHelper,
+			onEdit,
+			onDisableToggle,
+			onDelete,
+			onHeartbeatRefresh,
+			heartbeats,
+			heartbeatsLoading,
+			heartbeatRefreshIds,
+		],
 	);
 
 	const tableInstance = useReactTable<Stream>({

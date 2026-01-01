@@ -16,6 +16,7 @@ export default function TableWrapper() {
 	const [search, setSearch] = useState("");
 	const [heartbeats, setHeartbeats] = useState<Record<number, ProxyHostHeartbeatResult>>({});
 	const [heartbeatsLoading, setHeartbeatsLoading] = useState(false);
+	const [heartbeatRefreshIds, setHeartbeatRefreshIds] = useState<Record<number, boolean>>({});
 	const { isFetching, isLoading, isError, error, data } = useProxyHosts(["owner", "access_list", "certificate"]);
 
 	const heartbeatTargets = useMemo(() => {
@@ -91,6 +92,37 @@ export default function TableWrapper() {
 		showObjectSuccess("proxy-host", enabled ? "enabled" : "disabled");
 	};
 
+	const handleHeartbeatRefresh = async (id: number) => {
+		const host = data?.find((item) => item.id === id);
+		if (!host) {
+			return;
+		}
+		setHeartbeatRefreshIds((prev) => ({ ...prev, [id]: true }));
+		try {
+			const results = await checkProxyHostHeartbeats([
+				{
+					id: host.id,
+					forwardScheme: host.forwardScheme,
+					forwardHost: host.forwardHost,
+					forwardPort: host.forwardPort,
+				},
+			]);
+			const result = results?.[0];
+			if (result) {
+				setHeartbeats((prev) => ({
+					...prev,
+					[id]: result,
+				}));
+			}
+		} finally {
+			setHeartbeatRefreshIds((prev) => {
+				const next = { ...prev };
+				delete next[id];
+				return next;
+			});
+		}
+	};
+
 	let filtered = null;
 	if (search && data) {
 		filtered = data?.filter(
@@ -155,6 +187,8 @@ export default function TableWrapper() {
 					isFetching={isFetching}
 					heartbeats={heartbeats}
 					heartbeatsLoading={heartbeatsLoading}
+					heartbeatRefreshIds={heartbeatRefreshIds}
+					onHeartbeatRefresh={handleHeartbeatRefresh}
 					onEdit={(id: number) => showProxyHostModal(id)}
 					onDelete={(id: number) =>
 						showDeleteConfirmModal({

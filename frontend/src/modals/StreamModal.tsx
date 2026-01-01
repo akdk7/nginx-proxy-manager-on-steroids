@@ -21,7 +21,13 @@ interface Props extends InnerModalProps {
 	id: number | "new";
 }
 
-const ForwardStreamHeartbeatCheck = () => {
+const ForwardStreamHeartbeatCheck = ({
+	refreshKey,
+	onRefresh,
+}: {
+	refreshKey: number;
+	onRefresh: () => void;
+}) => {
 	const { values } = useFormikContext<any>();
 	const [state, setState] = useState<{
 		status: "idle" | "checking" | "ok" | "failed" | "unsupported";
@@ -102,6 +108,7 @@ const ForwardStreamHeartbeatCheck = () => {
 		values.udpForwarding,
 		values.upstreamEnabled,
 		values.upstreamServers,
+		refreshKey,
 	]);
 
 	const latencyMs = Number.isFinite(state.result?.latencyMs) ? Math.round(state.result?.latencyMs || 0) : null;
@@ -128,10 +135,14 @@ const ForwardStreamHeartbeatCheck = () => {
 
 	return (
 		<div className="mb-3">
-			<div className={`small ${statusClass}`}>
+			<button
+				type="button"
+				className={`btn btn-link p-0 text-decoration-none small ${statusClass}`}
+				onClick={onRefresh}
+			>
 				<T id="host.heartbeat" />: {statusLabel}
 				{state.status === "ok" && latencyMs !== null ? <span> ({latencyMs}ms)</span> : null}
-			</div>
+			</button>
 			{state.status === "failed" && state.error ? (
 				<div className="small text-muted text-break">{state.error}</div>
 			) : null}
@@ -139,13 +150,14 @@ const ForwardStreamHeartbeatCheck = () => {
 	);
 };
 
-const UpstreamSettings = () => {
+const UpstreamSettings = ({ onRequestForwardHeartbeat }: { onRequestForwardHeartbeat: () => void }) => {
 	const { values, setFieldValue, errors, submitCount } = useFormikContext<any>();
 	const servers = Array.isArray(values.upstreamServers) ? values.upstreamServers : [];
 	const upstreamInvalid = submitCount > 0 && !!errors.upstreamServers;
 	const [upstreamHeartbeats, setUpstreamHeartbeats] = useState<Record<number, StreamHeartbeatResult>>({});
 	const [upstreamChecking, setUpstreamChecking] = useState(false);
 	const upstreamRequestId = useRef(0);
+	const [upstreamRefresh, setUpstreamRefresh] = useState(0);
 
 	useEffect(() => {
 		if (!values.upstreamEnabled || servers.length === 0) {
@@ -246,7 +258,12 @@ const UpstreamSettings = () => {
 			clearTimeout(timer);
 			abortController.abort();
 		};
-	}, [servers, values.tcpForwarding, values.udpForwarding, values.upstreamEnabled]);
+	}, [servers, values.tcpForwarding, values.udpForwarding, values.upstreamEnabled, upstreamRefresh]);
+
+	const handleUpstreamRefresh = () => {
+		setUpstreamRefresh((prev) => prev + 1);
+		onRequestForwardHeartbeat();
+	};
 
 	const renderHeartbeatBadge = (server: any, idx: number) => {
 		const host = `${server?.host || ""}`.trim();
@@ -261,7 +278,7 @@ const UpstreamSettings = () => {
 			if (!validTarget) {
 				return { color: "secondary", label: <T id="host.heartbeat.status.waiting" /> };
 			}
-			if (upstreamChecking && !heartbeat) {
+			if (upstreamChecking) {
 				return { color: "yellow", label: <T id="host.heartbeat.status.checking" /> };
 			}
 			if (!heartbeat) {
@@ -284,10 +301,16 @@ const UpstreamSettings = () => {
 					: undefined;
 
 		return (
-			<span className={`badge bg-${badge.color}-lt`} title={title}>
-				<T id="host.heartbeat" />: {badge.label}
-				{badge.color === "lime" && latencyMs !== null ? <span> ({latencyMs}ms)</span> : null}
-			</span>
+			<button
+				type="button"
+				className="btn btn-link p-0 text-decoration-none"
+				onClick={handleUpstreamRefresh}
+			>
+				<span className={`badge bg-${badge.color}-lt`} title={title}>
+					<T id="host.heartbeat" />: {badge.label}
+					{badge.color === "lime" && latencyMs !== null ? <span> ({latencyMs}ms)</span> : null}
+				</span>
+			</button>
 		);
 	};
 
@@ -510,6 +533,7 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 	const { mutate: setStream } = useSetStream();
 	const [errorMsg, setErrorMsg] = useState<ReactNode | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [forwardHeartbeatKey, setForwardHeartbeatKey] = useState(0);
 
 	const onSubmit = async (values: any, { setSubmitting }: any) => {
 		if (isSubmitting) return;
@@ -765,8 +789,13 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 														</Field>
 											</div>
 									</div>
-									<ForwardStreamHeartbeatCheck />
-									<UpstreamSettings />
+									<ForwardStreamHeartbeatCheck
+										refreshKey={forwardHeartbeatKey}
+										onRefresh={() => setForwardHeartbeatKey((prev) => prev + 1)}
+									/>
+									<UpstreamSettings
+										onRequestForwardHeartbeat={() => setForwardHeartbeatKey((prev) => prev + 1)}
+									/>
 									<div className="my-3">
 										<h3 className="py-2">
 											<T id="host.flags.protocols" />

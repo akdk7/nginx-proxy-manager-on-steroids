@@ -24,8 +24,10 @@ interface Props {
 	onDelete?: (id: number) => void;
 	onDisableToggle?: (id: number, enabled: boolean) => void;
 	onNew?: () => void;
+	onHeartbeatRefresh?: (id: number) => void;
 	heartbeats?: Record<number, ProxyHostHeartbeatResult>;
 	heartbeatsLoading?: boolean;
+	heartbeatRefreshIds?: Record<number, boolean>;
 }
 export default function Table({
 	data,
@@ -34,9 +36,11 @@ export default function Table({
 	onDelete,
 	onDisableToggle,
 	onNew,
+	onHeartbeatRefresh,
 	isFiltered,
 	heartbeats,
 	heartbeatsLoading,
+	heartbeatRefreshIds,
 }: Props) {
 	const columnHelper = createColumnHelper<ProxyHost>();
 	const columns = useMemo(
@@ -107,7 +111,8 @@ export default function Table({
 						<HeartbeatStatusFormatter
 							enabled={info.getValue()}
 							heartbeat={heartbeat}
-							isChecking={heartbeatsLoading}
+							isChecking={heartbeatsLoading || !!heartbeatRefreshIds?.[host.id]}
+							onRefresh={onHeartbeatRefresh ? () => onHeartbeatRefresh(host.id) : undefined}
 						/>
 					);
 				},
@@ -178,7 +183,16 @@ export default function Table({
 				},
 			}),
 		],
-		[columnHelper, onEdit, onDisableToggle, onDelete, heartbeats, heartbeatsLoading],
+		[
+			columnHelper,
+			onEdit,
+			onDisableToggle,
+			onDelete,
+			onHeartbeatRefresh,
+			heartbeats,
+			heartbeatsLoading,
+			heartbeatRefreshIds,
+		],
 	);
 
 	const tableInstance = useReactTable<ProxyHost>({
