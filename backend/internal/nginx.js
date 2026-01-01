@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import net from "node:net";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import _ from "lodash";
@@ -67,6 +68,14 @@ const mergeSecurityHeaders = (base, overrides) => {
 const hasHeader = (headers, name) =>
 	Array.isArray(headers) && headers.some((header) => header?.name?.toLowerCase() === name.toLowerCase());
 
+const isIpAddress = (host) => {
+	if (!host) {
+		return false;
+	}
+	const normalized = host.startsWith("[") && host.endsWith("]") ? host.slice(1, -1) : host;
+	return net.isIP(normalized) !== 0;
+};
+
 const sanitizeUpstreamServers = (servers) => {
 	if (!Array.isArray(servers)) {
 		return [];
@@ -88,6 +97,7 @@ const sanitizeUpstreamServers = (servers) => {
 				max_fails: Number.isFinite(maxFails) && maxFails >= 0 ? maxFails : null,
 				fail_timeout: Number.isFinite(failTimeout) && failTimeout >= 0 ? failTimeout : null,
 				backup: server?.backup === true,
+				resolve: !isIpAddress(host),
 			};
 		})
 		.filter(Boolean);
