@@ -6,9 +6,10 @@ import "vitest/config";
 import { execFile } from "node:child_process";
 
 // https://vitejs.dev/config/
-export default defineConfig({
-	plugins: [
-		{
+export default defineConfig(({ mode }) => {
+	const isTest = mode === "test";
+	const plugins = [
+		!isTest && {
 			name: "trigger-script-on-reload",
 			configureServer(server) {
 				server.watcher.on("change", (file) => {
@@ -31,21 +32,26 @@ export default defineConfig({
 			},
 		},
 		react(),
-		checker({
-			// e.g. use TypeScript check
-			typescript: true,
-		}),
+		!isTest &&
+			checker({
+				// e.g. use TypeScript check
+				typescript: true,
+			}),
 		tsconfigPaths(),
-	],
-	server: {
-		host: true,
-		port: 5173,
-		strictPort: true,
-		allowedHosts: true,
-	},
-	test: {
-		environment: "happy-dom",
-		setupFiles: ["./vitest-setup.js"],
-	},
-	assetsInclude: ["**/*.md", "**/*.png", "**/*.svg"],
+	].filter(Boolean);
+
+	return {
+		plugins,
+		server: {
+			host: true,
+			port: 5173,
+			strictPort: true,
+			allowedHosts: true,
+		},
+		test: {
+			environment: "happy-dom",
+			setupFiles: ["./vitest-setup.js"],
+		},
+		assetsInclude: ["**/*.md", "**/*.png", "**/*.svg"],
+	};
 });
