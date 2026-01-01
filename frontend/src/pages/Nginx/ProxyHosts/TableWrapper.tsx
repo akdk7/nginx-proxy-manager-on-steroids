@@ -32,16 +32,6 @@ export default function TableWrapper() {
 			}));
 	}, [data]);
 
-	const heartbeatKey = useMemo(
-		() =>
-			heartbeatTargets
-				.map(
-					(target) => `${target.id}:${target.forwardScheme}:${target.forwardHost}:${target.forwardPort}`,
-				)
-				.join("|"),
-		[heartbeatTargets],
-	);
-
 	useEffect(() => {
 		if (!heartbeatTargets.length) {
 			setHeartbeats({});
@@ -79,7 +69,7 @@ export default function TableWrapper() {
 			active = false;
 			abortController.abort();
 		};
-	}, [heartbeatKey, heartbeatTargets]);
+	}, [heartbeatTargets]);
 
 	if (isLoading) {
 		return <LoadingPage />;
