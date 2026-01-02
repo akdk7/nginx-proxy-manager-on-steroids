@@ -297,6 +297,25 @@ const internalNginx = {
 			return null;
 		}
 	},
+	loadSslCertificate: async (host) => {
+		if (!host?.certificate_id || host.certificate_id <= 0 || host.certificate) {
+			return host?.certificate || null;
+		}
+		try {
+			const cert = await certificateModel
+				.query()
+				.where("is_deleted", 0)
+				.andWhere("id", host.certificate_id)
+				.first();
+			if (cert) {
+				host.certificate = cert;
+			}
+			return cert;
+		} catch (err) {
+			debug(logger, "Failed to load SSL certificate:", err.message);
+			return null;
+		}
+	},
 
 	updateRateLimitConfig: (host_type) => {
 		if (internalNginx.getFileFriendlyHostType(host_type) !== "proxy_host") {
@@ -397,6 +416,7 @@ const internalNginx = {
 		const renderEngine = utils.getRenderEngine();
 		const filename = internalNginx.getConfigName(nice_host_type, host.id);
 		const template = readTemplate(`${nice_host_type}.conf`);
+		const sslCertPromise = internalNginx.loadSslCertificate(host);
 		const upstreamCertPromise = internalNginx.loadUpstreamSslCertificate(host);
 		let origLocations;
 
@@ -444,7 +464,10 @@ const internalNginx = {
 		if (Array.isArray(host.locations)) {
 			//logger.info ('host.locations = ' + JSON.stringify(host.locations, null, 2));
 			origLocations = [].concat(host.locations);
-			await upstreamCertPromise;
+			await Promise.all([sslCertPromise, upstreamCertPromise]);
+			if (hasCertificate && !host.certificate) {
+				throw new errs.ConfigurationError(`Certificate ${host.certificate_id} not found for host ${host.id}`);
+			}
 			host.locations = await internalNginx.renderLocations(host);
 
 			// Allow someone who is using / custom location path to use it, and skip the default / location
@@ -452,7 +475,10 @@ const internalNginx = {
 				host.use_default_location = false;
 			}
 		} else {
-			await upstreamCertPromise;
+			await Promise.all([sslCertPromise, upstreamCertPromise]);
+			if (hasCertificate && !host.certificate) {
+				throw new errs.ConfigurationError(`Certificate ${host.certificate_id} not found for host ${host.id}`);
+			}
 		}
 
 		// Set the IPv6 setting for the host
