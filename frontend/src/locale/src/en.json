@@ -296,6 +296,54 @@
 	"dashboard": {
 		"defaultMessage": "Dashboard"
 	},
+	"dashboard.certificates": {
+		"defaultMessage": "Certificates"
+	},
+	"dashboard.certificates.expired": {
+		"defaultMessage": "Expired"
+	},
+	"dashboard.certificates.expiring": {
+		"defaultMessage": "Expiring Soon"
+	},
+	"dashboard.error-logs": {
+		"defaultMessage": "Error Logs"
+	},
+	"dashboard.error-logs.empty": {
+		"defaultMessage": "No error logs found"
+	},
+	"dashboard.error-logs.updated": {
+		"defaultMessage": "Last updated:"
+	},
+	"dashboard.error-logs.view": {
+		"defaultMessage": "Open Logs"
+	},
+	"dashboard.heartbeat": {
+		"defaultMessage": "Heartbeat Health"
+	},
+	"dashboard.heartbeat.proxy": {
+		"defaultMessage": "Proxy Hosts"
+	},
+	"dashboard.heartbeat.streams": {
+		"defaultMessage": "Streams"
+	},
+	"dashboard.recent-activity": {
+		"defaultMessage": "Recent Activity"
+	},
+	"dashboard.recent-activity.empty": {
+		"defaultMessage": "No recent events"
+	},
+	"dashboard.status": {
+		"defaultMessage": "Status Overview"
+	},
+	"dashboard.status.offline": {
+		"defaultMessage": "Offline"
+	},
+	"dashboard.status.online": {
+		"defaultMessage": "Online"
+	},
+	"dashboard.status.total": {
+		"defaultMessage": "Total"
+	},
 	"dead-host": {
 		"defaultMessage": "404 Host"
 	},
