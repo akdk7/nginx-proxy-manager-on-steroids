@@ -1,8 +1,10 @@
 ARG NGINX_IMAGE=nginxproxymanager/nginx-full:certbot-node
+ARG NGINX_VERSION
 ARG HTTP3_OPENSSL_REPO=https://github.com/quictls/openssl
 ARG HTTP3_OPENSSL_REF=OpenSSL_1_1_1w+quic
 
 FROM ${NGINX_IMAGE} AS nginx-http3-build
+ARG NGINX_VERSION
 ARG HTTP3_OPENSSL_REPO
 ARG HTTP3_OPENSSL_REF
 
@@ -20,9 +22,16 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
-	nginx_version="$(/usr/sbin/nginx -v 2>&1 | awk -F/ '{print $2}')"; \
+	nginx_version="${NGINX_VERSION:-$(/usr/sbin/nginx -v 2>&1 | awk -F/ '{print $2}')}"; \
 	mkdir -p /tmp/nginx-http3; \
-	curl -fsSL "http://nginx.org/download/nginx-${nginx_version}.tar.gz" | tar -xz -C /tmp/nginx-http3; \
+	if ! curl -fsSL "https://nginx.org/download/nginx-${nginx_version}.tar.gz" | tar -xz -C /tmp/nginx-http3; then \
+		nginx_version_fallback="${nginx_version%.*}"; \
+		if [ "${nginx_version_fallback}" = "${nginx_version}" ]; then \
+			exit 1; \
+		fi; \
+		curl -fsSL "https://nginx.org/download/nginx-${nginx_version_fallback}.tar.gz" | tar -xz -C /tmp/nginx-http3; \
+		nginx_version="${nginx_version_fallback}"; \
+	fi; \
 	git clone --depth 1 --branch "${HTTP3_OPENSSL_REF}" "${HTTP3_OPENSSL_REPO}" /tmp/nginx-http3/openssl; \
 	cd "/tmp/nginx-http3/nginx-${nginx_version}"; \
 	./configure \
