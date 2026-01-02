@@ -15,15 +15,15 @@ import { T } from "src/locale";
 type HostConfigType = "proxy-host" | "redirection-host" | "dead-host" | "stream";
 
 const showNginxConfigModal = (type: HostConfigType, id: number) => {
-	EasyModal.show(NginxConfigModal, { type, id });
+	EasyModal.show(NginxConfigModal, { type, hostId: id });
 };
 
 interface Props extends InnerModalProps {
-	id: number;
+	hostId: number;
 	type: HostConfigType;
 }
 
-const NginxConfigModal = EasyModal.create(({ id, type, visible, remove }: Props) => {
+const NginxConfigModal = EasyModal.create(({ hostId, type, visible, remove }: Props) => {
 	const [configText, setConfigText] = useState("");
 	const [error, setError] = useState<Error | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
@@ -40,13 +40,13 @@ const NginxConfigModal = EasyModal.create(({ id, type, visible, remove }: Props)
 		const loadConfig = async () => {
 			switch (type) {
 				case "proxy-host":
-					return getProxyHostConfig(id);
+					return getProxyHostConfig(hostId);
 				case "redirection-host":
-					return getRedirectionHostConfig(id);
+					return getRedirectionHostConfig(hostId);
 				case "dead-host":
-					return getDeadHostConfig(id);
+					return getDeadHostConfig(hostId);
 				case "stream":
-					return getStreamConfig(id);
+					return getStreamConfig(hostId);
 				default:
 					return Promise.resolve("");
 			}
@@ -74,7 +74,7 @@ const NginxConfigModal = EasyModal.create(({ id, type, visible, remove }: Props)
 		return () => {
 			active = false;
 		};
-	}, [id, type, visible]);
+	}, [hostId, type, visible]);
 
 	return (
 		<Modal show={visible} onHide={remove} size="lg">
