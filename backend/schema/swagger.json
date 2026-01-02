@@ -25,6 +25,10 @@
 			"description": "Endpoints related to Audit Logs"
 		},
 		{
+			"name": "logs",
+			"description": "Endpoints for log file access"
+		},
+		{
 			"name": "access-lists",
 			"description": "Endpoints related to Access Lists"
 		},
@@ -79,6 +83,16 @@
 		"/audit-log/{id}": {
 			"get": {
 				"$ref": "./paths/audit-log/id/get.json"
+			}
+		},
+		"/logs": {
+			"get": {
+				"$ref": "./paths/logs/get.json"
+			}
+		},
+		"/logs/{logName}": {
+			"get": {
+				"$ref": "./paths/logs/logName/get.json"
 			}
 		},
 		"/nginx/access-lists": {

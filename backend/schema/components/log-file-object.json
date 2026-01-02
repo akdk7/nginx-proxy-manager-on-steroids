@@ -1,0 +1,20 @@
+{
+	"type": "object",
+	"description": "Log file",
+	"required": ["name", "size", "modified_on"],
+	"properties": {
+		"name": {
+			"type": "string",
+			"description": "Log filename",
+			"example": "proxy-host-1_access.log"
+		},
+		"size": {
+			"type": "integer",
+			"description": "File size in bytes",
+			"example": 102400
+		},
+		"modified_on": {
+			"$ref": "../common.json#/properties/modified_on"
+		}
+	}
+}

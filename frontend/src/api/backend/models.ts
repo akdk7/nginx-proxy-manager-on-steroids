@@ -44,6 +44,17 @@ export interface AuditLog {
 	user?: User;
 }
 
+export interface LogFile {
+	name: string;
+	size: number;
+	modifiedOn: string;
+}
+
+export interface LogFileContent extends LogFile {
+	lines: string[];
+	truncated: boolean;
+}
+
 export interface AccessList {
 	id?: number;
 	createdOn?: string;

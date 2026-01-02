@@ -1,0 +1,54 @@
+{
+	"operationId": "getLogFile",
+	"summary": "Get log file contents",
+	"tags": ["logs"],
+	"security": [
+		{
+			"bearerAuth": ["admin"]
+		}
+	],
+	"parameters": [
+		{
+			"in": "path",
+			"name": "logName",
+			"description": "Log filename",
+			"schema": {
+				"type": "string"
+			},
+			"required": true,
+			"example": "proxy-host-1_access.log"
+		},
+		{
+			"in": "query",
+			"name": "lines",
+			"description": "Number of lines to return from the end of the file",
+			"schema": {
+				"type": "integer",
+				"minimum": 1,
+				"maximum": 5000
+			}
+		},
+		{
+			"in": "query",
+			"name": "max_bytes",
+			"description": "Maximum bytes to read from the end of the file",
+			"schema": {
+				"type": "integer",
+				"minimum": 1024,
+				"maximum": 5242880
+			}
+		}
+	],
+	"responses": {
+		"200": {
+			"description": "200 response",
+			"content": {
+				"application/json": {
+					"schema": {
+						"$ref": "../../../components/log-file-content.json"
+					}
+				}
+			}
+		}
+	}
+}

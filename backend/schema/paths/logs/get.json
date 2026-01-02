@@ -1,0 +1,22 @@
+{
+	"operationId": "listLogs",
+	"summary": "List log files",
+	"tags": ["logs"],
+	"security": [
+		{
+			"bearerAuth": ["admin"]
+		}
+	],
+	"responses": {
+		"200": {
+			"description": "200 response",
+			"content": {
+				"application/json": {
+					"schema": {
+						"$ref": "../../components/log-file-list.json"
+					}
+				}
+			}
+		}
+	}
+}

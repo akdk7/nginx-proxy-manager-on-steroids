@@ -15,6 +15,7 @@ import schemaRoutes from "./schema.js";
 import settingsRoutes from "./settings.js";
 import tokensRoutes from "./tokens.js";
 import usersRoutes from "./users.js";
+import logsRoutes from "./logs.js";
 
 const router = express.Router({
 	caseSensitive: true,
@@ -49,6 +50,7 @@ router.use("/schema", schemaRoutes);
 router.use("/tokens", tokensRoutes);
 router.use("/users", usersRoutes);
 router.use("/audit-log", auditLogRoutes);
+router.use("/logs", logsRoutes);
 router.use("/reports", reportsRoutes);
 router.use("/settings", settingsRoutes);
 router.use("/nginx/proxy-hosts", proxyHostsRoutes);

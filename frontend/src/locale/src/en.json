@@ -71,6 +71,51 @@
 	"auditlogs": {
 		"defaultMessage": "Audit Logs"
 	},
+	"logs": {
+		"defaultMessage": "Logs"
+	},
+	"logs.empty": {
+		"defaultMessage": "No log files found"
+	},
+	"logs.file": {
+		"defaultMessage": "Log File"
+	},
+	"logs.filter": {
+		"defaultMessage": "Filter (Regex)"
+	},
+	"logs.filter.ignore-case": {
+		"defaultMessage": "Ignore case"
+	},
+	"logs.filter.placeholder": {
+		"defaultMessage": "e.g. 502|timeout"
+	},
+	"logs.interval": {
+		"defaultMessage": "Refresh Interval"
+	},
+	"logs.interval.off": {
+		"defaultMessage": "Off"
+	},
+	"logs.lines": {
+		"defaultMessage": "Lines"
+	},
+	"logs.no-content": {
+		"defaultMessage": "No log output to display"
+	},
+	"logs.refresh": {
+		"defaultMessage": "Refresh"
+	},
+	"logs.regex.invalid": {
+		"defaultMessage": "Invalid regex"
+	},
+	"logs.tail": {
+		"defaultMessage": "Showing last {lines} lines"
+	},
+	"logs.updated": {
+		"defaultMessage": "Last updated"
+	},
+	"logs.updating": {
+		"defaultMessage": "Updating..."
+	},
 	"cancel": {
 		"defaultMessage": "Cancel"
 	},

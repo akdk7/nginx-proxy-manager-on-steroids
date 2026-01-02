@@ -10,6 +10,8 @@ export * from "./useDebouncedHeartbeats";
 export * from "./useDnsProviders";
 export * from "./useHealth";
 export * from "./useHostReport";
+export * from "./useLogFile";
+export * from "./useLogs";
 export * from "./useProxyHost";
 export * from "./useProxyHosts";
 export * from "./useRedirectionHost";

@@ -1,0 +1,24 @@
+{
+	"allOf": [
+		{
+			"$ref": "./log-file-object.json"
+		},
+		{
+			"type": "object",
+			"required": ["lines", "truncated"],
+			"properties": {
+				"lines": {
+					"type": "array",
+					"description": "Log lines",
+					"items": {
+						"type": "string"
+					}
+				},
+				"truncated": {
+					"type": "boolean",
+					"description": "Whether the output was truncated"
+				}
+			}
+		}
+	]
+}
