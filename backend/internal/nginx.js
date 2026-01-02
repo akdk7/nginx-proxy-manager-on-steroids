@@ -31,6 +31,7 @@ const rateLimitOverrideKeys = [
 let http3SupportCache;
 let http3SupportPromise;
 const proxyProtocolPortsCache = { ports: [], loadedAt: 0 };
+const defaultListenPorts = ["80", "443"];
 
 const normalizeProxyProtocolPorts = (ports) => {
 	if (!Array.isArray(ports)) {
@@ -44,6 +45,24 @@ const normalizeProxyProtocolPorts = (ports) => {
 		}
 	});
 	return Array.from(uniquePorts).sort((a, b) => Number(a) - Number(b));
+};
+
+const normalizeListenPorts = (ports, fallbackPorts = defaultListenPorts) => {
+	if (typeof ports === "string") {
+		ports = ports.split(",");
+	}
+	if (!Array.isArray(ports)) {
+		return [...fallbackPorts];
+	}
+	const uniquePorts = new Set();
+	ports.forEach((port) => {
+		const parsed = Number.parseInt(`${port}`, 10);
+		if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 65535) {
+			uniquePorts.add(`${parsed}`);
+		}
+	});
+	const normalized = Array.from(uniquePorts).sort((a, b) => Number(a) - Number(b));
+	return normalized.length ? normalized : [...fallbackPorts];
 };
 
 
@@ -365,7 +384,15 @@ const internalNginx = {
 				host.http3_support = false;
 			}
 		}
+		const hasCertificate = Number.parseInt(`${host.certificate_id || 0}`, 10) > 0;
+		const fallbackPorts = hasCertificate ? ["80", "443"] : ["80"];
+		host.listen_ports = normalizeListenPorts(host.listen_ports, fallbackPorts);
+		host.listen_ports_http = hasCertificate ? host.listen_ports.filter((port) => port === "80") : host.listen_ports;
+		host.listen_ports_ssl = hasCertificate ? host.listen_ports.filter((port) => port !== "80") : [];
 		host.proxy_protocol_ports = await internalNginx.getProxyProtocolPorts();
+		host.proxy_protocol_enabled = host.proxy_protocol_ports.some((port) => host.listen_ports.includes(port));
+		const http3Requested = host.http3_support === 1 || host.http3_support === true;
+		host.http3_enabled = http3Requested && hasCertificate && host.listen_ports_ssl.includes("443");
 
 		const renderEngine = utils.getRenderEngine();
 		const filename = internalNginx.getConfigName(nice_host_type, host.id);

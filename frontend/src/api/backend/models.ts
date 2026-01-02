@@ -153,6 +153,7 @@ export interface ProxyHost {
 	http2Support: boolean;
 	http3Support: boolean;
 	enabled: boolean;
+	listenPorts?: number[];
 	locations?: ProxyLocation[];
 	hstsEnabled: boolean;
 	hstsSubdomains: boolean;

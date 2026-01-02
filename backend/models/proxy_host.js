@@ -19,7 +19,6 @@ const boolFields = [
 	"allow_websocket_upgrade",
 	"http2_support",
 	"http3_support",
-	"proxy_protocol",
 	"enabled",
 	"hsts_enabled",
 	"hsts_subdomains",
@@ -74,7 +73,7 @@ class ProxyHost extends Model {
 	}
 
 	static get jsonAttributes() {
-		return ["domain_names", "meta", "locations", "upstream_servers", "security_headers"];
+		return ["domain_names", "listen_ports", "meta", "locations", "upstream_servers", "security_headers"];
 	}
 
 	static get relationMappings() {

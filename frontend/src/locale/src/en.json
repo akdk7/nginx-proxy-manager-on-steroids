@@ -326,6 +326,9 @@
 	"error.invalid-domain": {
 		"defaultMessage": "Invalid domain: {domain}"
 	},
+	"error.invalid-port": {
+		"defaultMessage": "Invalid port"
+	},
 	"error.invalid-email": {
 		"defaultMessage": "Invalid email address"
 	},
@@ -382,6 +385,12 @@
 	},
 	"host.forward-port": {
 		"defaultMessage": "Forward Port"
+	},
+	"host.listen-ports": {
+		"defaultMessage": "Listen Ports"
+	},
+	"host.listen-ports.help": {
+		"defaultMessage": "Comma-separated ports. Port 80 is required for ACME; when a certificate is set, all non-80 ports are treated as HTTPS."
 	},
 	"host.forward-scheme": {
 		"defaultMessage": "Scheme"

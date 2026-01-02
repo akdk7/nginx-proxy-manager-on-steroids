@@ -32,6 +32,7 @@ const fetchProxyHost = (id: number | "new") => {
 			http3Support: false,
 			forwardScheme: "",
 			enabled: true,
+			listenPorts: [80, 443],
 			hstsEnabled: false,
 			hstsSubdomains: false,
 		} as ProxyHost);

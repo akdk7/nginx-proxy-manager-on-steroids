@@ -40,6 +40,10 @@
 									"domain_names": [
 										"test.jc21com"
 									],
+									"listen_ports": [
+										80,
+										443
+									],
 									"forward_host": "127.0.0.1",
 									"forward_port": 8081,
 									"access_list_id": 1,

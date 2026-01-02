@@ -1,6 +1,6 @@
 import { migrate as logger } from "../logger.js";
 
-const migrateName = "proxy_protocol";
+const migrateName = "proxy_host_listen_ports";
 
 /**
  * Migrate
@@ -13,9 +13,10 @@ const migrateName = "proxy_protocol";
 const up = (knex) => {
 	logger.info(`[${migrateName}] Migrating Up...`);
 
-	return knex.schema.table("proxy_host", (proxy_host) => {
-		proxy_host.integer("proxy_protocol").notNull().unsigned().defaultTo(0);
-	})
+	return knex.schema
+		.table("proxy_host", (proxy_host) => {
+			proxy_host.json("listen_ports");
+		})
 		.then(() => {
 			logger.info(`[${migrateName}] proxy_host Table altered`);
 		});

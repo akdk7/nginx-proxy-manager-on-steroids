@@ -28,6 +28,26 @@ import { showObjectSuccess } from "src/notifications";
 
 const validateForwardHost = validateString(1, 255);
 const validateForwardPort = validateNumber(1, 65535);
+const defaultListenPorts = [80, 443];
+
+const normalizeListenPortsInput = (value: unknown) => {
+	if (value === null || typeof value === "undefined") {
+		return { ports: [...defaultListenPorts], hasValue: false };
+	}
+	const raw = `${value}`.trim();
+	if (!raw) {
+		return { ports: [], hasValue: true };
+	}
+	const parts = raw
+		.split(",")
+		.map((part) => part.trim())
+		.filter(Boolean);
+	const parsedPorts = parts
+		.map((part) => Number.parseInt(part, 10))
+		.filter((port) => Number.isFinite(port) && port >= 1 && port <= 65535);
+	const uniquePorts = Array.from(new Set<number>(parsedPorts)).sort((a, b) => a - b);
+	return { ports: uniquePorts, hasValue: true };
+};
 
 const showProxyHostModal = (id: number | "new") => {
 	EasyModal.show(ProxyHostModal, { id });
@@ -472,9 +492,12 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 	const onSubmit = async (values: any, { setSubmitting }: any) => {
 		setErrorMsg(null);
 
+		const normalizedListenPorts = normalizeListenPortsInput(values.listenPorts);
+
 		const { ...payload } = {
 			id: id === "new" ? undefined : id,
 			...values,
+			listenPorts: normalizedListenPorts.ports.length ? normalizedListenPorts.ports : defaultListenPorts,
 		};
 
 		setSubmitting(true);
@@ -508,6 +531,7 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 							forwardScheme: data?.forwardScheme || "http",
 							forwardHost: data?.forwardHost || "",
 							forwardPort: data?.forwardPort || undefined,
+							listenPorts: (data?.listenPorts?.length ? data.listenPorts : defaultListenPorts).join(", "),
 							accessListId: data?.accessListId || 0,
 							cachingEnabled: data?.cachingEnabled || false,
 							blockExploits: data?.blockExploits || false,
@@ -549,6 +573,8 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 									return intl.formatMessage({ id: "host.forward-port" });
 								case "forwardScheme":
 									return intl.formatMessage({ id: "host.forward-scheme" });
+								case "listenPorts":
+									return intl.formatMessage({ id: "host.listen-ports" });
 								case "rateLimitRps":
 									return intl.formatMessage({ id: "host.rate-limit.rps" });
 								case "rateLimitBurst":
@@ -757,6 +783,34 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 														</Field>
 												</div>
 											</div>
+											<Field name="listenPorts">
+												{({ field, form }: any) => (
+													<div className="mb-3">
+														<label className="form-label" htmlFor="listenPorts">
+															<T id="host.listen-ports" />
+														</label>
+														<input
+															{...field}
+															id="listenPorts"
+															type="text"
+															placeholder="80, 443"
+															className={`form-control ${
+																form.errors.listenPorts &&
+																(form.touched.listenPorts || form.submitCount > 0)
+																	? "is-invalid"
+																	: ""
+															}`}
+														/>
+														{form.errors.listenPorts &&
+														(form.touched.listenPorts || form.submitCount > 0) ? (
+															<div className="invalid-feedback">{form.errors.listenPorts}</div>
+														) : null}
+														<div className="form-hint">
+															<T id="host.listen-ports.help" />
+														</div>
+													</div>
+												)}
+											</Field>
 											<ForwardHeartbeatCheck
 												refreshKey={forwardHeartbeatKey}
 												onRefresh={() => setForwardHeartbeatKey((prev) => prev + 1)}

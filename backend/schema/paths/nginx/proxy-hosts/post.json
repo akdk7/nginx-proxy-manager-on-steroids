@@ -27,6 +27,9 @@
 						"domain_names": {
 							"$ref": "../../../components/proxy-host-object.json#/properties/domain_names"
 						},
+						"listen_ports": {
+							"$ref": "../../../components/proxy-host-object.json#/properties/listen_ports"
+						},
 						"forward_scheme": {
 							"$ref": "../../../components/proxy-host-object.json#/properties/forward_scheme"
 						},
@@ -111,6 +114,10 @@
 					"domain_names": [
 						"test.example.com"
 					],
+					"listen_ports": [
+						80,
+						443
+					],
 					"forward_scheme": "http",
 					"forward_host": "127.0.0.1",
 					"forward_port": 8080
@@ -132,6 +139,10 @@
 								"owner_user_id": 1,
 								"domain_names": [
 									"test.example.com"
+								],
+								"listen_ports": [
+									80,
+									443
 								],
 								"forward_host": "127.0.0.1",
 								"forward_port": 8080,

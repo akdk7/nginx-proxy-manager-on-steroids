@@ -37,6 +37,10 @@
 								"domain_names": [
 									"test.example.com"
 								],
+								"listen_ports": [
+									80,
+									443
+								],
 								"forward_host": "127.0.0.1",
 								"forward_port": 8080,
 								"access_list_id": 0,
