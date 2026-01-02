@@ -10,10 +10,12 @@ const normalizePorts = (ports: unknown): string[] => {
 	if (!Array.isArray(ports)) {
 		return [];
 	}
-	const parsedPorts = ports
+	const parsedPorts: number[] = ports
 		.map((port) => Number.parseInt(`${port}`, 10))
 		.filter((port) => Number.isFinite(port) && port >= 1 && port <= 65535);
-	return Array.from(new Set(parsedPorts)).sort((a, b) => a - b).map((port) => `${port}`);
+	return Array.from(new Set<number>(parsedPorts))
+		.sort((a, b) => a - b)
+		.map((port) => `${port}`);
 };
 
 export default function ProxyProtocol() {
@@ -28,10 +30,10 @@ export default function ProxyProtocol() {
 		setErrorMsg(null);
 
 		const rawPorts = Array.isArray(values.ports) ? values.ports : [];
-		const parsedPorts = rawPorts
+		const parsedPorts: number[] = rawPorts
 			.map((port: string) => Number.parseInt(`${port}`, 10))
 			.filter((port: number) => Number.isFinite(port) && port >= 1 && port <= 65535);
-		const uniquePorts = Array.from(new Set(parsedPorts)).sort((a, b) => a - b);
+		const uniquePorts = Array.from(new Set<number>(parsedPorts)).sort((a, b) => a - b);
 
 		const payload = {
 			id: "proxy-protocol",
@@ -163,7 +165,8 @@ export default function ProxyProtocol() {
 									<tbody>
 										{ports.length ? (
 											ports.map((_: string, idx: number) => {
-												const portError = errors.ports?.[idx];
+												const portErrors = Array.isArray(errors.ports) ? errors.ports : [];
+												const portError = portErrors[idx];
 												return (
 													<tr key={`proxy-protocol-port-${idx}`}>
 														<td>
