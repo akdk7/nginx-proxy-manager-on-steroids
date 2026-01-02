@@ -166,7 +166,8 @@ export default function ProxyProtocol() {
 										{ports.length ? (
 											ports.map((_: string, idx: number) => {
 												const portErrors = Array.isArray(errors.ports) ? errors.ports : [];
-												const portError = portErrors[idx];
+												const portError =
+													typeof portErrors[idx] === "string" ? portErrors[idx] : undefined;
 												return (
 													<tr key={`proxy-protocol-port-${idx}`}>
 														<td>
