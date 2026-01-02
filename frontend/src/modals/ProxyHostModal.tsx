@@ -642,6 +642,42 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 													<T id="column.ssl" />
 												</a>
 											</li>
+											<li className="nav-item" role="presentation">
+												<a
+													href="#tab-rate-limit"
+													className="nav-link"
+													data-bs-toggle="tab"
+													aria-selected="false"
+													tabIndex={-1}
+													role="tab"
+												>
+													<T id="host.rate-limit" />
+												</a>
+											</li>
+											<li className="nav-item" role="presentation">
+												<a
+													href="#tab-security-headers"
+													className="nav-link"
+													data-bs-toggle="tab"
+													aria-selected="false"
+													tabIndex={-1}
+													role="tab"
+												>
+													<T id="host.headers" />
+												</a>
+											</li>
+											<li className="nav-item" role="presentation">
+												<a
+													href="#tab-upstream-mtls"
+													className="nav-link"
+													data-bs-toggle="tab"
+													aria-selected="false"
+													tabIndex={-1}
+													role="tab"
+												>
+													<T id="host.upstream.mtls" />
+												</a>
+											</li>
 											<li className="nav-item ms-auto" role="presentation">
 												<a
 													href="#tab-advanced"
@@ -907,7 +943,7 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 												/>
 												<SSLOptionsFields color="bg-lime" />
 											</div>
-											<div className="tab-pane" id="tab-advanced" role="tabpanel">
+											<div className="tab-pane" id="tab-rate-limit" role="tabpanel">
 												<div className="mb-3">
 													<h4 className="py-2">
 														<T id="host.rate-limit" />
@@ -1008,6 +1044,8 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 														</div>
 													</div>
 												</div>
+											</div>
+											<div className="tab-pane" id="tab-security-headers" role="tabpanel">
 												<div className="mb-3">
 													<h4 className="py-2">
 														<T id="host.headers" />
@@ -1018,6 +1056,8 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 														prefix="proxy-host-headers"
 													/>
 												</div>
+											</div>
+											<div className="tab-pane" id="tab-upstream-mtls" role="tabpanel">
 												<div className="mb-3">
 													<h4 className="py-2">
 														<T id="host.upstream.mtls" />
@@ -1028,6 +1068,8 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 														allowNew
 													/>
 												</div>
+											</div>
+											<div className="tab-pane" id="tab-advanced" role="tabpanel">
 												<NginxConfigField />
 											</div>
 										</div>
