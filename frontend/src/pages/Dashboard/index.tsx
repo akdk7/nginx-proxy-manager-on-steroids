@@ -129,6 +129,8 @@ const Dashboard = () => {
 	}, [canViewStreams, streamsQuery.data]);
 
 	useEffect(() => {
+		// Re-run on refresh ticks, even if targets are unchanged.
+		void heartbeatRefreshKey;
 		if (!streamTargets.length) {
 			setStreamHeartbeatState({ status: "idle", results: [], error: undefined });
 			return;
