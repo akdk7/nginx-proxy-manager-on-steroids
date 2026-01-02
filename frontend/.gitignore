@@ -7,6 +7,10 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Allow UI log page sources
+!src/pages/Logs/
+!src/pages/Logs/**
+
 node_modules
 dist
 dist-ssr
