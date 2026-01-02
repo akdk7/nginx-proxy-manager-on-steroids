@@ -95,6 +95,7 @@
   "domains.hsts-enabled": "HSTS Enabled",
   "domains.hsts-subdomains": "HSTS Sub-domains",
   "domains.http2-support": "HTTP/2 Support",
+  "domains.http3-support": "HTTP/3 Support",
   "domains.use-dns": "Use DNS Challenge",
   "email-address": "Email address",
   "empty-search": "No results found",

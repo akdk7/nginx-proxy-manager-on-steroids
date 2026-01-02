@@ -31,7 +31,7 @@ interface Props {
 	label?: string;
 	required?: boolean;
 	allowNew?: boolean;
-	forHttp?: boolean; // the sslForced, http2Support, hstsEnabled, hstsSubdomains fields
+	forHttp?: boolean; // the sslForced, http2Support, http3Support, hstsEnabled, hstsSubdomains fields
 }
 export function SSLCertificateField({
 	name = "certificateId",
@@ -50,6 +50,7 @@ export function SSLCertificateField({
 		const {
 			sslForced,
 			http2Support,
+			http3Support,
 			hstsEnabled,
 			hstsSubdomains,
 			dnsChallenge,
@@ -60,6 +61,7 @@ export function SSLCertificateField({
 		if (forHttp && !newValue?.value) {
 			sslForced && setFieldValue("sslForced", false);
 			http2Support && setFieldValue("http2Support", false);
+			http3Support && setFieldValue("http3Support", false);
 			hstsEnabled && setFieldValue("hstsEnabled", false);
 			hstsSubdomains && setFieldValue("hstsSubdomains", false);
 		}

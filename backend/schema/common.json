@@ -118,6 +118,11 @@
 			"type": "boolean",
 			"example": true
 		},
+		"http3_support": {
+			"description": "HTTP/3 Protocol Support (QUIC)",
+			"type": "boolean",
+			"example": false
+		},
 		"block_exploits": {
 			"description": "Should we block common exploits",
 			"type": "boolean",
