@@ -93,8 +93,6 @@ RUN curl -sL https://taskfile.dev/install.sh | sh
 WORKDIR /root
 
 COPY --from=nginx-http3-build /tmp/nginx-http3/install/usr/sbin/nginx /usr/sbin/nginx
-COPY --from=nginx-http3-build /tmp/nginx-http3/install/usr/lib/nginx /usr/lib/nginx
-
 COPY rootfs /
 COPY scripts/install-s6 /tmp/install-s6
 RUN rm -f /etc/nginx/conf.d/production.conf \

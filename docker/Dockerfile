@@ -104,8 +104,6 @@ COPY docker/scripts/install-s6 /tmp/install-s6
 RUN /tmp/install-s6 "${TARGETPLATFORM}" && rm -f /tmp/install-s6
 
 COPY --from=nginx-http3-build /tmp/nginx-http3/install/usr/sbin/nginx /usr/sbin/nginx
-COPY --from=nginx-http3-build /tmp/nginx-http3/install/usr/lib/nginx /usr/lib/nginx
-
 EXPOSE 80 81 443 443/udp
 
 COPY backend       /app
