@@ -3,8 +3,68 @@
 
 # This file assumes that the frontend has been built using ./scripts/frontend-build
 
+ARG NGINX_IMAGE=nginxproxymanager/nginx-full:certbot-node
+ARG HTTP3_OPENSSL_REPO=https://github.com/quictls/openssl
+ARG HTTP3_OPENSSL_REF=OpenSSL_1_1_1w+quic
+
+FROM ${NGINX_IMAGE} AS nginx-http3-build
+ARG HTTP3_OPENSSL_REPO
+ARG HTTP3_OPENSSL_REF
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+		build-essential \
+		ca-certificates \
+		curl \
+		git \
+		libpcre3-dev \
+		zlib1g-dev \
+		perl \
+		pkg-config \
+	&& apt-get clean \
+	&& rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+	nginx_version="$(/usr/sbin/nginx -v 2>&1 | awk -F/ '{print $2}')"; \
+	mkdir -p /tmp/nginx-http3; \
+	curl -fsSL "http://nginx.org/download/nginx-${nginx_version}.tar.gz" | tar -xz -C /tmp/nginx-http3; \
+	git clone --depth 1 --branch "${HTTP3_OPENSSL_REF}" "${HTTP3_OPENSSL_REPO}" /tmp/nginx-http3/openssl; \
+	cd "/tmp/nginx-http3/nginx-${nginx_version}"; \
+	./configure \
+		--prefix=/usr \
+		--sbin-path=/usr/sbin/nginx \
+		--conf-path=/etc/nginx/nginx.conf \
+		--modules-path=/usr/lib/nginx/modules \
+		--pid-path=/run/nginx/nginx.pid \
+		--error-log-path=/var/log/nginx/error.log \
+		--http-log-path=/var/log/nginx/access.log \
+		--with-compat \
+		--with-http_ssl_module \
+		--with-http_v2_module \
+		--with-http_v3_module \
+		--with-http_realip_module \
+		--with-http_stub_status_module \
+		--with-http_gzip_static_module \
+		--with-http_auth_request_module \
+		--with-http_secure_link_module \
+		--with-http_slice_module \
+		--with-http_sub_module \
+		--with-http_addition_module \
+		--with-http_dav_module \
+		--with-http_flv_module \
+		--with-http_mp4_module \
+		--with-http_random_index_module \
+		--with-http_degradation_module \
+		--with-stream \
+		--with-stream_ssl_module \
+		--with-stream_ssl_preread_module \
+		--with-openssl=/tmp/nginx-http3/openssl \
+		--with-openssl-opt=enable-tls1_3; \
+	make -j"$(nproc)"; \
+	make install DESTDIR=/tmp/nginx-http3/install
+
 FROM nginxproxymanager/testca AS testca
-FROM nginxproxymanager/nginx-full:certbot-node
+FROM ${NGINX_IMAGE}
 
 ARG TARGETPLATFORM
 ARG BUILD_VERSION
@@ -34,7 +94,10 @@ RUN echo "fs.file-max = 65535" > /etc/sysctl.conf \
 COPY docker/scripts/install-s6 /tmp/install-s6
 RUN /tmp/install-s6 "${TARGETPLATFORM}" && rm -f /tmp/install-s6
 
-EXPOSE 80 81 443
+COPY --from=nginx-http3-build /tmp/nginx-http3/install/usr/sbin/nginx /usr/sbin/nginx
+COPY --from=nginx-http3-build /tmp/nginx-http3/install/usr/lib/nginx /usr/lib/nginx
+
+EXPOSE 80 81 443 443/udp
 
 COPY backend       /app
 COPY frontend/dist /app/frontend

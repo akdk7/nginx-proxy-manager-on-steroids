@@ -28,6 +28,8 @@ const rateLimitOverrideKeys = [
 	"rate_limit_burst",
 	"rate_limit_nodelay",
 ];
+let http3SupportCache;
+let http3SupportPromise;
 
 
 const readTemplate = (name) => {
@@ -39,6 +41,29 @@ const readTemplate = (name) => {
 };
 
 const internalNginx = {
+	isHttp3Supported: async () => {
+		if (typeof http3SupportCache === "boolean") {
+			return http3SupportCache;
+		}
+		if (http3SupportPromise) {
+			return http3SupportPromise;
+		}
+		http3SupportPromise = utils
+			.exec("/usr/sbin/nginx -V 2>&1")
+			.then((output) => {
+				http3SupportCache = output.includes("http_v3_module");
+				return http3SupportCache;
+			})
+			.catch((err) => {
+				debug(logger, "Failed to detect HTTP/3 support:", err.message);
+				http3SupportCache = false;
+				return false;
+			})
+			.finally(() => {
+				http3SupportPromise = null;
+			});
+		return http3SupportPromise;
+	},
 	/**
 	 * This will:
 	 * - test the nginx config first to make sure it's OK
@@ -288,6 +313,16 @@ const internalNginx = {
 		const nice_host_type = internalNginx.getFileFriendlyHostType(host_type);
 
 		debug(logger, `Generating ${nice_host_type} Config:`, JSON.stringify(host, null, 2));
+
+		if (host.http3_support === 1 || host.http3_support === true) {
+			const http3Supported = await internalNginx.isHttp3Supported();
+			if (!http3Supported) {
+				logger.warn(
+					`HTTP/3 requested but nginx lacks http_v3_module; disabling for host ${host.id}`,
+				);
+				host.http3_support = false;
+			}
+		}
 
 		const renderEngine = utils.getRenderEngine();
 		const filename = internalNginx.getConfigName(nice_host_type, host.id);

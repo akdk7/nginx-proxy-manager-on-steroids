@@ -6,10 +6,15 @@ services:
     build:
       context: ./
       dockerfile: ./dev/Dockerfile
+      args:
+        NGINX_IMAGE: "${NGINX_IMAGE:-nginxproxymanager/nginx-full:certbot-node}"
+        HTTP3_OPENSSL_REPO: "${HTTP3_OPENSSL_REPO:-https://github.com/quictls/openssl}"
+        HTTP3_OPENSSL_REF: "${HTTP3_OPENSSL_REF:-OpenSSL_1_1_1w+quic}"
     ports:
       - 3080:80
       - 3081:81
       - 3443:443
+      - 3443:443/udp
     networks:
       nginx_proxy_manager:
         aliases:
