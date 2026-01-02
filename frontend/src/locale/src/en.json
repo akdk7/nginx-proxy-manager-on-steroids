@@ -293,6 +293,9 @@
 	"domains.http3-support": {
 		"defaultMessage": "HTTP/3 Support"
 	},
+	"domains.proxy-protocol": {
+		"defaultMessage": "PROXY Protocol"
+	},
 	"domains.use-dns": {
 		"defaultMessage": "Use DNS Challenge"
 	},
@@ -313,6 +316,9 @@
 	},
 	"error.access.duplicate-usernames": {
 		"defaultMessage": "Authorization Usernames must be unique"
+	},
+	"error.duplicate-port": {
+		"defaultMessage": "Ports must be unique"
 	},
 	"error.invalid-auth": {
 		"defaultMessage": "Invalid email or password"
@@ -709,6 +715,18 @@
 	},
 	"settings.default-site.redirect": {
 		"defaultMessage": "Redirect"
+	},
+	"settings.proxy-protocol": {
+		"defaultMessage": "PROXY Protocol"
+	},
+	"settings.proxy-protocol.description": {
+		"defaultMessage": "Ports that should expect the PROXY protocol header for HTTP listeners (keep 80/443 consistent)"
+	},
+	"settings.proxy-protocol.empty": {
+		"defaultMessage": "No ports configured"
+	},
+	"settings.proxy-protocol.port": {
+		"defaultMessage": "Port"
 	},
 	"setup.preamble": {
 		"defaultMessage": "Get started by creating your admin account."

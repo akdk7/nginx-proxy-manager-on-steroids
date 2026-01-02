@@ -19,6 +19,7 @@ const boolFields = [
 	"allow_websocket_upgrade",
 	"http2_support",
 	"http3_support",
+	"proxy_protocol",
 	"enabled",
 	"hsts_enabled",
 	"hsts_subdomains",

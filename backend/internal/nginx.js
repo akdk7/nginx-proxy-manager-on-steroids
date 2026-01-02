@@ -30,6 +30,21 @@ const rateLimitOverrideKeys = [
 ];
 let http3SupportCache;
 let http3SupportPromise;
+const proxyProtocolPortsCache = { ports: [], loadedAt: 0 };
+
+const normalizeProxyProtocolPorts = (ports) => {
+	if (!Array.isArray(ports)) {
+		return [];
+	}
+	const uniquePorts = new Set();
+	ports.forEach((port) => {
+		const parsed = Number.parseInt(`${port}`, 10);
+		if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 65535) {
+			uniquePorts.add(`${parsed}`);
+		}
+	});
+	return Array.from(uniquePorts).sort((a, b) => Number(a) - Number(b));
+};
 
 
 const readTemplate = (name) => {
@@ -63,6 +78,21 @@ const internalNginx = {
 				http3SupportPromise = null;
 			});
 		return http3SupportPromise;
+	},
+	getProxyProtocolPorts: async () => {
+		const now = Date.now();
+		if (now - proxyProtocolPortsCache.loadedAt < 1000) {
+			return proxyProtocolPortsCache.ports;
+		}
+		const setting = await settingModel.query().where("id", "proxy-protocol").first();
+		const ports = normalizeProxyProtocolPorts(setting?.meta?.ports);
+		proxyProtocolPortsCache.ports = ports;
+		proxyProtocolPortsCache.loadedAt = now;
+		return ports;
+	},
+	invalidateProxyProtocolPortsCache: () => {
+		proxyProtocolPortsCache.ports = [];
+		proxyProtocolPortsCache.loadedAt = 0;
 	},
 	/**
 	 * This will:
@@ -335,6 +365,7 @@ const internalNginx = {
 				host.http3_support = false;
 			}
 		}
+		host.proxy_protocol_ports = await internalNginx.getProxyProtocolPorts();
 
 		const renderEngine = utils.getRenderEngine();
 		const filename = internalNginx.getConfigName(nice_host_type, host.id);
@@ -499,6 +530,7 @@ const internalNginx = {
 		const filename = `/data/nginx/temp/letsencrypt_${certificate.id}.conf`;
 
 		certificate.ipv6 = internalNginx.ipv6Enabled();
+		certificate.proxy_protocol_ports = await internalNginx.getProxyProtocolPorts();
 
 		try {
 			const configText = await renderEngine.parseAndRender(template, certificate);

@@ -64,9 +64,13 @@ const internalSetting = {
 								})
 								.then(() => {
 									// I'm being slack here I know..
-									throw new errs.ValidationError("Could not reconfigure Nginx. Please check logs.");
-								});
+								throw new errs.ValidationError("Could not reconfigure Nginx. Please check logs.");
+							});
 						});
+				}
+				if (row.id === "proxy-protocol") {
+					internalNginx.invalidateProxyProtocolPortsCache();
+					return internalNginx.regenerateAllConfigs().then(() => row);
 				}
 				return row;
 			});

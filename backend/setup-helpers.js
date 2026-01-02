@@ -75,6 +75,11 @@ const createSetup = ({
 	 */
 	const setupDefaultSettings = async () => {
 		const row = await settingModel.query().select("id").where({ id: "default-site" }).first();
+		const proxyProtocolRow = await settingModel
+			.query()
+			.select("id")
+			.where({ id: "proxy-protocol" })
+			.first();
 
 		if (!row?.id) {
 			await settingModel.query().insert({
@@ -85,6 +90,18 @@ const createSetup = ({
 				meta: {},
 			});
 			logger.info("Default settings added");
+		}
+		if (!proxyProtocolRow?.id) {
+			await settingModel.query().insert({
+				id: "proxy-protocol",
+				name: "PROXY Protocol",
+				description: "Ports that should expect the PROXY protocol header",
+				value: "ports",
+				meta: {
+					ports: [],
+				},
+			});
+			logger.info("PROXY protocol settings added");
 		}
 	};
 

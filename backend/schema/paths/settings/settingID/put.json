@@ -14,7 +14,7 @@
 			"schema": {
 				"type": "string",
 				"minLength": 1,
-				"enum": ["default-site"]
+				"enum": ["default-site", "proxy-protocol"]
 			},
 			"required": true,
 			"description": "Setting ID",
@@ -34,7 +34,7 @@
 						"value": {
 							"type": "string",
 							"minLength": 1,
-							"enum": ["congratulations", "404", "444", "redirect", "html"],
+							"enum": ["congratulations", "404", "444", "redirect", "html", "ports"],
 							"example": "html"
 						},
 						"meta": {
@@ -46,6 +46,15 @@
 								},
 								"html": {
 									"type": "string"
+								},
+								"ports": {
+									"type": "array",
+									"uniqueItems": true,
+									"items": {
+										"type": "integer",
+										"minimum": 1,
+										"maximum": 65535
+									}
 								}
 							},
 							"example": {

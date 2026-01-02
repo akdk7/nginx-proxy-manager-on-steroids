@@ -21,6 +21,15 @@
 									"description": "What to show when Nginx is hit with an unknown Host",
 									"value": "congratulations",
 									"meta": {}
+								},
+								{
+									"id": "proxy-protocol",
+									"name": "PROXY Protocol",
+									"description": "Ports that should expect the PROXY protocol header",
+									"value": "ports",
+									"meta": {
+										"ports": []
+									}
 								}
 							]
 						}
