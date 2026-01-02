@@ -10,58 +10,68 @@ interface Props {
 	heartbeat?: HeartbeatResult;
 	isChecking?: boolean;
 	onRefresh?: () => void;
+	layout?: "column" | "row";
+	label?: ReactNode;
 }
 
 const Badge = ({ color, children }: { color: string; children: ReactNode }) => (
 	<span className={`badge bg-${color}-lt`}>{children}</span>
 );
 
-export function HeartbeatStatusFormatter({ enabled, heartbeat, isChecking, onRefresh }: Props) {
+export function HeartbeatStatusFormatter({
+	enabled,
+	heartbeat,
+	isChecking,
+	onRefresh,
+	layout = "column",
+	label,
+}: Props) {
 	const checkedAt = heartbeat?.checkedAt ? formatDateTime(heartbeat.checkedAt) : null;
 	const latencyMs = Number.isFinite(heartbeat?.latencyMs) ? Math.round(heartbeat?.latencyMs || 0) : null;
 	const statusCode = Number.isFinite(heartbeat?.statusCode) ? heartbeat?.statusCode : null;
 	const resolvedStatus =
 		heartbeat?.status ?? (heartbeat ? (heartbeat.ok ? "ok" : "failed") : undefined);
+	const labelContent = label ?? <T id="host.heartbeat" />;
 
 	const badgeContent = (() => {
 		if (!enabled) {
 			return (
 				<Badge color="secondary">
-					<T id="host.heartbeat" />: <T id="host.heartbeat.status.disabled" />
+					{labelContent}: <T id="host.heartbeat.status.disabled" />
 				</Badge>
 			);
 		}
 		if (isChecking) {
 			return (
 				<Badge color="yellow">
-					<T id="host.heartbeat" />: <T id="host.heartbeat.status.checking" />
+					{labelContent}: <T id="host.heartbeat.status.checking" />
 				</Badge>
 			);
 		}
 		if (!heartbeat) {
 			return (
 				<Badge color="secondary">
-					<T id="host.heartbeat" />: <T id="host.heartbeat.status.unknown" />
+					{labelContent}: <T id="host.heartbeat.status.unknown" />
 				</Badge>
 			);
 		}
 		if (resolvedStatus === "unsupported") {
 			return (
 				<Badge color="secondary">
-					<T id="host.heartbeat" />: <T id="host.heartbeat.status.unsupported" />
+					{labelContent}: <T id="host.heartbeat.status.unsupported" />
 				</Badge>
 			);
 		}
 		if (heartbeat.ok) {
 			return (
 				<Badge color="lime">
-					<T id="host.heartbeat" />: <T id="host.heartbeat.status.ok" />
+					{labelContent}: <T id="host.heartbeat.status.ok" />
 				</Badge>
 			);
 		}
 		return (
 			<Badge color="danger">
-				<T id="host.heartbeat" />: <T id="host.heartbeat.status.failed" />
+				{labelContent}: <T id="host.heartbeat.status.failed" />
 			</Badge>
 		);
 	})();
@@ -134,7 +144,13 @@ export function HeartbeatStatusFormatter({ enabled, heartbeat, isChecking, onRef
 		: null;
 
 	return (
-		<div className="d-flex flex-column gap-1">
+		<div
+			className={
+				layout === "row"
+					? "d-inline-flex align-items-center gap-2 flex-wrap"
+					: "d-flex flex-column gap-1"
+			}
+		>
 			<TrueFalseFormatter value={enabled} trueLabel="online" falseLabel="offline" />
 			{popover ? (
 				<OverlayTrigger trigger={["hover", "click", "focus"]} placement="bottom" overlay={popover}>

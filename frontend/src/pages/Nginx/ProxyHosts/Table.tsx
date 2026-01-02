@@ -114,6 +114,8 @@ export default function Table({
 							heartbeat={heartbeat}
 							isChecking={heartbeatsLoading || !!heartbeatRefreshIds?.[host.id]}
 							onRefresh={onHeartbeatRefresh ? () => onHeartbeatRefresh(host.id) : undefined}
+							layout="row"
+							label="HB"
 						/>
 					);
 				},

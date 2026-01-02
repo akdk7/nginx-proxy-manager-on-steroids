@@ -96,7 +96,7 @@ export default function Table({ data, isFetching, onDelete, onRenew, onDownload,
 						);
 					}
 					return (
-						<span className="d-inline-flex flex-column gap-1">
+						<span className="d-inline-flex align-items-center gap-2 flex-wrap">
 							<DateFormatter value={value} highlightPast />
 							{badge}
 						</span>
