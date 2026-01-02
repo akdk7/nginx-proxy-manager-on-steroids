@@ -1,10 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getLogFile, type LogFileContent } from "src/api/backend";
-
-interface LogFileParams {
-	lines?: number;
-	maxBytes?: number;
-}
+import { getLogFile, type LogFileContent, type LogFileParams } from "src/api/backend";
 
 const fetchLogFile = (name: string, params?: LogFileParams) => {
 	return getLogFile(name, params);

@@ -2,7 +2,7 @@ import type { StringifiableRecord } from "query-string";
 import { get } from "./base";
 import type { LogFileContent } from "./models";
 
-interface LogFileParams extends StringifiableRecord {
+export interface LogFileParams extends StringifiableRecord {
 	lines?: number;
 	maxBytes?: number;
 }
