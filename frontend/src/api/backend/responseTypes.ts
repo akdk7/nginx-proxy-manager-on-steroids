@@ -4,6 +4,9 @@ export interface HealthResponse {
 	status: string;
 	version: AppVersion;
 	setup: boolean;
+	nginx?: {
+		http3Supported: boolean;
+	};
 }
 
 export interface TokenResponse {

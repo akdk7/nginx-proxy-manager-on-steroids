@@ -1,6 +1,7 @@
 import express from "express";
 import errs from "../lib/error.js";
 import pjson from "../package.json" with { type: "json" };
+import internalNginx from "../internal/nginx.js";
 import { isSetup } from "../setup.js";
 import auditLogRoutes from "./audit-log.js";
 import accessListsRoutes from "./nginx/access_lists.js";
@@ -28,10 +29,14 @@ const router = express.Router({
 router.get("/", async (_, res /*, next*/) => {
 	const version = pjson.version.split("-").shift().split(".");
 	const setup = await isSetup();
+	const http3Supported = await internalNginx.isHttp3Supported();
 
 	res.status(200).send({
 		status: "OK",
 		setup,
+		nginx: {
+			http3_supported: http3Supported,
+		},
 		version: {
 			major: Number.parseInt(version.shift(), 10),
 			minor: Number.parseInt(version.shift(), 10),

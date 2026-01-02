@@ -1,6 +1,8 @@
 import cn from "classnames";
 import { Field, useFormikContext } from "formik";
+import { useEffect } from "react";
 import { DNSProviderFields, DomainNamesField } from "src/components";
+import { useHealth } from "src/hooks/useHealth";
 import { T } from "src/locale";
 
 interface Props {
@@ -17,6 +19,15 @@ export function SSLOptionsFields({ forHttp = true, forceDNSForNew, requireDomain
 	const hasCertificate = newCertificate || (v?.certificateId && v?.certificateId > 0);
 	const { sslForced, http2Support, http3Support, hstsEnabled, hstsSubdomains, meta } = v;
 	const { dnsChallenge } = meta || {};
+	const { data: healthData } = useHealth({ refetchInterval: 60 * 1000, staleTime: 55 * 1000 });
+	const http3Supported = healthData?.nginx?.http3Supported;
+	const http3Disabled = http3Supported === false;
+
+	useEffect(() => {
+		if (http3Disabled && http3Support) {
+			setFieldValue("http3Support", false);
+		}
+	}, [http3Disabled, http3Support, setFieldValue]);
 
 	if (forceDNSForNew && newCertificate && !dnsChallenge) {
 		setFieldValue("meta.dnsChallenge", true);
@@ -122,7 +133,7 @@ export function SSLOptionsFields({ forHttp = true, forceDNSForNew, requireDomain
 									type="checkbox"
 									checked={!!http3Support}
 									onChange={(e) => handleToggleChange(e, field.name)}
-									disabled={!hasCertificate}
+									disabled={!hasCertificate || http3Disabled}
 								/>
 								<span className="form-check-label">
 									<T id="domains.http3-support" />

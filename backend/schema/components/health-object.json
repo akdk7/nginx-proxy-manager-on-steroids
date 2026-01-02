@@ -14,6 +14,18 @@
 			"description": "Whether the initial setup has been completed",
 			"example": true
 		},
+		"nginx": {
+			"type": "object",
+			"description": "Nginx capabilities",
+			"additionalProperties": false,
+			"properties": {
+				"http3_supported": {
+					"type": "boolean",
+					"description": "HTTP/3 module support detected",
+					"example": false
+				}
+			}
+		},
 		"version": {
 			"type": "object",
 			"description": "The version object",
