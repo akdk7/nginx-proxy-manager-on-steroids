@@ -8,8 +8,18 @@ import {
 	IconDisc,
 	IconShield,
 } from "@tabler/icons-react";
+import {
+	ArcElement,
+	BarElement,
+	CategoryScale,
+	Chart as ChartJS,
+	Legend,
+	LinearScale,
+	Tooltip,
+} from "chart.js";
 import { differenceInDays, isPast } from "date-fns";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Bar, Doughnut } from "react-chartjs-2";
 import { useNavigate } from "react-router-dom";
 import { HasPermission } from "src/components";
 import { EventFormatter } from "src/components/Table/Formatter/EventFormatter";
@@ -26,7 +36,7 @@ import {
 	useUser,
 	useDebouncedHeartbeats,
 } from "src/hooks";
-import { formatDateTime, parseDate, T } from "src/locale";
+import { formatDateTime, intl, parseDate, T } from "src/locale";
 import {
 	ADMIN,
 	CERTIFICATES,
@@ -39,9 +49,12 @@ import {
 	isAdmin,
 } from "src/modules/Permissions";
 
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
+
 const heartbeatRefreshMs = 15000;
 const certExpiryWarningDays = 30;
 const errorLogLimit = 5;
+const chartEmptyValue = 0;
 
 const formatBytes = (value: number) => {
 	if (!Number.isFinite(value)) {
@@ -246,6 +259,101 @@ const Dashboard = () => {
 
 	const canViewHosts = canViewProxy || canViewRedirection || canViewStreams || canViewDeadHosts;
 
+	const statusChartData = useMemo(() => {
+		return {
+			labels: [
+				intl.formatMessage({ id: "dashboard.status.online" }),
+				intl.formatMessage({ id: "dashboard.status.offline" }),
+			],
+			datasets: [
+				{
+					data: [statusTotals.online, statusTotals.offline],
+					backgroundColor: ["#2fb344", "#d63939"],
+					borderWidth: 0,
+				},
+			],
+		};
+	}, [statusTotals.online, statusTotals.offline]);
+
+	const certValid = Math.max(0, certStats.total - certStats.expiring - certStats.expired);
+	const certificatesChartData = useMemo(() => {
+		return {
+			labels: [
+				intl.formatMessage({ id: "dashboard.certificates.valid" }),
+				intl.formatMessage({ id: "dashboard.certificates.expiring" }),
+				intl.formatMessage({ id: "dashboard.certificates.expired" }),
+			],
+			datasets: [
+				{
+					data: [certValid, certStats.expiring, certStats.expired],
+					backgroundColor: ["#206bc4", "#f59f00", "#d63939"],
+					borderWidth: 0,
+				},
+			],
+		};
+	}, [certStats.expiring, certStats.expired, certValid]);
+
+	const heartbeatChartData = useMemo(() => {
+		const dataSets = [
+			{
+				label: intl.formatMessage({ id: "host.heartbeat.status.ok" }),
+				data: [heartbeatCounts.proxy.ok, heartbeatCounts.streams.ok],
+				backgroundColor: "#2fb344",
+			},
+			{
+				label: intl.formatMessage({ id: "host.heartbeat.status.failed" }),
+				data: [heartbeatCounts.proxy.failed, heartbeatCounts.streams.failed],
+				backgroundColor: "#d63939",
+			},
+		];
+		if (heartbeatCounts.proxy.unsupported || heartbeatCounts.streams.unsupported) {
+			dataSets.push({
+				label: intl.formatMessage({ id: "host.heartbeat.status.unsupported" }),
+				data: [heartbeatCounts.proxy.unsupported, heartbeatCounts.streams.unsupported],
+				backgroundColor: "#868e96",
+			});
+		}
+		return {
+			labels: [
+				intl.formatMessage({ id: "dashboard.heartbeat.proxy" }),
+				intl.formatMessage({ id: "dashboard.heartbeat.streams" }),
+			],
+			datasets: dataSets,
+		};
+	}, [heartbeatCounts.proxy, heartbeatCounts.streams]);
+
+	const doughnutOptions = {
+		maintainAspectRatio: false,
+		plugins: {
+			legend: {
+				position: "bottom" as const,
+				labels: {
+					boxWidth: 10,
+				},
+			},
+		},
+	};
+
+	const barOptions = {
+		maintainAspectRatio: false,
+		scales: {
+			x: { stacked: true },
+			y: {
+				stacked: true,
+				beginAtZero: true,
+				ticks: { precision: 0 },
+			},
+		},
+		plugins: {
+			legend: {
+				position: "bottom" as const,
+				labels: {
+					boxWidth: 10,
+				},
+			},
+		},
+	};
+
 	return (
 		<div>
 			<h2>
@@ -371,29 +479,44 @@ const Dashboard = () => {
 								</h3>
 							</div>
 							<div className="card-body">
-								<div className="row">
-									<div className="col-sm-4">
-										<div className="text-muted">
-											<T id="dashboard.status.online" />
-										</div>
-										<div className="h3 mb-0">
-											{statusLoading ? "..." : statusTotals.online}
+								<div className="row align-items-center">
+									<div className="col-md-8">
+										<div className="row">
+											<div className="col-sm-4">
+												<div className="text-muted">
+													<T id="dashboard.status.online" />
+												</div>
+												<div className="h3 mb-0">
+													{statusLoading ? "..." : statusTotals.online}
+												</div>
+											</div>
+											<div className="col-sm-4">
+												<div className="text-muted">
+													<T id="dashboard.status.offline" />
+												</div>
+												<div className="h3 mb-0">
+													{statusLoading ? "..." : statusTotals.offline}
+												</div>
+											</div>
+											<div className="col-sm-4">
+												<div className="text-muted">
+													<T id="dashboard.status.total" />
+												</div>
+												<div className="h3 mb-0">
+													{statusLoading ? "..." : statusTotals.total}
+												</div>
+											</div>
 										</div>
 									</div>
-									<div className="col-sm-4">
-										<div className="text-muted">
-											<T id="dashboard.status.offline" />
-										</div>
-										<div className="h3 mb-0">
-											{statusLoading ? "..." : statusTotals.offline}
-										</div>
-									</div>
-									<div className="col-sm-4">
-										<div className="text-muted">
-											<T id="dashboard.status.total" />
-										</div>
-										<div className="h3 mb-0">
-											{statusLoading ? "..." : statusTotals.total}
+									<div className="col-md-4">
+										<div style={{ height: 150 }}>
+											{statusTotals.total > chartEmptyValue ? (
+												<Doughnut data={statusChartData} options={doughnutOptions} />
+											) : (
+												<div className="text-muted">
+													<T id="dashboard.chart.empty" />
+												</div>
+											)}
 										</div>
 									</div>
 								</div>
@@ -413,7 +536,7 @@ const Dashboard = () => {
 										</h3>
 									</div>
 									<div className="card-body">
-										<div className="row">
+										<div className="row align-items-center">
 											<div className="col-6">
 												<div className="text-muted">
 													<T id="dashboard.certificates.expiring" />
@@ -428,6 +551,17 @@ const Dashboard = () => {
 												</div>
 												<div className="h3 mb-0">
 													{certificatesQuery.isLoading ? "..." : certStats.expired}
+												</div>
+											</div>
+											<div className="col-12 mt-3">
+												<div style={{ height: 140 }}>
+													{certStats.total > chartEmptyValue ? (
+														<Doughnut data={certificatesChartData} options={doughnutOptions} />
+													) : (
+														<div className="text-muted">
+															<T id="dashboard.chart.empty" />
+														</div>
+													)}
 												</div>
 											</div>
 										</div>
@@ -492,6 +626,21 @@ const Dashboard = () => {
 												<T id="logs.updating" />
 											</div>
 										) : null}
+										<div className="mt-3" style={{ height: 160 }}>
+											{heartbeatCounts.proxy.ok +
+												heartbeatCounts.proxy.failed +
+												heartbeatCounts.proxy.unsupported +
+												heartbeatCounts.streams.ok +
+												heartbeatCounts.streams.failed +
+												heartbeatCounts.streams.unsupported >
+											chartEmptyValue ? (
+												<Bar data={heartbeatChartData} options={barOptions} />
+											) : (
+												<div className="text-muted">
+													<T id="dashboard.chart.empty" />
+												</div>
+											)}
+										</div>
 									</div>
 								</div>
 							</div>

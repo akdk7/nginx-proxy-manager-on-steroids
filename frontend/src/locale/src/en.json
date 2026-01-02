@@ -296,6 +296,9 @@
 	"dashboard": {
 		"defaultMessage": "Dashboard"
 	},
+	"dashboard.chart.empty": {
+		"defaultMessage": "No data available"
+	},
 	"dashboard.certificates": {
 		"defaultMessage": "Certificates"
 	},
@@ -304,6 +307,9 @@
 	},
 	"dashboard.certificates.expiring": {
 		"defaultMessage": "Expiring Soon"
+	},
+	"dashboard.certificates.valid": {
+		"defaultMessage": "Valid"
 	},
 	"dashboard.error-logs": {
 		"defaultMessage": "Error Logs"
