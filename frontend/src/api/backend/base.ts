@@ -62,6 +62,29 @@ async function processResponse(response: Response) {
 	return camelizeKeys(payload) as any;
 }
 
+async function processTextResponse(response: Response) {
+	if (!response.ok) {
+		let payload: any = null;
+		try {
+			payload = await response.json();
+		} catch {
+			payload = null;
+		}
+		if (response.status === 401) {
+			AuthStore.clear();
+			queryClient.clear();
+			window.location.reload();
+		}
+		if (payload?.error?.messageI18n || payload?.error?.message) {
+			throw new Error(
+				typeof payload.error.messageI18n !== "undefined" ? payload.error.messageI18n : payload.error.message,
+			);
+		}
+		throw new Error("Request failed");
+	}
+	return response.text();
+}
+
 interface GetArgs {
 	url: string;
 	params?: queryString.StringifiableRecord;
@@ -78,6 +101,10 @@ async function baseGet({ url, params }: GetArgs, abortController?: AbortControll
 
 export async function get(args: GetArgs, abortController?: AbortController) {
 	return processResponse(await baseGet(args, abortController));
+}
+
+export async function getText(args: GetArgs, abortController?: AbortController) {
+	return processTextResponse(await baseGet(args, abortController));
 }
 
 export async function download({ url, params }: GetArgs, filename = "download.file") {

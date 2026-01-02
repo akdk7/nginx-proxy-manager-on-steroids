@@ -1,0 +1,40 @@
+{
+	"operationId": "getProxyHostConfig",
+	"summary": "Get proxy host nginx config",
+	"tags": ["proxy-hosts"],
+	"security": [
+		{
+			"bearerAuth": ["proxy_hosts.view"]
+		}
+	],
+	"parameters": [
+		{
+			"in": "path",
+			"name": "hostID",
+			"description": "The ID of the Proxy Host",
+			"schema": {
+				"type": "integer",
+				"minimum": 1
+			},
+			"required": true,
+			"example": 1
+		}
+	],
+	"responses": {
+		"200": {
+			"description": "200 response",
+			"content": {
+				"text/plain": {
+					"schema": {
+						"type": "string"
+					},
+					"examples": {
+						"default": {
+							"value": "server { ... }"
+						}
+					}
+				}
+			}
+		}
+	}
+}

@@ -207,6 +207,18 @@ const internalNginx = {
 		return `/data/nginx/${internalNginx.getFileFriendlyHostType(host_type)}/${host_id}.conf`;
 	},
 
+	readConfigText: (host_type, host_id) => {
+		const configFile = internalNginx.getConfigName(host_type, host_id);
+		const errorFile = `${configFile}.err`;
+		if (fs.existsSync(configFile)) {
+			return fs.readFileSync(configFile, { encoding: "utf8" });
+		}
+		if (fs.existsSync(errorFile)) {
+			return fs.readFileSync(errorFile, { encoding: "utf8" });
+		}
+		throw new errs.ItemNotFoundError(`${host_type}:${host_id}`);
+	},
+
 	getRateLimitZoneName: (host_id, location_id) => {
 		if (typeof location_id !== "undefined" && location_id !== null) {
 			return `proxy_host_${host_id}_loc_${location_id}_rate_limit`;

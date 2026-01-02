@@ -170,6 +170,11 @@
 				"$ref": "./paths/nginx/proxy-hosts/hostID/delete.json"
 			}
 		},
+		"/nginx/proxy-hosts/{hostID}/config": {
+			"get": {
+				"$ref": "./paths/nginx/proxy-hosts/hostID/config/get.json"
+			}
+		},
 		"/nginx/proxy-hosts/{hostID}/enable": {
 			"post": {
 				"$ref": "./paths/nginx/proxy-hosts/hostID/enable/post.json"
@@ -199,6 +204,11 @@
 				"$ref": "./paths/nginx/redirection-hosts/hostID/delete.json"
 			}
 		},
+		"/nginx/redirection-hosts/{hostID}/config": {
+			"get": {
+				"$ref": "./paths/nginx/redirection-hosts/hostID/config/get.json"
+			}
+		},
 		"/nginx/redirection-hosts/{hostID}/enable": {
 			"post": {
 				"$ref": "./paths/nginx/redirection-hosts/hostID/enable/post.json"
@@ -226,6 +236,11 @@
 			},
 			"delete": {
 				"$ref": "./paths/nginx/dead-hosts/hostID/delete.json"
+			}
+		},
+		"/nginx/dead-hosts/{hostID}/config": {
+			"get": {
+				"$ref": "./paths/nginx/dead-hosts/hostID/config/get.json"
 			}
 		},
 		"/nginx/dead-hosts/{hostID}/enable": {
@@ -260,6 +275,11 @@
 			},
 			"delete": {
 				"$ref": "./paths/nginx/streams/streamID/delete.json"
+			}
+		},
+		"/nginx/streams/{streamID}/config": {
+			"get": {
+				"$ref": "./paths/nginx/streams/streamID/config/get.json"
 			}
 		},
 		"/nginx/streams/{streamID}/enable": {

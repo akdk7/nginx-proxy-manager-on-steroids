@@ -65,6 +65,9 @@
 	"action.view-details": {
 		"defaultMessage": "View Details"
 	},
+	"action.view-config": {
+		"defaultMessage": "View Config"
+	},
 	"auditlogs": {
 		"defaultMessage": "Audit Logs"
 	},

@@ -1,0 +1,40 @@
+{
+	"operationId": "getStreamConfig",
+	"summary": "Get stream nginx config",
+	"tags": ["streams"],
+	"security": [
+		{
+			"bearerAuth": ["streams.view"]
+		}
+	],
+	"parameters": [
+		{
+			"in": "path",
+			"name": "streamID",
+			"description": "The ID of the Stream",
+			"schema": {
+				"type": "integer",
+				"minimum": 1
+			},
+			"required": true,
+			"example": 1
+		}
+	],
+	"responses": {
+		"200": {
+			"description": "200 response",
+			"content": {
+				"text/plain": {
+					"schema": {
+						"type": "string"
+					},
+					"examples": {
+						"default": {
+							"value": "stream { ... }"
+						}
+					}
+				}
+			}
+		}
+	}
+}

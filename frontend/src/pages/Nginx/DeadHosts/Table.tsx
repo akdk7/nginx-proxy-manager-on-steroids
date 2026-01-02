@@ -1,4 +1,4 @@
-import { IconDotsVertical, IconEdit, IconPower, IconTrash } from "@tabler/icons-react";
+import { IconDotsVertical, IconEdit, IconFileText, IconPower, IconTrash } from "@tabler/icons-react";
 import { createColumnHelper, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useMemo } from "react";
 import type { DeadHost } from "src/api/backend";
@@ -12,6 +12,7 @@ import {
 } from "src/components";
 import { TableLayout } from "src/components/Table/TableLayout";
 import { intl, T } from "src/locale";
+import { showNginxConfigModal } from "src/modals";
 import { DEAD_HOSTS, MANAGE } from "src/modules/Permissions";
 
 interface Props {
@@ -91,6 +92,17 @@ export default function Table({ data, isFetching, onEdit, onDelete, onDisableTog
 								>
 									<IconEdit size={16} />
 									<T id="action.edit" />
+								</a>
+								<a
+									className="dropdown-item"
+									href="#"
+									onClick={(e) => {
+										e.preventDefault();
+										showNginxConfigModal("dead-host", info.row.original.id);
+									}}
+								>
+									<IconFileText size={16} />
+									<T id="action.view-config" />
 								</a>
 								<HasPermission section={DEAD_HOSTS} permission={MANAGE} hideError>
 									<a

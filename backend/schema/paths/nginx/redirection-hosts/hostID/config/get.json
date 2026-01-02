@@ -1,0 +1,40 @@
+{
+	"operationId": "getRedirectionHostConfig",
+	"summary": "Get redirection host nginx config",
+	"tags": ["redirection-hosts"],
+	"security": [
+		{
+			"bearerAuth": ["redirection_hosts.view"]
+		}
+	],
+	"parameters": [
+		{
+			"in": "path",
+			"name": "hostID",
+			"description": "The ID of the Redirection Host",
+			"schema": {
+				"type": "integer",
+				"minimum": 1
+			},
+			"required": true,
+			"example": 1
+		}
+	],
+	"responses": {
+		"200": {
+			"description": "200 response",
+			"content": {
+				"text/plain": {
+					"schema": {
+						"type": "string"
+					},
+					"examples": {
+						"default": {
+							"value": "server { ... }"
+						}
+					}
+				}
+			}
+		}
+	}
+}

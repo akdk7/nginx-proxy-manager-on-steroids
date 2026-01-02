@@ -21,6 +21,7 @@
   "action.permissions": "Permissions",
   "action.renew": "Renew",
   "action.view-details": "View Details",
+  "action.view-config": "View Config",
   "auditlogs": "Audit Logs",
   "cancel": "Cancel",
   "certificate": "Certificate",

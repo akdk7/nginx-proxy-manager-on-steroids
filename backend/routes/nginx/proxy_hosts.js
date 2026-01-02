@@ -1,5 +1,6 @@
 import express from "express";
 import internalHeartbeat from "../../internal/heartbeat.js";
+import internalNginx from "../../internal/nginx.js";
 import internalProxyHost from "../../internal/proxy-host.js";
 import jwtdecode from "../../lib/express/jwt-decode.js";
 import apiValidator from "../../lib/validator/api.js";
@@ -92,6 +93,50 @@ router
 			await res.locals.access.can("proxy_hosts:list");
 			const results = await internalHeartbeat.checkProxyHosts(payload.hosts);
 			res.status(200).send(results);
+		} catch (err) {
+			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err}`);
+			next(err);
+		}
+	});
+
+/**
+ * Proxy-host config
+ *
+ * /api/nginx/proxy-hosts/123/config
+ */
+router
+	.route("/:host_id/config")
+	.options((_, res) => {
+		res.sendStatus(204);
+	})
+	.all(jwtdecode())
+
+	/**
+	 * GET /api/nginx/proxy-hosts/123/config
+	 *
+	 * Retrieve nginx config for a proxy-host
+	 */
+	.get(async (req, res, next) => {
+		try {
+			const data = await validator(
+				{
+					required: ["host_id"],
+					additionalProperties: false,
+					properties: {
+						host_id: {
+							$ref: "common#/properties/id",
+						},
+					},
+				},
+				{
+					host_id: req.params.host_id,
+				},
+			);
+			const row = await internalProxyHost.get(res.locals.access, {
+				id: Number.parseInt(data.host_id, 10),
+			});
+			const configText = internalNginx.readConfigText("proxy_host", row.id);
+			res.status(200).type("text/plain").send(configText);
 		} catch (err) {
 			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err}`);
 			next(err);

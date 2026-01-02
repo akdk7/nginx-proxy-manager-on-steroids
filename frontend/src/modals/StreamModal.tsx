@@ -426,10 +426,11 @@ const UpstreamSettings = ({ onRequestForwardHeartbeat }: { onRequestForwardHeart
 												max={65535}
 												className={`form-control ${upstreamInvalid ? "is-invalid" : ""}`}
 												placeholder="80"
-												value={server.port || 0}
-												onChange={(e) =>
-													handleChange(idx, "port", Number.parseInt(e.target.value, 10) || 0)
-												}
+												value={server.port ?? ""}
+												onChange={(e) => {
+													const raw = e.target.value;
+													handleChange(idx, "port", raw === "" ? "" : Number.parseInt(raw, 10));
+												}}
 											/>
 										</div>
 										<div className="col-md-2">

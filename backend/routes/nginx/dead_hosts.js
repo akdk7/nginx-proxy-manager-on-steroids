@@ -1,4 +1,5 @@
 import express from "express";
+import internalNginx from "../../internal/nginx.js";
 import internalDeadHost from "../../internal/dead-host.js";
 import jwtdecode from "../../lib/express/jwt-decode.js";
 import apiValidator from "../../lib/validator/api.js";
@@ -64,6 +65,50 @@ router
 			const payload = await apiValidator(getValidationSchema("/nginx/dead-hosts", "post"), req.body);
 			const result = await internalDeadHost.create(res.locals.access, payload);
 			res.status(201).send(result);
+		} catch (err) {
+			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err}`);
+			next(err);
+		}
+	});
+
+/**
+ * Dead-host config
+ *
+ * /api/nginx/dead-hosts/123/config
+ */
+router
+	.route("/:host_id/config")
+	.options((_, res) => {
+		res.sendStatus(204);
+	})
+	.all(jwtdecode())
+
+	/**
+	 * GET /api/nginx/dead-hosts/123/config
+	 *
+	 * Retrieve nginx config for a dead-host
+	 */
+	.get(async (req, res, next) => {
+		try {
+			const data = await validator(
+				{
+					required: ["host_id"],
+					additionalProperties: false,
+					properties: {
+						host_id: {
+							$ref: "common#/properties/id",
+						},
+					},
+				},
+				{
+					host_id: req.params.host_id,
+				},
+			);
+			const row = await internalDeadHost.get(res.locals.access, {
+				id: Number.parseInt(data.host_id, 10),
+			});
+			const configText = internalNginx.readConfigText("dead_host", row.id);
+			res.status(200).type("text/plain").send(configText);
 		} catch (err) {
 			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err}`);
 			next(err);

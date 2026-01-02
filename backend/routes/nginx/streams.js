@@ -1,5 +1,6 @@
 import express from "express";
 import internalHeartbeat from "../../internal/heartbeat.js";
+import internalNginx from "../../internal/nginx.js";
 import internalStream from "../../internal/stream.js";
 import jwtdecode from "../../lib/express/jwt-decode.js";
 import apiValidator from "../../lib/validator/api.js";
@@ -92,6 +93,50 @@ router
 			await res.locals.access.can("streams:list");
 			const results = await internalHeartbeat.checkStreams(payload.streams);
 			res.status(200).send(results);
+		} catch (err) {
+			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err}`);
+			next(err);
+		}
+	});
+
+/**
+ * Stream config
+ *
+ * /api/nginx/streams/123/config
+ */
+router
+	.route("/:stream_id/config")
+	.options((_, res) => {
+		res.sendStatus(204);
+	})
+	.all(jwtdecode())
+
+	/**
+	 * GET /api/nginx/streams/123/config
+	 *
+	 * Retrieve nginx config for a stream
+	 */
+	.get(async (req, res, next) => {
+		try {
+			const data = await validator(
+				{
+					required: ["stream_id"],
+					additionalProperties: false,
+					properties: {
+						stream_id: {
+							$ref: "common#/properties/id",
+						},
+					},
+				},
+				{
+					stream_id: req.params.stream_id,
+				},
+			);
+			const row = await internalStream.get(res.locals.access, {
+				id: Number.parseInt(data.stream_id, 10),
+			});
+			const configText = internalNginx.readConfigText("stream", row.id);
+			res.status(200).type("text/plain").send(configText);
 		} catch (err) {
 			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err}`);
 			next(err);
