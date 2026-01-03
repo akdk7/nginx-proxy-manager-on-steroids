@@ -279,7 +279,7 @@ export default function GeoAccess() {
 								value={values.countries || []}
 								onChange={(next) => setFieldValue("countries", next)}
 							/>
-							{errors.countries && submitCount > 0 ? (
+							{typeof errors.countries === "string" && submitCount > 0 ? (
 								<div className="text-danger small mt-2">{errors.countries}</div>
 							) : null}
 						</div>

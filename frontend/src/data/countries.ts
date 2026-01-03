@@ -252,7 +252,7 @@ export const COUNTRY_CODES = [
 
 export type CountryCode = typeof COUNTRY_CODES[number];
 
-export const getCountryOptions = (locale) => {
+export const getCountryOptions = (locale?: string) => {
 	const normalizedLocale = locale || "en";
 	let displayNames = null;
 	if (typeof Intl !== "undefined" && typeof Intl.DisplayNames === "function") {
