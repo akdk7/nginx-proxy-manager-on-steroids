@@ -687,6 +687,18 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 											</li>
 											<li className="nav-item" role="presentation">
 												<a
+													href="#tab-geo-access"
+													className="nav-link"
+													data-bs-toggle="tab"
+													aria-selected="false"
+													tabIndex={-1}
+													role="tab"
+												>
+													<T id="host.geo-access" />
+												</a>
+											</li>
+											<li className="nav-item" role="presentation">
+												<a
 													href="#tab-ssl"
 													className="nav-link"
 													data-bs-toggle="tab"
@@ -978,166 +990,171 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 													</div>
 												</div>
 											</div>
-											<div className="mb-4">
-												<h3 className="py-2">
-													<T id="host.geo-access" />
-												</h3>
-												<div className="row">
-													<div className="col-md-4">
-														<label className="form-label" htmlFor="geoAccessState">
-															<T id="host.geo-access.state" />
-														</label>
-														<select
-															id="geoAccessState"
-															className="form-control"
-															value={geoAccessState}
-															onChange={(e) => {
-																const next = e.target.value;
-																if (next === "inherit") {
-																	setFieldValue("geoAccessOverride", false);
-																} else {
-																	setFieldValue("geoAccessOverride", true);
-																	setFieldValue("geoAccessEnabled", next === "enabled");
-																}
-															}}
-														>
-															<option value="inherit">
-																<T id="host.geo-access.inherit" />
-															</option>
-															<option value="enabled">
-																<T id="host.geo-access.enable" />
-															</option>
-															<option value="disabled">
-																<T id="host.geo-access.disable" />
-															</option>
-														</select>
-													</div>
-													{geoAccessState === "enabled" ? (
-														<>
-															<div className="col-md-4">
-																<label className="form-label" htmlFor="geoAccessSource">
-																	<T id="host.geo-access.source" />
-																</label>
-																<select
-																	id="geoAccessSource"
-																	className="form-control"
-																	value={geoAccessSource}
-																	onChange={(e) => {
-																		const next = e.target.value;
-																		if (next === "preset") {
-																			setFieldValue("geoAccessPreset", geoPresets[0]?.id || "");
-																		} else {
-																			setFieldValue("geoAccessPreset", "");
-																		}
-																	}}
-																>
-																	<option value="custom">
-																		<T id="host.geo-access.source.custom" />
-																	</option>
-																	<option value="preset" disabled={geoPresets.length === 0}>
-																		<T id="host.geo-access.source.preset" />
-																	</option>
-																</select>
-															</div>
-															<div className="col-md-4">
-																{geoAccessSource === "preset" ? (
-																	<>
-																		<label className="form-label" htmlFor="geoAccessPreset">
-																			<T id="host.geo-access.preset" />
-																		</label>
-																		<select
-																			id="geoAccessPreset"
-																			className="form-control"
-																			value={values.geoAccessPreset || ""}
-																			onChange={(e) =>
-																				setFieldValue("geoAccessPreset", e.target.value)
+											<div className="tab-pane" id="tab-geo-access" role="tabpanel">
+												<div className="mb-4">
+													<h3 className="py-2">
+														<T id="host.geo-access" />
+													</h3>
+													<div className="row">
+														<div className="col-md-4">
+															<label className="form-label" htmlFor="geoAccessState">
+																<T id="host.geo-access.state" />
+															</label>
+															<select
+																id="geoAccessState"
+																className="form-control"
+																value={geoAccessState}
+																onChange={(e) => {
+																	const next = e.target.value;
+																	if (next === "inherit") {
+																		setFieldValue("geoAccessOverride", false);
+																	} else {
+																		setFieldValue("geoAccessOverride", true);
+																		setFieldValue("geoAccessEnabled", next === "enabled");
+																	}
+																}}
+															>
+																<option value="inherit">
+																	<T id="host.geo-access.inherit" />
+																</option>
+																<option value="enabled">
+																	<T id="host.geo-access.enable" />
+																</option>
+																<option value="disabled">
+																	<T id="host.geo-access.disable" />
+																</option>
+															</select>
+														</div>
+														{geoAccessState === "enabled" ? (
+															<>
+																<div className="col-md-4">
+																	<label className="form-label" htmlFor="geoAccessSource">
+																		<T id="host.geo-access.source" />
+																	</label>
+																	<select
+																		id="geoAccessSource"
+																		className="form-control"
+																		value={geoAccessSource}
+																		onChange={(e) => {
+																			const next = e.target.value;
+																			if (next === "preset") {
+																				setFieldValue(
+																					"geoAccessPreset",
+																					geoPresets[0]?.id || "",
+																				);
+																			} else {
+																				setFieldValue("geoAccessPreset", "");
 																			}
-																		>
-																			{geoPresets.map((preset: any) => (
-																				<option key={preset.id} value={preset.id}>
-																					{preset.name}
+																		}}
+																	>
+																		<option value="custom">
+																			<T id="host.geo-access.source.custom" />
+																		</option>
+																		<option value="preset" disabled={geoPresets.length === 0}>
+																			<T id="host.geo-access.source.preset" />
+																		</option>
+																	</select>
+																</div>
+																<div className="col-md-4">
+																	{geoAccessSource === "preset" ? (
+																		<>
+																			<label className="form-label" htmlFor="geoAccessPreset">
+																				<T id="host.geo-access.preset" />
+																			</label>
+																			<select
+																				id="geoAccessPreset"
+																				className="form-control"
+																				value={values.geoAccessPreset || ""}
+																				onChange={(e) =>
+																					setFieldValue("geoAccessPreset", e.target.value)
+																				}
+																			>
+																				{geoPresets.map((preset: any) => (
+																					<option key={preset.id} value={preset.id}>
+																						{preset.name}
+																					</option>
+																				))}
+																			</select>
+																		</>
+																	) : (
+																		<>
+																			<label className="form-label" htmlFor="geoAccessMode">
+																				<T id="host.geo-access.mode" />
+																			</label>
+																			<select
+																				id="geoAccessMode"
+																				className="form-control"
+																				value={values.geoAccessMode || "allow"}
+																				onChange={(e) =>
+																					setFieldValue("geoAccessMode", e.target.value)
+																				}
+																			>
+																				<option value="allow">
+																					<T id="host.geo-access.mode.allow" />
 																				</option>
-																			))}
-																		</select>
-																	</>
-																) : (
-																	<>
-																		<label className="form-label" htmlFor="geoAccessMode">
-																			<T id="host.geo-access.mode" />
-																		</label>
-																		<select
-																			id="geoAccessMode"
-																			className="form-control"
-																			value={values.geoAccessMode || "allow"}
-																			onChange={(e) =>
-																				setFieldValue("geoAccessMode", e.target.value)
-																			}
-																		>
-																			<option value="allow">
-																				<T id="host.geo-access.mode.allow" />
-																			</option>
-																			<option value="deny">
-																				<T id="host.geo-access.mode.deny" />
-																			</option>
-																		</select>
-																	</>
-																)}
-															</div>
-															<div className="col-md-4">
-																{geoAccessSource === "preset" ? (
-																	<>
-																		<label className="form-label" htmlFor="geoAccessPresetMode">
-																			<T id="host.geo-access.mode" />
-																		</label>
-																		<input
-																			id="geoAccessPresetMode"
-																			type="text"
-																			className="form-control"
-																			value={
-																				selectedPreset?.mode === "deny"
-																					? intl.formatMessage({
-																							id: "host.geo-access.mode.deny",
-																						})
-																					: intl.formatMessage({
-																							id: "host.geo-access.mode.allow",
-																						})
-																			}
-																			disabled
-																		/>
-																	</>
-																) : null}
-															</div>
-															<div className="col-12 mt-3">
-																<label className="form-label" htmlFor="streamGeoCountries">
-																	<T id="host.geo-access.countries" />
-																</label>
-																<CountryChecklist
-																	inputId="streamGeoCountries"
-																	value={
-																		geoAccessSource === "preset"
-																			? selectedPreset?.countries || []
-																			: values.geoAccessCountries || []
-																	}
-																	onChange={(next) =>
-																		setFieldValue("geoAccessCountries", next)
-																	}
-																	disabled={geoAccessSource === "preset"}
-																/>
-																{geoAccessSource !== "preset" &&
-																submitCount > 0 &&
-																errors.geoAccessCountries ? (
-																	<div className="text-danger small mt-2">
-																		<T id={errors.geoAccessCountries} />
-																	</div>
-																) : null}
-																{geoAccessSource === "preset" && geoPresets.length === 0 ? (
-																	<div className="text-muted small mt-2">
-																		<T id="host.geo-access.presets.empty" />
-																	</div>
-																) : null}
-															</div>
-														</>
-													) : null}
+																				<option value="deny">
+																					<T id="host.geo-access.mode.deny" />
+																				</option>
+																			</select>
+																		</>
+																	)}
+																</div>
+																<div className="col-md-4">
+																	{geoAccessSource === "preset" ? (
+																		<>
+																			<label className="form-label" htmlFor="geoAccessPresetMode">
+																				<T id="host.geo-access.mode" />
+																			</label>
+																			<input
+																				id="geoAccessPresetMode"
+																				type="text"
+																				className="form-control"
+																				value={
+																					selectedPreset?.mode === "deny"
+																						? intl.formatMessage({
+																								id: "host.geo-access.mode.deny",
+																							})
+																						: intl.formatMessage({
+																								id: "host.geo-access.mode.allow",
+																							})
+																				}
+																				disabled
+																			/>
+																		</>
+																	) : null}
+																</div>
+																<div className="col-12 mt-3">
+																	<label className="form-label" htmlFor="streamGeoCountries">
+																		<T id="host.geo-access.countries" />
+																	</label>
+																	<CountryChecklist
+																		inputId="streamGeoCountries"
+																		value={
+																			geoAccessSource === "preset"
+																				? selectedPreset?.countries || []
+																				: values.geoAccessCountries || []
+																		}
+																		onChange={(next) =>
+																			setFieldValue("geoAccessCountries", next)
+																		}
+																		disabled={geoAccessSource === "preset"}
+																	/>
+																	{geoAccessSource !== "preset" &&
+																	submitCount > 0 &&
+																	errors.geoAccessCountries ? (
+																		<div className="text-danger small mt-2">
+																			<T id={errors.geoAccessCountries} />
+																		</div>
+																	) : null}
+																	{geoAccessSource === "preset" && geoPresets.length === 0 ? (
+																		<div className="text-muted small mt-2">
+																			<T id="host.geo-access.presets.empty" />
+																		</div>
+																	) : null}
+																</div>
+															</>
+														) : null}
+													</div>
 												</div>
 											</div>
 											<div className="tab-pane" id="tab-ssl" role="tabpanel">

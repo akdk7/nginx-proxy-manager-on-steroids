@@ -721,6 +721,18 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 													<T id="host.upstream.mtls" />
 												</a>
 											</li>
+											<li className="nav-item" role="presentation">
+												<a
+													href="#tab-geo-access"
+													className="nav-link"
+													data-bs-toggle="tab"
+													aria-selected="false"
+													tabIndex={-1}
+													role="tab"
+												>
+													<T id="host.geo-access" />
+												</a>
+											</li>
 											<li className="nav-item ms-auto" role="presentation">
 												<a
 													href="#tab-advanced"
@@ -1112,7 +1124,7 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 													/>
 												</div>
 											</div>
-											<div className="tab-pane" id="tab-advanced" role="tabpanel">
+											<div className="tab-pane" id="tab-geo-access" role="tabpanel">
 												<div className="mb-4">
 													<h4 className="py-2">
 														<T id="host.geo-access" />
@@ -1282,6 +1294,8 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 														) : null}
 													</div>
 												</div>
+											</div>
+											<div className="tab-pane" id="tab-advanced" role="tabpanel">
 												<NginxConfigField />
 											</div>
 										</div>
