@@ -548,8 +548,35 @@
 	"host.geo-access.mode.deny": {
 		"defaultMessage": "Diese Länder blockieren"
 	},
+	"host.geo-access.source": {
+		"defaultMessage": "Auswahl"
+	},
+	"host.geo-access.source.custom": {
+		"defaultMessage": "Benutzerdefinierte Liste"
+	},
+	"host.geo-access.source.preset": {
+		"defaultMessage": "Preset verwenden"
+	},
+	"host.geo-access.preset": {
+		"defaultMessage": "Preset"
+	},
+	"host.geo-access.presets.empty": {
+		"defaultMessage": "Keine Presets verfügbar"
+	},
 	"host.geo-access.countries": {
-		"defaultMessage": "Länder (ISO 3166-1 alpha-2)"
+		"defaultMessage": "Länder"
+	},
+	"geo-access.countries.search": {
+		"defaultMessage": "Länder suchen"
+	},
+	"geo-access.countries.select-all": {
+		"defaultMessage": "Alle auswählen"
+	},
+	"geo-access.countries.clear": {
+		"defaultMessage": "Auswahl löschen"
+	},
+	"geo-access.countries.selected": {
+		"defaultMessage": "{count} ausgewählt / {total}"
 	},
 	"host.upstream": {
 		"defaultMessage": "Upstream-Pool"
@@ -843,7 +870,43 @@
 		"defaultMessage": "Diese Länder blockieren"
 	},
 	"settings.geo-access.countries": {
-		"defaultMessage": "Länder (ISO 3166-1 alpha-2)"
+		"defaultMessage": "Länder"
+	},
+	"settings.geo-access.presets": {
+		"defaultMessage": "Presets"
+	},
+	"settings.geo-access.presets.description": {
+		"defaultMessage": "Erstelle wiederverwendbare Länderlisten für Proxy Hosts und Streams."
+	},
+	"settings.geo-access.presets.name": {
+		"defaultMessage": "Preset-Name"
+	},
+	"settings.geo-access.presets.mode": {
+		"defaultMessage": "Preset-Modus"
+	},
+	"settings.geo-access.presets.count": {
+		"defaultMessage": "Länder"
+	},
+	"settings.geo-access.presets.actions": {
+		"defaultMessage": "Aktionen"
+	},
+	"settings.geo-access.presets.add": {
+		"defaultMessage": "Preset hinzufügen"
+	},
+	"settings.geo-access.presets.save": {
+		"defaultMessage": "Preset speichern"
+	},
+	"settings.geo-access.presets.cancel": {
+		"defaultMessage": "Abbrechen"
+	},
+	"settings.geo-access.presets.edit": {
+		"defaultMessage": "Bearbeiten"
+	},
+	"settings.geo-access.presets.delete": {
+		"defaultMessage": "Löschen"
+	},
+	"settings.geo-access.presets.empty": {
+		"defaultMessage": "Noch keine Presets erstellt"
 	},
 	"setup.preamble": {
 		"defaultMessage": "Beginne mit dem Erstellen deines Admin-Kontos."

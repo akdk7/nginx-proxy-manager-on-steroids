@@ -77,6 +77,39 @@
 										"minLength": 2,
 										"maxLength": 2
 									}
+								},
+								"presets": {
+									"type": "array",
+									"items": {
+										"type": "object",
+										"additionalProperties": false,
+										"required": ["id", "name", "mode", "countries"],
+										"properties": {
+											"id": {
+												"type": "string",
+												"minLength": 1,
+												"maxLength": 64
+											},
+											"name": {
+												"type": "string",
+												"minLength": 1,
+												"maxLength": 64
+											},
+											"mode": {
+												"type": "string",
+												"enum": ["allow", "deny"]
+											},
+											"countries": {
+												"type": "array",
+												"uniqueItems": true,
+												"items": {
+													"type": "string",
+													"minLength": 2,
+													"maxLength": 2
+												}
+											}
+										}
+									}
 								}
 							},
 							"example": {

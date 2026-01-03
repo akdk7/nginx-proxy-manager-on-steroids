@@ -252,6 +252,8 @@ Example `docker-compose.yml` volume mapping (read-only):
 You can override the database path in the settings UI. Per-host and per-stream overrides are available
 in the Advanced tab of the respective modal.
 
+Presets can be created in **Settings -> Geo Access Control** and reused by Proxy Hosts and Streams.
+
 ## Auto Initial User Creation
 
 Setting these environment variables will create the default user on startup, skipping the UI first user setup screen:

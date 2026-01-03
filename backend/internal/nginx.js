@@ -75,6 +75,33 @@ const normalizeGeoDbPath = (path) => {
 	return normalized || defaultGeoDbPath;
 };
 
+const sanitizeGeoPresetId = (value) => `${value || ""}`.trim();
+
+const sanitizeGeoPresetName = (value) => `${value || ""}`.trim();
+
+const sanitizeGeoPresets = (presets) => {
+	if (!Array.isArray(presets)) {
+		return [];
+	}
+	const seen = new Set();
+	const result = [];
+	presets.forEach((preset) => {
+		const id = sanitizeGeoPresetId(preset?.id);
+		const name = sanitizeGeoPresetName(preset?.name);
+		if (!id || !name || seen.has(id)) {
+			return;
+		}
+		seen.add(id);
+		result.push({
+			id,
+			name,
+			mode: normalizeGeoAccessMode(preset?.mode),
+			countries: sanitizeGeoCountries(preset?.countries),
+		});
+	});
+	return result;
+};
+
 const formatStreamTarget = (host, port) => {
 	const normalizedHost = `${host || ""}`.trim();
 	const parsedPort = Number.parseInt(`${port || ""}`, 10);
@@ -366,6 +393,7 @@ const internalNginx = {
 			mode: normalizeGeoAccessMode(meta.mode),
 			countries: sanitizeGeoCountries(meta.countries),
 			db_path: normalizeGeoDbPath(meta.db_path),
+			presets: sanitizeGeoPresets(meta.presets),
 		};
 	},
 	resolveGeoAccess: (geoSettings, host, hostType) => {
@@ -375,10 +403,20 @@ const internalNginx = {
 		const override = host?.geo_access_override === 1 || host?.geo_access_override === true;
 		const enabled = host?.geo_access_enabled === 1 || host?.geo_access_enabled === true;
 		const typeEnabled = hostType === "stream" ? geoSettings.stream_enabled : geoSettings.http_enabled;
-		const mode = override ? normalizeGeoAccessMode(host?.geo_access_mode) : geoSettings.mode;
-		const countries = override
-			? sanitizeGeoCountries(host?.geo_access_countries)
-			: geoSettings.countries;
+		const presetId = override ? sanitizeGeoPresetId(host?.geo_access_preset) : "";
+		const preset = presetId
+			? geoSettings.presets.find((candidate) => candidate.id === presetId)
+			: null;
+		const mode = preset
+			? normalizeGeoAccessMode(preset.mode)
+			: override
+				? normalizeGeoAccessMode(host?.geo_access_mode)
+				: geoSettings.mode;
+		const countries = preset
+			? sanitizeGeoCountries(preset.countries)
+			: override
+				? sanitizeGeoCountries(host?.geo_access_countries)
+				: geoSettings.countries;
 		const isEnabled = override ? enabled : typeEnabled;
 		if (!isEnabled || countries.length === 0) {
 			return { enabled: false, mode, countries: [] };

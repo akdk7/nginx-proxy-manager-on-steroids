@@ -161,6 +161,7 @@ export interface ProxyHost {
 	geoAccessOverride: boolean;
 	geoAccessEnabled: boolean;
 	geoAccessMode: string;
+	geoAccessPreset?: string;
 	geoAccessCountries: string[];
 	advancedConfig: string;
 	meta: Record<string, any>;
@@ -271,6 +272,7 @@ export interface Stream {
 	geoAccessOverride: boolean;
 	geoAccessEnabled: boolean;
 	geoAccessMode: string;
+	geoAccessPreset?: string;
 	geoAccessCountries: string[];
 	meta: Record<string, any>;
 	enabled: boolean;

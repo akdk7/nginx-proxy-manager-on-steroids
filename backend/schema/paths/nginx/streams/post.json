@@ -62,6 +62,9 @@
 						"geo_access_mode": {
 							"$ref": "../../../components/stream-object.json#/properties/geo_access_mode"
 						},
+						"geo_access_preset": {
+							"$ref": "../../../components/stream-object.json#/properties/geo_access_preset"
+						},
 						"geo_access_countries": {
 							"$ref": "../../../components/stream-object.json#/properties/geo_access_countries"
 						},

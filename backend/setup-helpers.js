@@ -120,6 +120,7 @@ const createSetup = ({
 					db_path: "/data/GeoLite2-Country.mmdb",
 					mode: "allow",
 					countries: [],
+					presets: [],
 				},
 			});
 			logger.info("Geo access settings added");

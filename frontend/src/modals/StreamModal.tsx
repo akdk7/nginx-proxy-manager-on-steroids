@@ -4,44 +4,14 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Alert } from "react-bootstrap";
 import Modal from "react-bootstrap/Modal";
 import { checkStreamHeartbeats, type StreamHeartbeatResult } from "src/api/backend";
-import { Button, Loading, SSLCertificateField, SSLOptionsFields } from "src/components";
-import { useSetStream, useStream } from "src/hooks";
+import { Button, CountryChecklist, Loading, SSLCertificateField, SSLOptionsFields } from "src/components";
+import { useSetStream, useSetting, useStream } from "src/hooks";
 import { intl, T } from "src/locale";
 import { validateNumber, validateString } from "src/modules/Validations";
 import { showObjectSuccess } from "src/notifications";
 
 const validateForwardingHost = validateString(1, 255);
 const validateForwardingPort = validateNumber(1, 65535);
-
-const normalizeGeoCountriesInput = (value: unknown) => {
-	if (Array.isArray(value)) {
-		return value.join(", ");
-	}
-	if (typeof value === "string") {
-		return value;
-	}
-	return "";
-};
-
-const parseGeoCountriesInput = (value: string) => {
-	if (!value) {
-		return [];
-	}
-	const parts = value
-		.split(/[\s,]+/)
-		.map((part) => part.trim().toUpperCase())
-		.filter(Boolean);
-	const unique = new Set<string>();
-	const result: string[] = [];
-	parts.forEach((part) => {
-		if (!/^[A-Z]{2}$/.test(part) || unique.has(part)) {
-			return;
-		}
-		unique.add(part);
-		result.push(part);
-	});
-	return result;
-};
 
 const showStreamModal = (id: number | "new") => {
 	EasyModal.show(StreamModal, { id });
@@ -564,6 +534,7 @@ const UpstreamSettings = ({ onRequestForwardHeartbeat }: { onRequestForwardHeart
 const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 	const { data, isLoading, error } = useStream(id);
 	const { mutate: setStream } = useSetStream();
+	const { data: geoAccessSetting } = useSetting("geo-access");
 	const [errorMsg, setErrorMsg] = useState<ReactNode | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [forwardHeartbeatKey, setForwardHeartbeatKey] = useState(0);
@@ -572,12 +543,10 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 		if (isSubmitting) return;
 		setIsSubmitting(true);
 		setErrorMsg(null);
-		const geoCountries = parseGeoCountriesInput(values.geoAccessCountriesInput || "");
 		const restValues = {
 			...values,
-			geoAccessCountries: geoCountries,
+			geoAccessCountries: Array.isArray(values.geoAccessCountries) ? values.geoAccessCountries : [],
 		};
-		delete restValues.geoAccessCountriesInput;
 
 		const { ...payload } = {
 			id: id === "new" ? undefined : id,
@@ -622,7 +591,8 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 							geoAccessOverride: data?.geoAccessOverride || false,
 							geoAccessEnabled: data?.geoAccessEnabled || false,
 							geoAccessMode: data?.geoAccessMode || "allow",
-							geoAccessCountriesInput: normalizeGeoCountriesInput(data?.geoAccessCountries),
+							geoAccessPreset: data?.geoAccessPreset || "",
+							geoAccessCountries: Array.isArray(data?.geoAccessCountries) ? data.geoAccessCountries : [],
 							certificateId: data?.certificateId,
 							meta: data?.meta || {},
 						} as any
@@ -645,10 +615,10 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 								? "enabled"
 								: "disabled"
 							: "inherit";
-						if (geoState === "enabled") {
-							const countries = parseGeoCountriesInput(values.geoAccessCountriesInput || "");
+						if (geoState === "enabled" && !values.geoAccessPreset) {
+							const countries = Array.isArray(values.geoAccessCountries) ? values.geoAccessCountries : [];
 							if ((values.geoAccessMode || "allow") === "allow" && countries.length === 0) {
-								errors.geoAccessCountriesInput = "error.geo-access.countries-required";
+								errors.geoAccessCountries = "error.geo-access.countries-required";
 							}
 						}
 						return errors;
@@ -668,7 +638,7 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 												return intl.formatMessage({ id: "host.forward-port" });
 											case "upstreamServers":
 												return intl.formatMessage({ id: "host.upstream" });
-											case "geoAccessCountriesInput":
+											case "geoAccessCountries":
 												return intl.formatMessage({ id: "host.geo-access.countries" });
 											default:
 												return key;
@@ -681,9 +651,16 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 								? "enabled"
 								: "disabled"
 							: "inherit";
+						const geoPresets = Array.isArray(geoAccessSetting?.meta?.presets)
+							? geoAccessSetting.meta.presets
+							: [];
+						const geoAccessSource = values.geoAccessPreset ? "preset" : "custom";
+						const selectedPreset = geoPresets.find(
+							(preset: any) => preset.id === values.geoAccessPreset,
+						);
 
 						return (
-						<Form noValidate>
+							<Form noValidate>
 							<Modal.Header closeButton>
 								<Modal.Title>
 									<T id={data?.id ? "object.edit" : "object.add"} tData={{ object: "stream" }} />
@@ -1038,59 +1015,124 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 													{geoAccessState === "enabled" ? (
 														<>
 															<div className="col-md-4">
-																<label className="form-label" htmlFor="geoAccessMode">
-																	<T id="host.geo-access.mode" />
+																<label className="form-label" htmlFor="geoAccessSource">
+																	<T id="host.geo-access.source" />
 																</label>
 																<select
-																	id="geoAccessMode"
+																	id="geoAccessSource"
 																	className="form-control"
-																	value={values.geoAccessMode || "allow"}
-																	onChange={(e) =>
-																		setFieldValue("geoAccessMode", e.target.value)
-																	}
+																	value={geoAccessSource}
+																	onChange={(e) => {
+																		const next = e.target.value;
+																		if (next === "preset") {
+																			setFieldValue("geoAccessPreset", geoPresets[0]?.id || "");
+																		} else {
+																			setFieldValue("geoAccessPreset", "");
+																		}
+																	}}
 																>
-																	<option value="allow">
-																		<T id="host.geo-access.mode.allow" />
+																	<option value="custom">
+																		<T id="host.geo-access.source.custom" />
 																	</option>
-																	<option value="deny">
-																		<T id="host.geo-access.mode.deny" />
+																	<option value="preset" disabled={geoPresets.length === 0}>
+																		<T id="host.geo-access.source.preset" />
 																	</option>
 																</select>
 															</div>
 															<div className="col-md-4">
-																<Field name="geoAccessCountriesInput">
-																	{({ field, form }: any) => {
-																		const error =
-																			submitCount > 0 && errors.geoAccessCountriesInput
-																				? errors.geoAccessCountriesInput
-																				: null;
-																		return (
-																			<div>
-																				<label
-																					className="form-label"
-																					htmlFor="geoAccessCountriesInput"
-																				>
-																					<T id="host.geo-access.countries" />
-																				</label>
-																				<input
-																					{...field}
-																					id="geoAccessCountriesInput"
-																					type="text"
-																					className={`form-control ${error ? "is-invalid" : ""}`}
-																					placeholder="DE, AT, CH"
-																					onChange={(e) =>
-																						form.setFieldValue(field.name, e.target.value)
-																					}
-																				/>
-																				{error ? (
-																					<div className="invalid-feedback d-block">
-																						<T id={error} />
-																					</div>
-																				) : null}
-																			</div>
-																		);
-																	}}
-																</Field>
+																{geoAccessSource === "preset" ? (
+																	<>
+																		<label className="form-label" htmlFor="geoAccessPreset">
+																			<T id="host.geo-access.preset" />
+																		</label>
+																		<select
+																			id="geoAccessPreset"
+																			className="form-control"
+																			value={values.geoAccessPreset || ""}
+																			onChange={(e) =>
+																				setFieldValue("geoAccessPreset", e.target.value)
+																			}
+																		>
+																			{geoPresets.map((preset: any) => (
+																				<option key={preset.id} value={preset.id}>
+																					{preset.name}
+																				</option>
+																			))}
+																		</select>
+																	</>
+																) : (
+																	<>
+																		<label className="form-label" htmlFor="geoAccessMode">
+																			<T id="host.geo-access.mode" />
+																		</label>
+																		<select
+																			id="geoAccessMode"
+																			className="form-control"
+																			value={values.geoAccessMode || "allow"}
+																			onChange={(e) =>
+																				setFieldValue("geoAccessMode", e.target.value)
+																			}
+																		>
+																			<option value="allow">
+																				<T id="host.geo-access.mode.allow" />
+																			</option>
+																			<option value="deny">
+																				<T id="host.geo-access.mode.deny" />
+																			</option>
+																		</select>
+																	</>
+																)}
+															</div>
+															<div className="col-md-4">
+																{geoAccessSource === "preset" ? (
+																	<>
+																		<label className="form-label">
+																			<T id="host.geo-access.mode" />
+																		</label>
+																		<input
+																			type="text"
+																			className="form-control"
+																			value={
+																				selectedPreset?.mode === "deny"
+																					? intl.formatMessage({
+																							id: "host.geo-access.mode.deny",
+																						})
+																					: intl.formatMessage({
+																							id: "host.geo-access.mode.allow",
+																						})
+																			}
+																			disabled
+																		/>
+																	</>
+																) : null}
+															</div>
+															<div className="col-12 mt-3">
+																<label className="form-label">
+																	<T id="host.geo-access.countries" />
+																</label>
+																<CountryChecklist
+																	value={
+																		geoAccessSource === "preset"
+																			? selectedPreset?.countries || []
+																			: values.geoAccessCountries || []
+																	}
+																	onChange={(next) =>
+																		setFieldValue("geoAccessCountries", next)
+																	}
+																	disabled={geoAccessSource === "preset"}
+																/>
+																{geoAccessSource !== "preset" &&
+																submitCount > 0 &&
+																errors.geoAccessCountries ? (
+																	<div className="text-danger small mt-2">
+																		<T id={errors.geoAccessCountries} />
+																	</div>
+																) : null}
+																{geoAccessSource === "preset" && geoPresets.length === 0 ? (
+																	<div className="text-muted small mt-2">
+																		<T id="host.geo-access.presets.empty" />
+																	</div>
+																) : null}
 															</div>
 														</>
 													) : null}

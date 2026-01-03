@@ -1,4 +1,5 @@
 export * from "./Button";
+export { default as CountryChecklist } from "./CountryChecklist";
 export * from "./EmptyData";
 export * from "./ErrorNotFound";
 export * from "./Flag";

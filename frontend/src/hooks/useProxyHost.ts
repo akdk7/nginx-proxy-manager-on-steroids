@@ -28,6 +28,7 @@ const fetchProxyHost = (id: number | "new") => {
 			geoAccessOverride: false,
 			geoAccessEnabled: false,
 			geoAccessMode: "allow",
+			geoAccessPreset: "",
 			geoAccessCountries: [],
 			advancedConfig: "",
 			meta: {},

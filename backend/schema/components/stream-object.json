@@ -104,6 +104,10 @@
 			"enum": ["allow", "deny"],
 			"example": "allow"
 		},
+		"geo_access_preset": {
+			"type": "string",
+			"example": "europe-allow"
+		},
 		"geo_access_countries": {
 			"type": "array",
 			"items": {

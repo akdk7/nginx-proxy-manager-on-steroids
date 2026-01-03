@@ -41,7 +41,8 @@
 										"stream_enabled": false,
 										"db_path": "/data/GeoLite2-Country.mmdb",
 										"mode": "allow",
-										"countries": []
+										"countries": [],
+										"presets": []
 									}
 								}
 							]

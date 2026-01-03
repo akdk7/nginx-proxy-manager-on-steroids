@@ -104,6 +104,9 @@
 						"geo_access_mode": {
 							"$ref": "../../../../components/proxy-host-object.json#/properties/geo_access_mode"
 						},
+						"geo_access_preset": {
+							"$ref": "../../../../components/proxy-host-object.json#/properties/geo_access_preset"
+						},
 						"geo_access_countries": {
 							"$ref": "../../../../components/proxy-host-object.json#/properties/geo_access_countries"
 						},
