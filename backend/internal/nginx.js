@@ -135,7 +135,14 @@ const internalNginx = {
 		const backup_file = `${config_file}.bak`;
 		const has_backup = fs.existsSync(config_file);
 
-		await internalNginx.test();
+		try {
+			await internalNginx.test();
+		} catch (err) {
+			logger.warn(
+				"Existing nginx config is invalid, attempting to continue:",
+				err?.message || err,
+			);
+		}
 
 		if (has_backup) {
 			fs.copyFileSync(config_file, backup_file);
@@ -403,15 +410,8 @@ const internalNginx = {
 				host.http3_support = false;
 			}
 		}
-		const hasCertificate = Number.parseInt(`${host.certificate_id || 0}`, 10) > 0;
-		const fallbackPorts = hasCertificate ? ["80", "443"] : ["80"];
-		host.listen_ports = normalizeListenPorts(host.listen_ports, fallbackPorts);
-		host.listen_ports_http = hasCertificate ? host.listen_ports.filter((port) => port === "80") : host.listen_ports;
-		host.listen_ports_ssl = hasCertificate ? host.listen_ports.filter((port) => port !== "80") : [];
-		host.proxy_protocol_ports = await internalNginx.getProxyProtocolPorts();
-		host.proxy_protocol_enabled = host.proxy_protocol_ports.some((port) => host.listen_ports.includes(port));
-		const http3Requested = host.http3_support === 1 || host.http3_support === true;
-		host.http3_enabled = http3Requested && hasCertificate && host.listen_ports_ssl.includes("443");
+		const certificateId = Number.parseInt(`${host.certificate_id || 0}`, 10);
+		const requestedCertificate = certificateId > 0;
 
 		const renderEngine = utils.getRenderEngine();
 		const filename = internalNginx.getConfigName(nice_host_type, host.id);
@@ -465,9 +465,6 @@ const internalNginx = {
 			//logger.info ('host.locations = ' + JSON.stringify(host.locations, null, 2));
 			origLocations = [].concat(host.locations);
 			await Promise.all([sslCertPromise, upstreamCertPromise]);
-			if (hasCertificate && !host.certificate) {
-				throw new errs.ConfigurationError(`Certificate ${host.certificate_id} not found for host ${host.id}`);
-			}
 			host.locations = await internalNginx.renderLocations(host);
 
 			// Allow someone who is using / custom location path to use it, and skip the default / location
@@ -476,10 +473,30 @@ const internalNginx = {
 			}
 		} else {
 			await Promise.all([sslCertPromise, upstreamCertPromise]);
-			if (hasCertificate && !host.certificate) {
-				throw new errs.ConfigurationError(`Certificate ${host.certificate_id} not found for host ${host.id}`);
-			}
 		}
+
+		const hasCertificate = requestedCertificate && !!host.certificate;
+		if (requestedCertificate && !host.certificate) {
+			logger.warn(
+				`Certificate ${host.certificate_id} not found for host ${host.id}; disabling SSL for this config generation.`,
+			);
+			host.certificate_id = 0;
+			host.certificate = null;
+			host.ssl_forced = false;
+			host.http2_support = false;
+			host.http3_support = false;
+			host.hsts_enabled = false;
+			host.hsts_subdomains = false;
+		}
+
+		const fallbackPorts = hasCertificate ? ["80", "443"] : ["80"];
+		host.listen_ports = normalizeListenPorts(host.listen_ports, fallbackPorts);
+		host.listen_ports_http = hasCertificate ? host.listen_ports.filter((port) => port === "80") : host.listen_ports;
+		host.listen_ports_ssl = hasCertificate ? host.listen_ports.filter((port) => port !== "80") : [];
+		host.proxy_protocol_ports = await internalNginx.getProxyProtocolPorts();
+		host.proxy_protocol_enabled = host.proxy_protocol_ports.some((port) => host.listen_ports.includes(port));
+		const http3Requested = host.http3_support === 1 || host.http3_support === true;
+		host.http3_enabled = http3Requested && hasCertificate && host.listen_ports_ssl.includes("443");
 
 		// Set the IPv6 setting for the host
 		host.ipv6 = internalNginx.ipv6Enabled();
