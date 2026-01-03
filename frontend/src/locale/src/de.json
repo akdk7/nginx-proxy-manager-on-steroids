@@ -1,0 +1,878 @@
+{
+	"access-list": {
+		"defaultMessage": "Zugriffsliste"
+	},
+	"access-list.access-count": {
+		"defaultMessage": "{count} {count, plural, one {Regel} other {Regeln}}"
+	},
+	"access-list.auth-count": {
+		"defaultMessage": "{count} {count, plural, one {Benutzer} other {Benutzer}}"
+	},
+	"access-list.help-rules-last": {
+		"defaultMessage": "Wenn mindestens 1 Regel existiert, wird diese Regel \"alles verweigern\" zuletzt hinzugefügt"
+	},
+	"access-list.help.rules-order": {
+		"defaultMessage": "Beachte, dass Allow- und Deny-Direktiven in der Reihenfolge angewendet werden, in der sie definiert sind."
+	},
+	"access-list.pass-auth": {
+		"defaultMessage": "Authentifizierung an Upstream weitergeben"
+	},
+	"access-list.public": {
+		"defaultMessage": "Öffentlich erreichbar"
+	},
+	"access-list.public.subtitle": {
+		"defaultMessage": "Keine Basic-Auth erforderlich"
+	},
+	"access-list.satisfy-any": {
+		"defaultMessage": "Beliebig erfüllen"
+	},
+	"access-list.subtitle": {
+		"defaultMessage": "{users} {users, plural, one {Benutzer} other {Benutzer}}, {rules} {rules, plural, one {Regel} other {Regeln}} - Erstellt: {date}"
+	},
+	"access-lists": {
+		"defaultMessage": "Zugriffslisten"
+	},
+	"action.add": {
+		"defaultMessage": "Hinzufügen"
+	},
+	"action.add-location": {
+		"defaultMessage": "Location hinzufügen"
+	},
+	"action.close": {
+		"defaultMessage": "Schließen"
+	},
+	"action.delete": {
+		"defaultMessage": "Löschen"
+	},
+	"action.disable": {
+		"defaultMessage": "Deaktivieren"
+	},
+	"action.download": {
+		"defaultMessage": "Herunterladen"
+	},
+	"action.edit": {
+		"defaultMessage": "Bearbeiten"
+	},
+	"action.enable": {
+		"defaultMessage": "Aktivieren"
+	},
+	"action.permissions": {
+		"defaultMessage": "Berechtigungen"
+	},
+	"action.renew": {
+		"defaultMessage": "Erneuern"
+	},
+	"action.view-details": {
+		"defaultMessage": "Details ansehen"
+	},
+	"action.view-config": {
+		"defaultMessage": "Konfiguration anzeigen"
+	},
+	"auditlogs": {
+		"defaultMessage": "Audit-Logs"
+	},
+	"logs": {
+		"defaultMessage": "Logs"
+	},
+	"logs.empty": {
+		"defaultMessage": "Keine Logdateien gefunden"
+	},
+	"logs.file": {
+		"defaultMessage": "Logdatei"
+	},
+	"logs.filter": {
+		"defaultMessage": "Filter (Regex)"
+	},
+	"logs.filter.ignore-case": {
+		"defaultMessage": "Groß-/Kleinschreibung ignorieren"
+	},
+	"logs.filter.placeholder": {
+		"defaultMessage": "z. B. 502|timeout"
+	},
+	"logs.interval": {
+		"defaultMessage": "Aktualisierungsintervall"
+	},
+	"logs.interval.off": {
+		"defaultMessage": "Aus"
+	},
+	"logs.lines": {
+		"defaultMessage": "Zeilen"
+	},
+	"logs.no-content": {
+		"defaultMessage": "Keine Logausgabe vorhanden"
+	},
+	"logs.refresh": {
+		"defaultMessage": "Aktualisieren"
+	},
+	"logs.regex.invalid": {
+		"defaultMessage": "Ungültiger Regex"
+	},
+	"logs.tail": {
+		"defaultMessage": "Letzte {lines} Zeilen anzeigen"
+	},
+	"logs.updated": {
+		"defaultMessage": "Zuletzt aktualisiert"
+	},
+	"logs.updating": {
+		"defaultMessage": "Aktualisiere…"
+	},
+	"cancel": {
+		"defaultMessage": "Abbrechen"
+	},
+	"certificate": {
+		"defaultMessage": "Zertifikat"
+	},
+	"certificate.custom-certificate": {
+		"defaultMessage": "Zertifikat"
+	},
+	"certificate.custom-certificate-key": {
+		"defaultMessage": "Zertifikatsschlüssel"
+	},
+	"certificate.custom-intermediate": {
+		"defaultMessage": "Zwischenzertifikat"
+	},
+	"certificate.in-use": {
+		"defaultMessage": "In Verwendung"
+	},
+	"certificate.none.subtitle": {
+		"defaultMessage": "Kein Zertifikat zugewiesen"
+	},
+	"certificate.none.subtitle.for-http": {
+		"defaultMessage": "Dieser Host verwendet kein HTTPS"
+	},
+	"certificate.none.title": {
+		"defaultMessage": "Keines"
+	},
+	"certificate.not-in-use": {
+		"defaultMessage": "Nicht verwendet"
+	},
+	"certificate.renew": {
+		"defaultMessage": "Zertifikat erneuern"
+	},
+	"certificates": {
+		"defaultMessage": "Zertifikate"
+	},
+	"certificates.custom": {
+		"defaultMessage": "Benutzerdefiniertes Zertifikat"
+	},
+	"certificates.custom.warning": {
+		"defaultMessage": "Schlüsseldateien mit Passphrase werden nicht unterstützt."
+	},
+	"certificates.expires-in-days": {
+		"defaultMessage": "{days}T"
+	},
+	"certificates.expired": {
+		"defaultMessage": "abgelaufen"
+	},
+	"certificates.san-mismatch": {
+		"defaultMessage": "SAN stimmt nicht überein"
+	},
+	"certificates.dns.credentials": {
+		"defaultMessage": "Inhalt der Zugangsdaten-Datei"
+	},
+	"certificates.dns.credentials-note": {
+		"defaultMessage": "Dieses Plugin erfordert eine Konfigurationsdatei mit einem API-Token oder anderen Zugangsdaten für deinen Provider"
+	},
+	"certificates.dns.credentials-warning": {
+		"defaultMessage": "Diese Daten werden im Klartext in der Datenbank und in einer Datei gespeichert!"
+	},
+	"certificates.dns.propagation-seconds": {
+		"defaultMessage": "Propagation-Sekunden"
+	},
+	"certificates.dns.propagation-seconds-note": {
+		"defaultMessage": "Leer lassen, um den Standardwert des Plugins zu verwenden. Anzahl der Sekunden, die auf DNS-Propagation gewartet wird."
+	},
+	"certificates.dns.provider": {
+		"defaultMessage": "DNS-Anbieter"
+	},
+	"certificates.dns.warning": {
+		"defaultMessage": "Dieser Abschnitt erfordert Kenntnisse über Certbot und dessen DNS-Plugins. Bitte die jeweilige Plugin-Dokumentation konsultieren."
+	},
+	"certificates.http.reachability-404": {
+		"defaultMessage": "Es wurde ein Server unter dieser Domain gefunden, aber es scheint nicht der Nginx Proxy Manager zu sein. Bitte stelle sicher, dass deine Domain auf die IP zeigt, auf der deine NPM-Instanz läuft."
+	},
+	"certificates.http.reachability-failed-to-check": {
+		"defaultMessage": "Die Erreichbarkeit konnte aufgrund eines Kommunikationsfehlers mit site24x7.com nicht geprüft werden."
+	},
+	"certificates.http.reachability-not-resolved": {
+		"defaultMessage": "Unter dieser Domain ist kein Server erreichbar. Bitte stelle sicher, dass deine Domain existiert und auf die IP deiner NPM-Instanz zeigt und dass ggf. Port 80 am Router weitergeleitet wird."
+	},
+	"certificates.http.reachability-ok": {
+		"defaultMessage": "Dein Server ist erreichbar und das Erstellen von Zertifikaten sollte möglich sein."
+	},
+	"certificates.http.reachability-other": {
+		"defaultMessage": "Es wurde ein Server unter dieser Domain gefunden, der jedoch einen unerwarteten Statuscode {code} zurückgab. Ist es der NPM-Server? Bitte stelle sicher, dass deine Domain auf die IP deiner NPM-Instanz zeigt."
+	},
+	"certificates.http.reachability-wrong-data": {
+		"defaultMessage": "Es wurde ein Server unter dieser Domain gefunden, der jedoch unerwartete Daten zurückgab. Ist es der NPM-Server? Bitte stelle sicher, dass deine Domain auf die IP deiner NPM-Instanz zeigt."
+	},
+	"certificates.http.test-results": {
+		"defaultMessage": "Testergebnisse"
+	},
+	"certificates.http.warning": {
+		"defaultMessage": "Diese Domains müssen bereits so konfiguriert sein, dass sie auf diese Installation zeigen."
+	},
+	"certificates.request.subtitle": {
+		"defaultMessage": "mit Let's Encrypt"
+	},
+	"certificates.request.title": {
+		"defaultMessage": "Neues Zertifikat anfordern"
+	},
+	"column.access": {
+		"defaultMessage": "Zugriff"
+	},
+	"column.authorization": {
+		"defaultMessage": "Autorisierung"
+	},
+	"column.authorizations": {
+		"defaultMessage": "Autorisierungen"
+	},
+	"column.custom-locations": {
+		"defaultMessage": "Benutzerdefinierte Locations"
+	},
+	"column.destination": {
+		"defaultMessage": "Ziel"
+	},
+	"column.details": {
+		"defaultMessage": "Details"
+	},
+	"column.email": {
+		"defaultMessage": "E-Mail"
+	},
+	"column.event": {
+		"defaultMessage": "Ereignis"
+	},
+	"column.expires": {
+		"defaultMessage": "Läuft ab"
+	},
+	"column.http-code": {
+		"defaultMessage": "HTTP-Code"
+	},
+	"column.incoming-port": {
+		"defaultMessage": "Eingangsport"
+	},
+	"column.name": {
+		"defaultMessage": "Name"
+	},
+	"column.protocol": {
+		"defaultMessage": "Protokoll"
+	},
+	"column.provider": {
+		"defaultMessage": "Anbieter"
+	},
+	"column.rate-limit": {
+		"defaultMessage": "Rate-Limit"
+	},
+	"column.roles": {
+		"defaultMessage": "Rollen"
+	},
+	"column.rules": {
+		"defaultMessage": "Regeln"
+	},
+	"column.satisfy": {
+		"defaultMessage": "Erfüllen"
+	},
+	"column.satisfy-all": {
+		"defaultMessage": "Alle"
+	},
+	"column.satisfy-any": {
+		"defaultMessage": "Beliebig"
+	},
+	"column.scheme": {
+		"defaultMessage": "Schema"
+	},
+	"column.source": {
+		"defaultMessage": "Quelle"
+	},
+	"column.ssl": {
+		"defaultMessage": "SSL"
+	},
+	"column.status": {
+		"defaultMessage": "Status"
+	},
+	"created-on": {
+		"defaultMessage": "Erstellt: {date}"
+	},
+	"dashboard": {
+		"defaultMessage": "Dashboard"
+	},
+	"dead-host": {
+		"defaultMessage": "404-Host"
+	},
+	"dead-hosts": {
+		"defaultMessage": "404-Hosts"
+	},
+	"dead-hosts.count": {
+		"defaultMessage": "{count} {count, plural, one {404-Host} other {404-Hosts}}"
+	},
+	"disabled": {
+		"defaultMessage": "Deaktiviert"
+	},
+	"domain-names": {
+		"defaultMessage": "Domainnamen"
+	},
+	"domain-names.max": {
+		"defaultMessage": "Maximal {count} Domainnamen"
+	},
+	"domain-names.placeholder": {
+		"defaultMessage": "Tippen, um Domain hinzuzufügen..."
+	},
+	"domain-names.wildcards-not-permitted": {
+		"defaultMessage": "Wildcards für diesen Typ nicht erlaubt"
+	},
+	"domain-names.wildcards-not-supported": {
+		"defaultMessage": "Wildcards für diese CA nicht unterstützt"
+	},
+	"domains.force-ssl": {
+		"defaultMessage": "SSL erzwingen"
+	},
+	"domains.hsts-enabled": {
+		"defaultMessage": "HSTS aktiviert"
+	},
+	"domains.hsts-subdomains": {
+		"defaultMessage": "HSTS-Subdomains"
+	},
+	"domains.http2-support": {
+		"defaultMessage": "HTTP/2-Unterstützung"
+	},
+	"domains.http3-support": {
+		"defaultMessage": "HTTP/3-Unterstützung"
+	},
+	"domains.proxy-protocol": {
+		"defaultMessage": "PROXY Protocol"
+	},
+	"domains.use-dns": {
+		"defaultMessage": "DNS-Challenge verwenden"
+	},
+	"email-address": {
+		"defaultMessage": "E-Mail-Adresse"
+	},
+	"empty-search": {
+		"defaultMessage": "Keine Ergebnisse gefunden"
+	},
+	"empty-subtitle": {
+		"defaultMessage": "Warum nicht eine erstellen?"
+	},
+	"enabled": {
+		"defaultMessage": "Aktiviert"
+	},
+	"error.access.at-least-one": {
+		"defaultMessage": "Mindestens eine Autorisierung oder eine Zugriffsregel ist erforderlich"
+	},
+	"error.access.duplicate-usernames": {
+		"defaultMessage": "Autorisierungs-Benutzernamen müssen eindeutig sein"
+	},
+	"error.duplicate-port": {
+		"defaultMessage": "Ports müssen eindeutig sein"
+	},
+	"error.invalid-auth": {
+		"defaultMessage": "Ungültige E-Mail oder Passwort"
+	},
+	"error.invalid-domain": {
+		"defaultMessage": "Ungültige Domain: {domain}"
+	},
+	"error.invalid-port": {
+		"defaultMessage": "Ungültiger Port"
+	},
+	"error.invalid-email": {
+		"defaultMessage": "Ungültige E-Mail-Adresse"
+	},
+	"error.max-character-length": {
+		"defaultMessage": "Maximale Länge ist {max} Zeichen"
+	},
+	"error.max-domains": {
+		"defaultMessage": "Zu viele Domains, Maximum ist {max}"
+	},
+	"error.maximum": {
+		"defaultMessage": "Maximum ist {max}"
+	},
+	"error.min-character-length": {
+		"defaultMessage": "Minimale Länge ist {min} Zeichen"
+	},
+	"error.minimum": {
+		"defaultMessage": "Minimum ist {min}"
+	},
+	"error.passwords-must-match": {
+		"defaultMessage": "Passwörter müssen übereinstimmen"
+	},
+	"error.required": {
+		"defaultMessage": "Pflichtfeld"
+	},
+	"error.upstream-required": {
+		"defaultMessage": "Mindestens ein Upstream-Server ist erforderlich"
+	},
+	"error.fix-validation": {
+		"defaultMessage": "Bitte die markierten Felder vor dem Speichern korrigieren"
+	},
+	"error.fix-validation-fields": {
+		"defaultMessage": "Bitte ausfüllen: {fields}"
+	},
+	"expires.on": {
+		"defaultMessage": "Läuft ab: {date}"
+	},
+	"footer.github-fork": {
+		"defaultMessage": "Fork mich auf GitHub"
+	},
+	"host.flags.block-exploits": {
+		"defaultMessage": "Gängige Exploits blockieren"
+	},
+	"host.flags.cache-assets": {
+		"defaultMessage": "Assets zwischenspeichern"
+	},
+	"host.flags.preserve-path": {
+		"defaultMessage": "Pfad beibehalten"
+	},
+	"host.flags.protocols": {
+		"defaultMessage": "Protokolle"
+	},
+	"host.flags.websockets-upgrade": {
+		"defaultMessage": "WebSocket-Unterstützung"
+	},
+	"host.forward-port": {
+		"defaultMessage": "Weiterleitungs-Port"
+	},
+	"host.listen-ports": {
+		"defaultMessage": "Listen-Ports"
+	},
+	"host.listen-ports.help": {
+		"defaultMessage": "Kommagetrennte Ports. Port 80 ist für ACME erforderlich; wenn ein Zertifikat gesetzt ist, werden alle Nicht-80-Ports als HTTPS behandelt."
+	},
+	"host.forward-scheme": {
+		"defaultMessage": "Schema"
+	},
+	"host.heartbeat": {
+		"defaultMessage": "Heartbeat"
+	},
+	"host.heartbeat.status.waiting": {
+		"defaultMessage": "Warten auf Eingabe"
+	},
+	"host.heartbeat.status.checking": {
+		"defaultMessage": "Wird geprüft"
+	},
+	"host.heartbeat.status.ok": {
+		"defaultMessage": "OK"
+	},
+	"host.heartbeat.status.failed": {
+		"defaultMessage": "Fehlgeschlagen"
+	},
+	"host.heartbeat.status.unknown": {
+		"defaultMessage": "Nicht geprüft"
+	},
+	"host.heartbeat.status.disabled": {
+		"defaultMessage": "Deaktiviert"
+	},
+	"host.heartbeat.status.unsupported": {
+		"defaultMessage": "Nicht unterstützt"
+	},
+	"host.heartbeat.detail.status": {
+		"defaultMessage": "Status"
+	},
+	"host.heartbeat.detail.status-code": {
+		"defaultMessage": "HTTP-Status"
+	},
+	"host.heartbeat.detail.latency": {
+		"defaultMessage": "Latenz"
+	},
+	"host.heartbeat.detail.checked-at": {
+		"defaultMessage": "Geprüft am"
+	},
+	"host.heartbeat.detail.error": {
+		"defaultMessage": "Fehler"
+	},
+	"host.heartbeat.detail.redirect": {
+		"defaultMessage": "Leitet weiter zu {scheme}"
+	},
+	"host.headers": {
+		"defaultMessage": "Security-Header"
+	},
+	"host.headers.add": {
+		"defaultMessage": "Header hinzufügen"
+	},
+	"host.headers.empty": {
+		"defaultMessage": "Keine Header konfiguriert"
+	},
+	"host.headers.preset.basic": {
+		"defaultMessage": "Basics hinzufügen"
+	},
+	"host.headers.preset.strict": {
+		"defaultMessage": "CSP hinzufügen (streng)"
+	},
+	"host.headers.preset.hsts": {
+		"defaultMessage": "HSTS hinzufügen"
+	},
+	"host.rate-limit": {
+		"defaultMessage": "Rate-Limiting"
+	},
+	"host.rate-limit.off": {
+		"defaultMessage": "Aus"
+	},
+	"host.rate-limit.summary": {
+		"defaultMessage": "{rps} Anfragen/s"
+	},
+	"host.rate-limit.enabled": {
+		"defaultMessage": "Rate-Limiting aktivieren"
+	},
+	"host.rate-limit.rps": {
+		"defaultMessage": "Anfragen pro Sekunde"
+	},
+	"host.rate-limit.burst": {
+		"defaultMessage": "Burst"
+	},
+	"host.rate-limit.nodelay": {
+		"defaultMessage": "Keine Verzögerung (nodelay)"
+	},
+	"host.upstream": {
+		"defaultMessage": "Upstream-Pool"
+	},
+	"host.upstream.enabled": {
+		"defaultMessage": "Load Balancing aktivieren"
+	},
+	"host.upstream.policy": {
+		"defaultMessage": "Load-Balancing-Richtlinie"
+	},
+	"host.upstream.policy.round-robin": {
+		"defaultMessage": "Round Robin"
+	},
+	"host.upstream.policy.least-conn": {
+		"defaultMessage": "Wenigste Verbindungen"
+	},
+	"host.upstream.policy.ip-hash": {
+		"defaultMessage": "IP-Hash"
+	},
+	"host.upstream.add": {
+		"defaultMessage": "Upstream hinzufügen"
+	},
+	"host.upstream.empty": {
+		"defaultMessage": "Keine Upstreams konfiguriert"
+	},
+	"host.upstream.backup": {
+		"defaultMessage": "Backup"
+	},
+	"host.upstream.server": {
+		"defaultMessage": "Upstream-Host"
+	},
+	"host.upstream.port": {
+		"defaultMessage": "Port"
+	},
+	"host.upstream.weight": {
+		"defaultMessage": "Gewichtung"
+	},
+	"host.upstream.max-fails": {
+		"defaultMessage": "Max. Fehler"
+	},
+	"host.upstream.fail-timeout": {
+		"defaultMessage": "Fail-Timeout (s)"
+	},
+	"host.upstream.mtls": {
+		"defaultMessage": "Upstream-mTLS"
+	},
+	"host.upstream.mtls.certificate": {
+		"defaultMessage": "Client-Zertifikat"
+	},
+	"hosts": {
+		"defaultMessage": "Hosts"
+	},
+	"http-only": {
+		"defaultMessage": "Nur HTTP"
+	},
+	"lets-encrypt": {
+		"defaultMessage": "Let's Encrypt"
+	},
+	"lets-encrypt-via-dns": {
+		"defaultMessage": "Let's Encrypt über DNS"
+	},
+	"lets-encrypt-via-http": {
+		"defaultMessage": "Let's Encrypt über HTTP"
+	},
+	"loading": {
+		"defaultMessage": "Laden…"
+	},
+	"login.title": {
+		"defaultMessage": "In dein Konto einloggen"
+	},
+	"nginx-config.label": {
+		"defaultMessage": "Benutzerdefinierte Nginx-Konfiguration"
+	},
+	"nginx-config.placeholder": {
+		"defaultMessage": "# Gib hier deine benutzerdefinierte Nginx-Konfiguration auf eigenes Risiko ein!"
+	},
+	"no-permission-error": {
+		"defaultMessage": "Du hast keine Berechtigung, dies anzusehen."
+	},
+	"notfound.action": {
+		"defaultMessage": "Zur Startseite"
+	},
+	"notfound.content": {
+		"defaultMessage": "Es tut uns leid, aber die gesuchte Seite wurde nicht gefunden"
+	},
+	"notfound.title": {
+		"defaultMessage": "Ups… Du hast eine Fehlerseite gefunden"
+	},
+	"notification.error": {
+		"defaultMessage": "Fehler"
+	},
+	"notification.object-deleted": {
+		"defaultMessage": "{object} wurde gelöscht"
+	},
+	"notification.object-disabled": {
+		"defaultMessage": "{object} wurde deaktiviert"
+	},
+	"notification.object-enabled": {
+		"defaultMessage": "{object} wurde aktiviert"
+	},
+	"notification.object-renewed": {
+		"defaultMessage": "{object} wurde erneuert"
+	},
+	"notification.object-saved": {
+		"defaultMessage": "{object} wurde gespeichert"
+	},
+	"notification.success": {
+		"defaultMessage": "Erfolg"
+	},
+	"object.actions-title": {
+		"defaultMessage": "{object} #{id}"
+	},
+	"object.add": {
+		"defaultMessage": "{object} hinzufügen"
+	},
+	"object.delete": {
+		"defaultMessage": "{object} löschen"
+	},
+	"object.delete.content": {
+		"defaultMessage": "Möchtest du dieses {object} wirklich löschen?"
+	},
+	"object.edit": {
+		"defaultMessage": "{object} bearbeiten"
+	},
+	"object.empty": {
+		"defaultMessage": "Es gibt keine {objects}"
+	},
+	"object.event.created": {
+		"defaultMessage": "{object} erstellt"
+	},
+	"object.event.deleted": {
+		"defaultMessage": "{object} gelöscht"
+	},
+	"object.event.disabled": {
+		"defaultMessage": "{object} deaktiviert"
+	},
+	"object.event.enabled": {
+		"defaultMessage": "{object} aktiviert"
+	},
+	"object.event.renewed": {
+		"defaultMessage": "{object} erneuert"
+	},
+	"object.event.updated": {
+		"defaultMessage": "{object} aktualisiert"
+	},
+	"offline": {
+		"defaultMessage": "Offline"
+	},
+	"online": {
+		"defaultMessage": "Online"
+	},
+	"options": {
+		"defaultMessage": "Optionen"
+	},
+	"password": {
+		"defaultMessage": "Passwort"
+	},
+	"password.generate": {
+		"defaultMessage": "Zufälliges Passwort erzeugen"
+	},
+	"password.hide": {
+		"defaultMessage": "Passwort verbergen"
+	},
+	"password.show": {
+		"defaultMessage": "Passwort anzeigen"
+	},
+	"permissions.hidden": {
+		"defaultMessage": "Ausgeblendet"
+	},
+	"permissions.manage": {
+		"defaultMessage": "Verwalten"
+	},
+	"permissions.view": {
+		"defaultMessage": "Nur anzeigen"
+	},
+	"permissions.visibility.all": {
+		"defaultMessage": "Alle Elemente"
+	},
+	"permissions.visibility.title": {
+		"defaultMessage": "Sichtbarkeit der Elemente"
+	},
+	"permissions.visibility.user": {
+		"defaultMessage": "Nur erstellte Elemente"
+	},
+	"proxy-host": {
+		"defaultMessage": "Proxy-Host"
+	},
+	"proxy-host.forward-host": {
+		"defaultMessage": "Weiterleitungs-Hostname / IP"
+	},
+	"proxy-hosts": {
+		"defaultMessage": "Proxy-Hosts"
+	},
+	"proxy-hosts.count": {
+		"defaultMessage": "{count} {count, plural, one {Proxy-Host} other {Proxy-Hosts}}"
+	},
+	"public": {
+		"defaultMessage": "Öffentlich"
+	},
+	"redirection-host": {
+		"defaultMessage": "Weiterleitungs-Host"
+	},
+	"redirection-host.forward-domain": {
+		"defaultMessage": "Ziel-Domain"
+	},
+	"redirection-hosts": {
+		"defaultMessage": "Weiterleitungs-Hosts"
+	},
+	"redirection-hosts.count": {
+		"defaultMessage": "{count} {count, plural, one {Weiterleitungs-Host} other {Weiterleitungs-Hosts}}"
+	},
+	"role.admin": {
+		"defaultMessage": "Administrator"
+	},
+	"role.standard-user": {
+		"defaultMessage": "Standardbenutzer"
+	},
+	"save": {
+		"defaultMessage": "Speichern"
+	},
+	"setting": {
+		"defaultMessage": "Einstellung"
+	},
+	"settings": {
+		"defaultMessage": "Einstellungen"
+	},
+	"settings.default-site": {
+		"defaultMessage": "Standard-Site"
+	},
+	"settings.default-site.404": {
+		"defaultMessage": "404-Seite"
+	},
+	"settings.default-site.444": {
+		"defaultMessage": "Keine Antwort (444)"
+	},
+	"settings.default-site.congratulations": {
+		"defaultMessage": "Glückwunsch-Seite"
+	},
+	"settings.default-site.description": {
+		"defaultMessage": "Was angezeigt werden soll, wenn Nginx mit einem unbekannten Host angesprochen wird"
+	},
+	"settings.default-site.html": {
+		"defaultMessage": "Benutzerdefiniertes HTML"
+	},
+	"settings.default-site.html.placeholder": {
+		"defaultMessage": "<!-- Gib hier deinen benutzerdefinierten HTML-Inhalt ein -->"
+	},
+	"settings.default-site.redirect": {
+		"defaultMessage": "Weiterleitung"
+	},
+	"settings.proxy-protocol": {
+		"defaultMessage": "PROXY Protocol"
+	},
+	"settings.proxy-protocol.description": {
+		"defaultMessage": "Ports, die den PROXY Protocol-Header für HTTP-Listener erwarten sollen (80/443 konsistent halten)"
+	},
+	"settings.proxy-protocol.notice": {
+		"defaultMessage": "PROXY Protocol wird pro Listener (Port/IP) ausgehandelt, nicht pro Host. Wenn mehrere Hosts einen Port teilen, müssen sie alle die gleiche PROXY Protocol-Einstellung verwenden."
+	},
+	"settings.proxy-protocol.empty": {
+		"defaultMessage": "Keine Ports konfiguriert"
+	},
+	"settings.proxy-protocol.port": {
+		"defaultMessage": "Port"
+	},
+	"setup.preamble": {
+		"defaultMessage": "Beginne mit dem Erstellen deines Admin-Kontos."
+	},
+	"setup.title": {
+		"defaultMessage": "Willkommen!"
+	},
+	"sign-in": {
+		"defaultMessage": "Anmelden"
+	},
+	"ssl-certificate": {
+		"defaultMessage": "SSL-Zertifikat"
+	},
+	"stream": {
+		"defaultMessage": "Stream"
+	},
+	"stream.forward-host": {
+		"defaultMessage": "Ziel-Host"
+	},
+	"stream.incoming-port": {
+		"defaultMessage": "Eingangsport"
+	},
+	"streams": {
+		"defaultMessage": "Streams"
+	},
+	"streams.count": {
+		"defaultMessage": "{count} {count, plural, one {Stream} other {Streams}}"
+	},
+	"streams.proxy-protocol": {
+		"defaultMessage": "PROXY Protocol erwarten"
+	},
+	"streams.proxy-protocol-upstream": {
+		"defaultMessage": "PROXY Protocol zum Upstream senden"
+	},
+	"streams.tcp": {
+		"defaultMessage": "TCP"
+	},
+	"streams.udp": {
+		"defaultMessage": "UDP"
+	},
+	"test": {
+		"defaultMessage": "Test"
+	},
+	"user": {
+		"defaultMessage": "Benutzer"
+	},
+	"user.change-password": {
+		"defaultMessage": "Passwort ändern"
+	},
+	"user.confirm-password": {
+		"defaultMessage": "Passwort bestätigen"
+	},
+	"user.current-password": {
+		"defaultMessage": "Aktuelles Passwort"
+	},
+	"user.edit-profile": {
+		"defaultMessage": "Profil bearbeiten"
+	},
+	"user.full-name": {
+		"defaultMessage": "Vollständiger Name"
+	},
+	"user.login-as": {
+		"defaultMessage": "Anmelden als {name}"
+	},
+	"user.logout": {
+		"defaultMessage": "Abmelden"
+	},
+	"user.new-password": {
+		"defaultMessage": "Neues Passwort"
+	},
+	"user.nickname": {
+		"defaultMessage": "Spitzname"
+	},
+	"user.set-password": {
+		"defaultMessage": "Passwort setzen"
+	},
+	"user.set-permissions": {
+		"defaultMessage": "Berechtigungen für {name} setzen"
+	},
+	"user.switch-dark": {
+		"defaultMessage": "In den Dark-Mode wechseln"
+	},
+	"user.switch-light": {
+		"defaultMessage": "In den Light-Mode wechseln"
+	},
+	"username": {
+		"defaultMessage": "Benutzername"
+	},
+	"users": {
+		"defaultMessage": "Benutzer"
+	}
+}
