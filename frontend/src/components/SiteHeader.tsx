@@ -37,6 +37,7 @@ export function SiteHeader() {
 							/>
 						</div>
 						Nginx Proxy Manager
+						<span className={styles.comicTag}>on steroids</span>
 					</NavLink>
 				</div>
 				<div className="navbar-nav flex-row order-md-last">

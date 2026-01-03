@@ -6,3 +6,10 @@
 		margin-right: 0.8rem;
 	}
 }
+
+.comicTag {
+	margin-left: 0.35rem;
+	font-family: "Comic Sans MS", "Comic Sans", cursive;
+	font-size: 0.95rem;
+	font-weight: 700;
+}
