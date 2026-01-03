@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { getLocale, intl, T } from "src/locale";
 import { getCountryOptions } from "src/data/countries";
 import { Flag } from "./Flag";
@@ -12,6 +12,7 @@ type CountryChecklistProps = {
 	value: string[];
 	onChange: (value: string[]) => void;
 	disabled?: boolean;
+	inputId?: string;
 };
 
 const normalizeValue = (value: string[]) =>
@@ -19,7 +20,14 @@ const normalizeValue = (value: string[]) =>
 		? value.map((code) => `${code || ""}`.trim().toUpperCase()).filter(Boolean)
 		: [];
 
-export default function CountryChecklist({ value, onChange, disabled = false }: CountryChecklistProps) {
+export default function CountryChecklist({
+	value,
+	onChange,
+	disabled = false,
+	inputId,
+}: CountryChecklistProps) {
+	const autoId = useId();
+	const searchId = inputId || autoId;
 	const [filter, setFilter] = useState("");
 	const locale = getLocale(true);
 	const options = useMemo<CountryOption[]>(() => getCountryOptions(locale), [locale]);
@@ -62,7 +70,9 @@ export default function CountryChecklist({ value, onChange, disabled = false }: 
 			return;
 		}
 		const next = new Set(selectedSet);
-		filteredOptions.forEach((option) => next.add(option.code));
+		filteredOptions.forEach((option) => {
+			next.add(option.code);
+		});
 		updateSelection(next);
 	};
 
@@ -71,7 +81,9 @@ export default function CountryChecklist({ value, onChange, disabled = false }: 
 			return;
 		}
 		const next = new Set(selectedSet);
-		filteredOptions.forEach((option) => next.delete(option.code));
+		filteredOptions.forEach((option) => {
+			next.delete(option.code);
+		});
 		updateSelection(next);
 	};
 
@@ -79,6 +91,7 @@ export default function CountryChecklist({ value, onChange, disabled = false }: 
 		<div>
 			<div className="d-flex flex-wrap gap-2 mb-2 align-items-center">
 				<input
+					id={searchId}
 					type="text"
 					className="form-control"
 					placeholder={intl.formatMessage({ id: "geo-access.countries.search" })}

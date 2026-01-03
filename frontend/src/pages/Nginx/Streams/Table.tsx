@@ -91,6 +91,28 @@ export default function Table({
 					);
 				},
 			}),
+			columnHelper.accessor((row: any) => row, {
+				id: "geoAccess",
+				header: intl.formatMessage({ id: "column.geo-access" }),
+				cell: (info: any) => {
+					const value = info.getValue();
+					let statusId = "geo-access.status.global";
+					if (value.geoAccessOverride) {
+						if (!value.geoAccessEnabled) {
+							statusId = "geo-access.status.disabled";
+						} else if (value.geoAccessPreset) {
+							statusId = "geo-access.status.preset";
+						} else {
+							statusId = "geo-access.status.enabled";
+						}
+					}
+					return (
+						<span className="badge badge-lg domain-name">
+							<T id={statusId} />
+						</span>
+					);
+				},
+			}),
 			columnHelper.accessor((row: any) => row.certificate, {
 				id: "certificate",
 				header: intl.formatMessage({ id: "column.ssl" }),

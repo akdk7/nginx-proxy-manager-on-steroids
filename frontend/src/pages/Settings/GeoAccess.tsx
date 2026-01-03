@@ -275,6 +275,7 @@ export default function GeoAccess() {
 								<T id="settings.geo-access.countries" />
 							</label>
 							<CountryChecklist
+								inputId="geoAccessCountries"
 								value={values.countries || []}
 								onChange={(next) => setFieldValue("countries", next)}
 							/>
@@ -333,10 +334,11 @@ export default function GeoAccess() {
 										</div>
 									</div>
 									<div className="mb-3">
-										<label className="form-label">
+										<label className="form-label" htmlFor="geoAccessPresetCountries">
 											<T id="settings.geo-access.countries" />
 										</label>
 										<CountryChecklist
+											inputId="geoAccessPresetCountries"
 											value={presetDraft.countries || []}
 											onChange={(next) => {
 												setPresetDraft({ ...presetDraft, countries: next });

@@ -1086,10 +1086,11 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 															<div className="col-md-4">
 																{geoAccessSource === "preset" ? (
 																	<>
-																		<label className="form-label">
+																		<label className="form-label" htmlFor="geoAccessPresetMode">
 																			<T id="host.geo-access.mode" />
 																		</label>
 																		<input
+																			id="geoAccessPresetMode"
 																			type="text"
 																			className="form-control"
 																			value={
@@ -1107,10 +1108,11 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 																) : null}
 															</div>
 															<div className="col-12 mt-3">
-																<label className="form-label">
+																<label className="form-label" htmlFor="streamGeoCountries">
 																	<T id="host.geo-access.countries" />
 																</label>
 																<CountryChecklist
+																	inputId="streamGeoCountries"
 																	value={
 																		geoAccessSource === "preset"
 																			? selectedPreset?.countries || []

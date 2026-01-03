@@ -263,6 +263,9 @@
 	"column.rate-limit": {
 		"defaultMessage": "Rate Limit"
 	},
+	"column.geo-access": {
+		"defaultMessage": "GeoIP"
+	},
 	"column.roles": {
 		"defaultMessage": "Roles"
 	},
@@ -577,6 +580,18 @@
 	},
 	"geo-access.countries.selected": {
 		"defaultMessage": "{count} selected / {total}"
+	},
+	"geo-access.status.global": {
+		"defaultMessage": "Global"
+	},
+	"geo-access.status.enabled": {
+		"defaultMessage": "Enabled"
+	},
+	"geo-access.status.disabled": {
+		"defaultMessage": "Disabled"
+	},
+	"geo-access.status.preset": {
+		"defaultMessage": "Preset"
 	},
 	"host.upstream": {
 		"defaultMessage": "Upstream Pool"

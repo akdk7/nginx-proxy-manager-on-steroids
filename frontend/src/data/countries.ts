@@ -258,7 +258,7 @@ export const getCountryOptions = (locale) => {
 	if (typeof Intl !== "undefined" && typeof Intl.DisplayNames === "function") {
 		try {
 			displayNames = new Intl.DisplayNames([normalizedLocale], { type: "region" });
-		} catch (err) {
+		} catch (_err) {
 			displayNames = null;
 		}
 	}
