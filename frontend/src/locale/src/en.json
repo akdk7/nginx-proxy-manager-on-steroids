@@ -375,7 +375,7 @@
 		"defaultMessage": "Invalid port"
 	},
 	"error.geo-access.countries-required": {
-		"defaultMessage": "Add at least one country code for allow list mode"
+		"defaultMessage": "Select at least one country for allow list mode"
 	},
 	"error.invalid-email": {
 		"defaultMessage": "Invalid email address"
@@ -907,6 +907,30 @@
 	},
 	"settings.geo-access.presets.empty": {
 		"defaultMessage": "No presets created yet"
+	},
+	"settings.geo-access.presets.apply.title": {
+		"defaultMessage": "Apply Preset"
+	},
+	"settings.geo-access.presets.apply.description": {
+		"defaultMessage": "Assign the selected preset to every Proxy Host or Stream."
+	},
+	"settings.geo-access.presets.apply.preset": {
+		"defaultMessage": "Preset"
+	},
+	"settings.geo-access.presets.apply.select": {
+		"defaultMessage": "Select a preset"
+	},
+	"settings.geo-access.presets.apply.proxy-hosts": {
+		"defaultMessage": "Apply to Proxy Hosts"
+	},
+	"settings.geo-access.presets.apply.streams": {
+		"defaultMessage": "Apply to Streams"
+	},
+	"settings.geo-access.presets.apply.error": {
+		"defaultMessage": "Select a preset before applying"
+	},
+	"settings.geo-access.presets.apply.success": {
+		"defaultMessage": "Applied preset \"{preset}\" to {count} {target}"
 	},
 	"setup.preamble": {
 		"defaultMessage": "Get started by creating your admin account."

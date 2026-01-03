@@ -1,10 +1,11 @@
 import { Field, Form, Formik } from "formik";
 import { type ReactNode, useState } from "react";
 import { Alert } from "react-bootstrap";
+import { updateProxyHost, updateStream } from "src/api/backend";
 import { Button, CountryChecklist, Loading } from "src/components";
-import { useSetSetting, useSetting } from "src/hooks";
+import { fetchProxyHosts, fetchStreams, useSetSetting, useSetting } from "src/hooks";
 import { intl, T } from "src/locale";
-import { showObjectSuccess } from "src/notifications";
+import { showError, showObjectSuccess, showSuccess } from "src/notifications";
 
 type GeoPreset = {
 	id: string;
@@ -27,6 +28,9 @@ export default function GeoAccess() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [presetDraft, setPresetDraft] = useState<GeoPreset | null>(null);
 	const [presetError, setPresetError] = useState<string | null>(null);
+	const [applyPresetId, setApplyPresetId] = useState("");
+	const [applyError, setApplyError] = useState<ReactNode | null>(null);
+	const [applyTarget, setApplyTarget] = useState<"proxy-hosts" | "streams" | null>(null);
 
 	const onSubmit = async (values: any, { setSubmitting }: any) => {
 		if (isSubmitting) return;
@@ -70,6 +74,55 @@ export default function GeoAccess() {
 			errors.countries = intl.formatMessage({ id: "error.geo-access.countries-required" });
 		}
 		return errors;
+	};
+
+	const applyPreset = async (target: "proxy-hosts" | "streams", values: any) => {
+		if (applyTarget) {
+			return;
+		}
+		const presets = Array.isArray(values.presets) ? values.presets : [];
+		const preset = presets.find((entry: GeoPreset) => entry.id === applyPresetId);
+		if (!preset) {
+			setApplyError(<T id="settings.geo-access.presets.apply.error" />);
+			return;
+		}
+		setApplyTarget(target);
+		setApplyError(null);
+		try {
+			const items =
+				target === "proxy-hosts" ? await fetchProxyHosts() : await fetchStreams();
+			for (const item of items) {
+				const payload = {
+					id: item.id,
+					geoAccessOverride: true,
+					geoAccessEnabled: true,
+					geoAccessPreset: preset.id,
+					geoAccessMode: preset.mode,
+					geoAccessCountries: preset.countries,
+				};
+				if (target === "proxy-hosts") {
+					await updateProxyHost(payload as any);
+				} else {
+					await updateStream(payload as any);
+				}
+			}
+			showSuccess(
+				intl.formatMessage(
+					{ id: "settings.geo-access.presets.apply.success" },
+					{
+						preset: preset.name,
+						count: items.length,
+						target: intl.formatMessage({ id: target }),
+					},
+				),
+			);
+		} catch (err: any) {
+			const message = typeof err?.message === "string" ? err.message : "Unexpected error";
+			showError(message);
+			setApplyError(message);
+		} finally {
+			setApplyTarget(null);
+		}
 	};
 
 	if (!isLoading && error) {
@@ -435,6 +488,63 @@ export default function GeoAccess() {
 									<T id="settings.geo-access.presets.empty" />
 								</div>
 							)}
+							<div className="border rounded p-3 mt-4">
+								<h5 className="mb-2">
+									<T id="settings.geo-access.presets.apply.title" />
+								</h5>
+								<div className="text-muted mb-3">
+									<T id="settings.geo-access.presets.apply.description" />
+								</div>
+								<div className="row align-items-end">
+									<div className="col-md-6">
+										<label className="form-label" htmlFor="geoAccessApplyPreset">
+											<T id="settings.geo-access.presets.apply.preset" />
+										</label>
+										<select
+											id="geoAccessApplyPreset"
+											className="form-control"
+											value={applyPresetId}
+											onChange={(e) => {
+												setApplyPresetId(e.target.value);
+												setApplyError(null);
+											}}
+											disabled={applyTarget !== null || !values.presets?.length}
+										>
+											<option value="">
+												<T id="settings.geo-access.presets.apply.select" />
+											</option>
+											{values.presets.map((preset: GeoPreset) => (
+												<option key={preset.id} value={preset.id}>
+													{preset.name}
+												</option>
+											))}
+										</select>
+									</div>
+									<div className="col-md-6 d-flex flex-wrap gap-2 mt-3 mt-md-0">
+										<Button
+											actionType="primary"
+											isLoading={applyTarget === "proxy-hosts"}
+											disabled={applyTarget !== null || !values.presets?.length}
+											onClick={() => applyPreset("proxy-hosts", values)}
+										>
+											<T id="settings.geo-access.presets.apply.proxy-hosts" />
+										</Button>
+										<Button
+											actionType="primary"
+											isLoading={applyTarget === "streams"}
+											disabled={applyTarget !== null || !values.presets?.length}
+											onClick={() => applyPreset("streams", values)}
+										>
+											<T id="settings.geo-access.presets.apply.streams" />
+										</Button>
+									</div>
+								</div>
+								{applyError ? (
+									<div className="text-danger small mt-2">
+										{applyError}
+									</div>
+								) : null}
+							</div>
 						</div>
 					</div>
 					<div className="card-footer bg-transparent mt-auto">

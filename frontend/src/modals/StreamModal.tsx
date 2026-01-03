@@ -654,10 +654,10 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 						const geoPresets = Array.isArray(geoAccessSetting?.meta?.presets)
 							? geoAccessSetting.meta.presets
 							: [];
-						const geoAccessSource = values.geoAccessPreset ? "preset" : "custom";
 						const selectedPreset = geoPresets.find(
 							(preset: any) => preset.id === values.geoAccessPreset,
 						);
+						const geoAccessSource = values.geoAccessPreset && selectedPreset ? "preset" : "custom";
 
 						return (
 							<Form noValidate>
