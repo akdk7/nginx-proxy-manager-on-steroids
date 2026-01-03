@@ -124,7 +124,7 @@ export default function GeoAccess() {
 			validate={validate}
 			onSubmit={onSubmit}
 		>
-			{({ values, errors, submitCount, setFieldValue }) => (
+			{({ values, submitCount, setFieldValue }) => (
 				<Form>
 					<div className="card-body">
 						<Alert variant="danger" show={!!errorMsg} onClose={() => setErrorMsg(null)} dismissible>

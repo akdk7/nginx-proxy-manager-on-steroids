@@ -573,12 +573,15 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 		setIsSubmitting(true);
 		setErrorMsg(null);
 		const geoCountries = parseGeoCountriesInput(values.geoAccessCountriesInput || "");
-		const { geoAccessCountriesInput, ...restValues } = values;
+		const restValues = {
+			...values,
+			geoAccessCountries: geoCountries,
+		};
+		delete restValues.geoAccessCountriesInput;
 
 		const { ...payload } = {
 			id: id === "new" ? undefined : id,
 			...restValues,
-			geoAccessCountries: geoCountries,
 		};
 
 		setStream(payload, {

@@ -542,12 +542,15 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 
 		const normalizedListenPorts = normalizeListenPortsInput(values.listenPorts);
 		const geoCountries = parseGeoCountriesInput(values.geoAccessCountriesInput || "");
-		const { geoAccessCountriesInput, ...restValues } = values;
+		const restValues = {
+			...values,
+			geoAccessCountries: geoCountries,
+		};
+		delete restValues.geoAccessCountriesInput;
 
 		const { ...payload } = {
 			id: id === "new" ? undefined : id,
 			...restValues,
-			geoAccessCountries: geoCountries,
 			listenPorts: normalizedListenPorts.ports.length ? normalizedListenPorts.ports : defaultListenPorts,
 		};
 
