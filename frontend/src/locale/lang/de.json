@@ -314,7 +314,7 @@
   "settings.geo-access.presets.apply.proxy-hosts": "Auf Proxy Hosts anwenden",
   "settings.geo-access.presets.apply.streams": "Auf Streams anwenden",
   "settings.geo-access.presets.apply.error": "Bitte ein Preset auswählen",
-  "settings.geo-access.presets.apply.success": "Preset \"{preset}\" auf {count} {target} angewendet"
+  "settings.geo-access.presets.apply.success": "Preset \"{preset}\" auf {count} {target} angewendet",
   "setup.preamble": "Beginne mit dem Erstellen deines Admin-Kontos.",
   "setup.title": "Willkommen!",
   "sign-in": "Anmelden",
