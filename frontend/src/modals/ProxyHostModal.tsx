@@ -49,6 +49,54 @@ const normalizeListenPortsInput = (value: unknown) => {
 	return { ports: uniquePorts, hasValue: true };
 };
 
+const normalizeGeoCountriesInput = (value: unknown) => {
+	if (Array.isArray(value)) {
+		return value.join(", ");
+	}
+	if (typeof value === "string") {
+		return value;
+	}
+	return "";
+};
+
+const parseGeoCountriesInput = (value: string) => {
+	if (!value) {
+		return [];
+	}
+	const parts = value
+		.split(/[\s,]+/)
+		.map((part) => part.trim().toUpperCase())
+		.filter(Boolean);
+	const unique = new Set<string>();
+	const result: string[] = [];
+	parts.forEach((part) => {
+		if (!/^[A-Z]{2}$/.test(part) || unique.has(part)) {
+			return;
+		}
+		unique.add(part);
+		result.push(part);
+	});
+	return result;
+};
+
+const validateProxyHost = (values: any) => {
+	const errors = {
+		...validateUpstreamServers(values),
+	};
+	const geoState = values.geoAccessOverride
+		? values.geoAccessEnabled
+			? "enabled"
+			: "disabled"
+		: "inherit";
+	if (geoState === "enabled") {
+		const countries = parseGeoCountriesInput(values.geoAccessCountriesInput || "");
+		if ((values.geoAccessMode || "allow") === "allow" && countries.length === 0) {
+			errors.geoAccessCountriesInput = "error.geo-access.countries-required";
+		}
+	}
+	return errors;
+};
+
 const showProxyHostModal = (id: number | "new") => {
 	EasyModal.show(ProxyHostModal, { id });
 };
@@ -493,10 +541,13 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 		setErrorMsg(null);
 
 		const normalizedListenPorts = normalizeListenPortsInput(values.listenPorts);
+		const geoCountries = parseGeoCountriesInput(values.geoAccessCountriesInput || "");
+		const { geoAccessCountriesInput, ...restValues } = values;
 
 		const { ...payload } = {
 			id: id === "new" ? undefined : id,
-			...values,
+			...restValues,
+			geoAccessCountries: geoCountries,
 			listenPorts: normalizedListenPorts.ports.length ? normalizedListenPorts.ports : defaultListenPorts,
 		};
 
@@ -544,6 +595,10 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 							upstreamServers: data?.upstreamServers || [],
 							upstreamSslCertificateId: data?.upstreamSslCertificateId || 0,
 							securityHeaders: data?.securityHeaders || [],
+							geoAccessOverride: data?.geoAccessOverride || false,
+							geoAccessEnabled: data?.geoAccessEnabled || false,
+							geoAccessMode: data?.geoAccessMode || "allow",
+							geoAccessCountriesInput: normalizeGeoCountriesInput(data?.geoAccessCountries),
 							allowWebsocketUpgrade: data?.allowWebsocketUpgrade || false,
 							// Locations tab
 							locations: data?.locations || [],
@@ -559,7 +614,7 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 							meta: data?.meta || {},
 						} as any
 					}
-					validate={validateUpstreamServers}
+					validate={validateProxyHost}
 					onSubmit={onSubmit}
 				>
 					{({ values, setFieldValue, isSubmitting, errors, submitCount }: any) => {
@@ -583,6 +638,8 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 									return intl.formatMessage({ id: "host.upstream" });
 								case "locations":
 									return intl.formatMessage({ id: "column.custom-locations" });
+								case "geoAccessCountriesInput":
+									return intl.formatMessage({ id: "host.geo-access.countries" });
 								default:
 									return key.replace(/_/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2");
 							}
@@ -592,6 +649,11 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 								? Object.keys(errors).map((key) => labelForField(key))
 								: [];
 						const errorSummary = errorFields.length ? errorFields.join(", ") : null;
+						const geoAccessState = values.geoAccessOverride
+							? values.geoAccessEnabled
+								? "enabled"
+								: "disabled"
+							: "inherit";
 
 						return (
 						<Form noValidate>
@@ -1070,6 +1132,101 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 												</div>
 											</div>
 											<div className="tab-pane" id="tab-advanced" role="tabpanel">
+												<div className="mb-4">
+													<h4 className="py-2">
+														<T id="host.geo-access" />
+													</h4>
+													<div className="row">
+														<div className="col-md-4">
+															<label className="form-label" htmlFor="geoAccessState">
+																<T id="host.geo-access.state" />
+															</label>
+															<select
+																id="geoAccessState"
+																className="form-control"
+																value={geoAccessState}
+																onChange={(e) => {
+																	const next = e.target.value;
+																	if (next === "inherit") {
+																		setFieldValue("geoAccessOverride", false);
+																	} else {
+																		setFieldValue("geoAccessOverride", true);
+																		setFieldValue("geoAccessEnabled", next === "enabled");
+																	}
+																}}
+															>
+																<option value="inherit">
+																	<T id="host.geo-access.inherit" />
+																</option>
+																<option value="enabled">
+																	<T id="host.geo-access.enable" />
+																</option>
+																<option value="disabled">
+																	<T id="host.geo-access.disable" />
+																</option>
+															</select>
+														</div>
+														{geoAccessState === "enabled" ? (
+															<>
+																<div className="col-md-4">
+																	<label className="form-label" htmlFor="geoAccessMode">
+																		<T id="host.geo-access.mode" />
+																	</label>
+																	<select
+																		id="geoAccessMode"
+																		className="form-control"
+																		value={values.geoAccessMode || "allow"}
+																		onChange={(e) =>
+																			setFieldValue("geoAccessMode", e.target.value)
+																		}
+																	>
+																		<option value="allow">
+																			<T id="host.geo-access.mode.allow" />
+																		</option>
+																		<option value="deny">
+																			<T id="host.geo-access.mode.deny" />
+																		</option>
+																	</select>
+																</div>
+																<div className="col-md-4">
+																	<Field name="geoAccessCountriesInput">
+																		{({ field, form }: any) => {
+																			const error =
+																				submitCount > 0 && errors.geoAccessCountriesInput
+																					? errors.geoAccessCountriesInput
+																					: null;
+																			return (
+																				<div>
+																					<label
+																						className="form-label"
+																						htmlFor="geoAccessCountriesInput"
+																					>
+																						<T id="host.geo-access.countries" />
+																					</label>
+																					<input
+																						{...field}
+																						id="geoAccessCountriesInput"
+																						type="text"
+																						className={`form-control ${error ? "is-invalid" : ""}`}
+																						placeholder="DE, AT, CH"
+																						onChange={(e) =>
+																							form.setFieldValue(field.name, e.target.value)
+																						}
+																					/>
+																					{error ? (
+																						<div className="invalid-feedback d-block">
+																							<T id={error} />
+																						</div>
+																					) : null}
+																				</div>
+																			);
+																		}}
+																	</Field>
+																</div>
+															</>
+														) : null}
+													</div>
+												</div>
 												<NginxConfigField />
 											</div>
 										</div>

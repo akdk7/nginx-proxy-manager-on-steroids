@@ -13,6 +13,36 @@ import { showObjectSuccess } from "src/notifications";
 const validateForwardingHost = validateString(1, 255);
 const validateForwardingPort = validateNumber(1, 65535);
 
+const normalizeGeoCountriesInput = (value: unknown) => {
+	if (Array.isArray(value)) {
+		return value.join(", ");
+	}
+	if (typeof value === "string") {
+		return value;
+	}
+	return "";
+};
+
+const parseGeoCountriesInput = (value: string) => {
+	if (!value) {
+		return [];
+	}
+	const parts = value
+		.split(/[\s,]+/)
+		.map((part) => part.trim().toUpperCase())
+		.filter(Boolean);
+	const unique = new Set<string>();
+	const result: string[] = [];
+	parts.forEach((part) => {
+		if (!/^[A-Z]{2}$/.test(part) || unique.has(part)) {
+			return;
+		}
+		unique.add(part);
+		result.push(part);
+	});
+	return result;
+};
+
 const showStreamModal = (id: number | "new") => {
 	EasyModal.show(StreamModal, { id });
 };
@@ -542,10 +572,13 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 		if (isSubmitting) return;
 		setIsSubmitting(true);
 		setErrorMsg(null);
+		const geoCountries = parseGeoCountriesInput(values.geoAccessCountriesInput || "");
+		const { geoAccessCountriesInput, ...restValues } = values;
 
 		const { ...payload } = {
 			id: id === "new" ? undefined : id,
-			...values,
+			...restValues,
+			geoAccessCountries: geoCountries,
 		};
 
 		setStream(payload, {
@@ -583,6 +616,10 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 							udpForwarding: data?.udpForwarding,
 							proxyProtocol: data?.proxyProtocol || false,
 							proxyProtocolUpstream: data?.proxyProtocolUpstream || false,
+							geoAccessOverride: data?.geoAccessOverride || false,
+							geoAccessEnabled: data?.geoAccessEnabled || false,
+							geoAccessMode: data?.geoAccessMode || "allow",
+							geoAccessCountriesInput: normalizeGeoCountriesInput(data?.geoAccessCountries),
 							certificateId: data?.certificateId,
 							meta: data?.meta || {},
 						} as any
@@ -598,6 +635,17 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 							});
 							if (!hasValidServer) {
 								errors.upstreamServers = "error.upstream-required";
+							}
+						}
+						const geoState = values.geoAccessOverride
+							? values.geoAccessEnabled
+								? "enabled"
+								: "disabled"
+							: "inherit";
+						if (geoState === "enabled") {
+							const countries = parseGeoCountriesInput(values.geoAccessCountriesInput || "");
+							if ((values.geoAccessMode || "allow") === "allow" && countries.length === 0) {
+								errors.geoAccessCountriesInput = "error.geo-access.countries-required";
 							}
 						}
 						return errors;
@@ -617,12 +665,19 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 												return intl.formatMessage({ id: "host.forward-port" });
 											case "upstreamServers":
 												return intl.formatMessage({ id: "host.upstream" });
+											case "geoAccessCountriesInput":
+												return intl.formatMessage({ id: "host.geo-access.countries" });
 											default:
 												return key;
 										}
 								  })
 								: [];
 						const errorSummary = errorFields.length ? errorFields.join(", ") : null;
+						const geoAccessState = values.geoAccessOverride
+							? values.geoAccessEnabled
+								? "enabled"
+								: "disabled"
+							: "inherit";
 
 						return (
 						<Form noValidate>
@@ -941,6 +996,101 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 															</label>
 														</div>
 													</div>
+												</div>
+											</div>
+											<div className="mb-4">
+												<h3 className="py-2">
+													<T id="host.geo-access" />
+												</h3>
+												<div className="row">
+													<div className="col-md-4">
+														<label className="form-label" htmlFor="geoAccessState">
+															<T id="host.geo-access.state" />
+														</label>
+														<select
+															id="geoAccessState"
+															className="form-control"
+															value={geoAccessState}
+															onChange={(e) => {
+																const next = e.target.value;
+																if (next === "inherit") {
+																	setFieldValue("geoAccessOverride", false);
+																} else {
+																	setFieldValue("geoAccessOverride", true);
+																	setFieldValue("geoAccessEnabled", next === "enabled");
+																}
+															}}
+														>
+															<option value="inherit">
+																<T id="host.geo-access.inherit" />
+															</option>
+															<option value="enabled">
+																<T id="host.geo-access.enable" />
+															</option>
+															<option value="disabled">
+																<T id="host.geo-access.disable" />
+															</option>
+														</select>
+													</div>
+													{geoAccessState === "enabled" ? (
+														<>
+															<div className="col-md-4">
+																<label className="form-label" htmlFor="geoAccessMode">
+																	<T id="host.geo-access.mode" />
+																</label>
+																<select
+																	id="geoAccessMode"
+																	className="form-control"
+																	value={values.geoAccessMode || "allow"}
+																	onChange={(e) =>
+																		setFieldValue("geoAccessMode", e.target.value)
+																	}
+																>
+																	<option value="allow">
+																		<T id="host.geo-access.mode.allow" />
+																	</option>
+																	<option value="deny">
+																		<T id="host.geo-access.mode.deny" />
+																	</option>
+																</select>
+															</div>
+															<div className="col-md-4">
+																<Field name="geoAccessCountriesInput">
+																	{({ field, form }: any) => {
+																		const error =
+																			submitCount > 0 && errors.geoAccessCountriesInput
+																				? errors.geoAccessCountriesInput
+																				: null;
+																		return (
+																			<div>
+																				<label
+																					className="form-label"
+																					htmlFor="geoAccessCountriesInput"
+																				>
+																					<T id="host.geo-access.countries" />
+																				</label>
+																				<input
+																					{...field}
+																					id="geoAccessCountriesInput"
+																					type="text"
+																					className={`form-control ${error ? "is-invalid" : ""}`}
+																					placeholder="DE, AT, CH"
+																					onChange={(e) =>
+																						form.setFieldValue(field.name, e.target.value)
+																					}
+																				/>
+																				{error ? (
+																					<div className="invalid-feedback d-block">
+																						<T id={error} />
+																					</div>
+																				) : null}
+																			</div>
+																		);
+																	}}
+																</Field>
+															</div>
+														</>
+													) : null}
 												</div>
 											</div>
 											<div className="tab-pane" id="tab-ssl" role="tabpanel">

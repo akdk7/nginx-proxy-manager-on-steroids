@@ -72,6 +72,9 @@ const internalSetting = {
 					internalNginx.invalidateProxyProtocolPortsCache();
 					return internalNginx.regenerateAllConfigs().then(() => row);
 				}
+				if (row.id === "geo-access") {
+					return internalNginx.regenerateAllConfigs().then(() => row);
+				}
 				return row;
 			});
 	},

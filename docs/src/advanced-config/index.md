@@ -229,6 +229,28 @@ load_module /usr/lib/nginx/modules/ngx_http_geoip2_module.so;
 load_module /usr/lib/nginx/modules/ngx_stream_geoip2_module.so;
 ```
 
+## Geo Access Control
+
+NPM can use GeoIP2 to allow or deny traffic by country for Proxy Hosts (HTTP) and Streams (TCP/UDP).
+Configure this in **Settings -> Geo Access Control**. You must load the geoip2 modules (see above) and
+mount a GeoLite2 Country database file into the container. The default path is:
+
+```
+/data/GeoLite2-Country.mmdb
+```
+
+Example `docker-compose.yml` volume mapping (read-only):
+
+```
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+      - ./geo/GeoLite2-Country.mmdb:/data/GeoLite2-Country.mmdb:ro
+```
+
+You can override the database path in the settings UI. Per-host and per-stream overrides are available
+in the Advanced tab of the respective modal.
+
 ## Auto Initial User Creation
 
 Setting these environment variables will create the default user on startup, skipping the UI first user setup screen:

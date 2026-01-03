@@ -30,6 +30,19 @@
 									"meta": {
 										"ports": []
 									}
+								},
+								{
+									"id": "geo-access",
+									"name": "Geo Access Control",
+									"description": "GeoIP2-based access control for proxy hosts and streams",
+									"value": "geo-access",
+									"meta": {
+										"http_enabled": false,
+										"stream_enabled": false,
+										"db_path": "/data/GeoLite2-Country.mmdb",
+										"mode": "allow",
+										"countries": []
+									}
 								}
 							]
 						}

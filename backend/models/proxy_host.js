@@ -25,6 +25,8 @@ const boolFields = [
 	"rate_limit_enabled",
 	"rate_limit_nodelay",
 	"upstream_enabled",
+	"geo_access_override",
+	"geo_access_enabled",
 ];
 
 class ProxyHost extends Model {
@@ -73,7 +75,15 @@ class ProxyHost extends Model {
 	}
 
 	static get jsonAttributes() {
-		return ["domain_names", "listen_ports", "meta", "locations", "upstream_servers", "security_headers"];
+		return [
+			"domain_names",
+			"listen_ports",
+			"meta",
+			"locations",
+			"upstream_servers",
+			"security_headers",
+			"geo_access_countries",
+		];
 	}
 
 	static get relationMappings() {

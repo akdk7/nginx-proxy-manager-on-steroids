@@ -14,7 +14,7 @@
 			"schema": {
 				"type": "string",
 				"minLength": 1,
-				"enum": ["default-site", "proxy-protocol"]
+				"enum": ["default-site", "proxy-protocol", "geo-access"]
 			},
 			"required": true,
 			"description": "Setting ID",
@@ -34,7 +34,7 @@
 						"value": {
 							"type": "string",
 							"minLength": 1,
-							"enum": ["congratulations", "404", "444", "redirect", "html", "ports"],
+							"enum": ["congratulations", "404", "444", "redirect", "html", "ports", "geo-access"],
 							"example": "html"
 						},
 						"meta": {
@@ -54,6 +54,28 @@
 										"type": "integer",
 										"minimum": 1,
 										"maximum": 65535
+									}
+								},
+								"http_enabled": {
+									"type": "boolean"
+								},
+								"stream_enabled": {
+									"type": "boolean"
+								},
+								"db_path": {
+									"type": "string"
+								},
+								"mode": {
+									"type": "string",
+									"enum": ["allow", "deny"]
+								},
+								"countries": {
+									"type": "array",
+									"uniqueItems": true,
+									"items": {
+										"type": "string",
+										"minLength": 2,
+										"maxLength": 2
 									}
 								}
 							},

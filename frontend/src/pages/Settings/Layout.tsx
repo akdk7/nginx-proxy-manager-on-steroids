@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { T } from "src/locale";
 import DefaultSite from "./DefaultSite";
+import GeoAccess from "./GeoAccess";
 import ProxyProtocol from "./ProxyProtocol";
 
 export default function Layout() {
 	// Taken from https://preview.tabler.io/settings.html
 	// Refer to that when updating this content
-	const [activeSection, setActiveSection] = useState<"default-site" | "proxy-protocol">("default-site");
+	const [activeSection, setActiveSection] = useState<"default-site" | "proxy-protocol" | "geo-access">(
+		"default-site",
+	);
 
 	return (
 		<div className="card mt-4">
@@ -47,11 +50,29 @@ export default function Layout() {
 								>
 									<T id="settings.proxy-protocol" />
 								</a>
+								<a
+									href="#"
+									className={`list-group-item list-group-item-action d-flex align-items-center ${
+										activeSection === "geo-access" ? "active" : ""
+									}`}
+									onClick={(e) => {
+										e.preventDefault();
+										setActiveSection("geo-access");
+									}}
+								>
+									<T id="settings.geo-access" />
+								</a>
 							</div>
 						</div>
 					</div>
 					<div className="col-12 col-md-9 d-flex flex-column">
-						{activeSection === "default-site" ? <DefaultSite /> : <ProxyProtocol />}
+						{activeSection === "default-site" ? (
+							<DefaultSite />
+						) : activeSection === "proxy-protocol" ? (
+							<ProxyProtocol />
+						) : (
+							<GeoAccess />
+						)}
 					</div>
 				</div>
 			</div>

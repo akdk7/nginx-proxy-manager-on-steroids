@@ -87,6 +87,18 @@
 						"security_headers": {
 							"$ref": "../../../components/proxy-host-object.json#/properties/security_headers"
 						},
+						"geo_access_override": {
+							"$ref": "../../../components/proxy-host-object.json#/properties/geo_access_override"
+						},
+						"geo_access_enabled": {
+							"$ref": "../../../components/proxy-host-object.json#/properties/geo_access_enabled"
+						},
+						"geo_access_mode": {
+							"$ref": "../../../components/proxy-host-object.json#/properties/geo_access_mode"
+						},
+						"geo_access_countries": {
+							"$ref": "../../../components/proxy-host-object.json#/properties/geo_access_countries"
+						},
 						"caching_enabled": {
 							"$ref": "../../../components/proxy-host-object.json#/properties/caching_enabled"
 						},

@@ -295,6 +295,7 @@ const internalProxyHost = {
 						return internalNginx
 							.deleteConfig("proxy_host", row)
 							.then(() => internalNginx.updateRateLimitConfig("proxy_host"))
+							.then(() => internalNginx.updateGeoConfig())
 							.then(() => internalNginx.reload());
 					})
 					.then(() => {
@@ -397,6 +398,7 @@ const internalProxyHost = {
 						return internalNginx
 							.deleteConfig("proxy_host", row)
 							.then(() => internalNginx.updateRateLimitConfig("proxy_host"))
+							.then(() => internalNginx.updateGeoConfig())
 							.then(() => internalNginx.reload());
 					})
 					.then(() => {

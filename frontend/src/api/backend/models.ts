@@ -158,6 +158,10 @@ export interface ProxyHost {
 	upstreamServers: UpstreamServer[];
 	upstreamSslCertificateId: number;
 	securityHeaders: SecurityHeader[];
+	geoAccessOverride: boolean;
+	geoAccessEnabled: boolean;
+	geoAccessMode: string;
+	geoAccessCountries: string[];
 	advancedConfig: string;
 	meta: Record<string, any>;
 	allowWebsocketUpgrade: boolean;
@@ -264,6 +268,10 @@ export interface Stream {
 	udpForwarding: boolean;
 	proxyProtocol: boolean;
 	proxyProtocolUpstream: boolean;
+	geoAccessOverride: boolean;
+	geoAccessEnabled: boolean;
+	geoAccessMode: string;
+	geoAccessCountries: string[];
 	meta: Record<string, any>;
 	enabled: boolean;
 	certificateId: number;

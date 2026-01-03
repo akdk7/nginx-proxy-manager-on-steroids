@@ -374,6 +374,9 @@
 	"error.invalid-port": {
 		"defaultMessage": "Invalid port"
 	},
+	"error.geo-access.countries-required": {
+		"defaultMessage": "Add at least one country code for allow list mode"
+	},
 	"error.invalid-email": {
 		"defaultMessage": "Invalid email address"
 	},
@@ -520,6 +523,33 @@
 	},
 	"host.rate-limit.nodelay": {
 		"defaultMessage": "No delay (nodelay)"
+	},
+	"host.geo-access": {
+		"defaultMessage": "Geo Access Control"
+	},
+	"host.geo-access.state": {
+		"defaultMessage": "Override"
+	},
+	"host.geo-access.inherit": {
+		"defaultMessage": "Use global settings"
+	},
+	"host.geo-access.enable": {
+		"defaultMessage": "Enable"
+	},
+	"host.geo-access.disable": {
+		"defaultMessage": "Disable"
+	},
+	"host.geo-access.mode": {
+		"defaultMessage": "Mode"
+	},
+	"host.geo-access.mode.allow": {
+		"defaultMessage": "Allow only these countries"
+	},
+	"host.geo-access.mode.deny": {
+		"defaultMessage": "Block these countries"
+	},
+	"host.geo-access.countries": {
+		"defaultMessage": "Countries (ISO 3166-1 alpha-2)"
 	},
 	"host.upstream": {
 		"defaultMessage": "Upstream Pool"
@@ -784,6 +814,36 @@
 	},
 	"settings.proxy-protocol.port": {
 		"defaultMessage": "Port"
+	},
+	"settings.geo-access": {
+		"defaultMessage": "Geo Access Control"
+	},
+	"settings.geo-access.description": {
+		"defaultMessage": "GeoIP2-based allow/deny rules for proxy hosts and streams"
+	},
+	"settings.geo-access.notice": {
+		"defaultMessage": "Requires the geoip2 module and a mounted GeoLite2 Country database. Stream rules need ngx_stream_geoip2_module loaded."
+	},
+	"settings.geo-access.http": {
+		"defaultMessage": "Enable for Proxy Hosts (HTTP)"
+	},
+	"settings.geo-access.stream": {
+		"defaultMessage": "Enable for Streams (TCP/UDP)"
+	},
+	"settings.geo-access.db-path": {
+		"defaultMessage": "GeoIP2 database path"
+	},
+	"settings.geo-access.mode": {
+		"defaultMessage": "Mode"
+	},
+	"settings.geo-access.mode.allow": {
+		"defaultMessage": "Allow only these countries"
+	},
+	"settings.geo-access.mode.deny": {
+		"defaultMessage": "Block these countries"
+	},
+	"settings.geo-access.countries": {
+		"defaultMessage": "Countries (ISO 3166-1 alpha-2)"
 	},
 	"setup.preamble": {
 		"defaultMessage": "Get started by creating your admin account."

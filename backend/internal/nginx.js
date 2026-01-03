@@ -16,6 +16,7 @@ import {
 	isIpAddress,
 	mergeSecurityHeaders,
 	sanitizeSecurityHeaders,
+	sanitizeGeoCountries,
 	sanitizeUpstreamServers,
 } from "./nginx-helpers.js";
 
@@ -28,6 +29,8 @@ const rateLimitOverrideKeys = [
 	"rate_limit_burst",
 	"rate_limit_nodelay",
 ];
+const geoAccessModes = ["allow", "deny"];
+const defaultGeoDbPath = "/data/GeoLite2-Country.mmdb";
 let http3SupportCache;
 let http3SupportPromise;
 const proxyProtocolPortsCache = { ports: [], loadedAt: 0 };
@@ -63,6 +66,26 @@ const normalizeListenPorts = (ports, fallbackPorts = defaultListenPorts) => {
 	});
 	const normalized = Array.from(uniquePorts).sort((a, b) => Number(a) - Number(b));
 	return normalized.length ? normalized : [...fallbackPorts];
+};
+
+const normalizeGeoAccessMode = (mode) => (geoAccessModes.includes(mode) ? mode : "allow");
+
+const normalizeGeoDbPath = (path) => {
+	const normalized = `${path || ""}`.trim();
+	return normalized || defaultGeoDbPath;
+};
+
+const formatStreamTarget = (host, port) => {
+	const normalizedHost = `${host || ""}`.trim();
+	const parsedPort = Number.parseInt(`${port || ""}`, 10);
+	if (!normalizedHost || !Number.isFinite(parsedPort) || parsedPort <= 0) {
+		return null;
+	}
+	let targetHost = normalizedHost;
+	if (isIpAddress(normalizedHost) && normalizedHost.includes(":") && !normalizedHost.startsWith("[")) {
+		targetHost = `[${normalizedHost}]`;
+	}
+	return `${targetHost}:${parsedPort}`;
 };
 
 
@@ -164,6 +187,7 @@ const internalNginx = {
 		try {
 			await internalNginx.generateConfig(host_type, host);
 			await internalNginx.updateRateLimitConfig(host_type);
+			await internalNginx.updateGeoConfig();
 		} catch (err) {
 			restoreConfig(false);
 			throw err;
@@ -329,6 +353,64 @@ const internalNginx = {
 			return Promise.resolve(true);
 		}
 		return internalNginx.generateRateLimitConfig();
+	},
+	updateGeoConfig: () => {
+		return internalNginx.generateGeoConfig();
+	},
+	getGeoSettings: async () => {
+		const setting = await settingModel.query().where("id", "geo-access").first();
+		const meta = setting?.meta || {};
+		return {
+			http_enabled: meta.http_enabled === true || meta.http_enabled === 1,
+			stream_enabled: meta.stream_enabled === true || meta.stream_enabled === 1,
+			mode: normalizeGeoAccessMode(meta.mode),
+			countries: sanitizeGeoCountries(meta.countries),
+			db_path: normalizeGeoDbPath(meta.db_path),
+		};
+	},
+	resolveGeoAccess: (geoSettings, host, hostType) => {
+		if (!geoSettings) {
+			return { enabled: false, mode: "allow", countries: [] };
+		}
+		const override = host?.geo_access_override === 1 || host?.geo_access_override === true;
+		const enabled = host?.geo_access_enabled === 1 || host?.geo_access_enabled === true;
+		const typeEnabled = hostType === "stream" ? geoSettings.stream_enabled : geoSettings.http_enabled;
+		const mode = override ? normalizeGeoAccessMode(host?.geo_access_mode) : geoSettings.mode;
+		const countries = override
+			? sanitizeGeoCountries(host?.geo_access_countries)
+			: geoSettings.countries;
+		const isEnabled = override ? enabled : typeEnabled;
+		if (!isEnabled || countries.length === 0) {
+			return { enabled: false, mode, countries: [] };
+		}
+		return {
+			enabled: true,
+			mode,
+			countries,
+		};
+	},
+	getStreamGeoAccessVariable: (id) => `stream_geo_target_${id}`,
+	getStreamProxyPassTarget: (host) => {
+		const upstreamEnabled = host.upstream_enabled === 1 || host.upstream_enabled === true;
+		const upstreamServers = sanitizeUpstreamServers(host.upstream_servers);
+		const hasExplicitUpstream = upstreamEnabled && upstreamServers.length > 0;
+		const needsStreamUpstream =
+			!hasExplicitUpstream &&
+			typeof host.forwarding_host === "string" &&
+			host.forwarding_host.trim() &&
+			!isIpAddress(host.forwarding_host.trim());
+		const fallbackStreamServers = needsStreamUpstream
+			? sanitizeUpstreamServers([
+					{
+						host: host.forwarding_host.trim(),
+						port: host.forwarding_port,
+					},
+				])
+			: [];
+		if (hasExplicitUpstream || fallbackStreamServers.length > 0) {
+			return internalNginx.getUpstreamName("stream", host.id);
+		}
+		return formatStreamTarget(host.forwarding_host, host.forwarding_port);
 	},
 
 	/**
@@ -505,6 +587,16 @@ const internalNginx = {
 		if (hostRateLimitEnabled && Number.isFinite(hostRateLimitRps) && hostRateLimitRps > 0) {
 			host.rate_limit_zone_name = internalNginx.getRateLimitZoneName(host.id);
 		}
+		if (nice_host_type === "proxy_host" || nice_host_type === "stream") {
+			const geoSettings = await internalNginx.getGeoSettings();
+			const geoAccess = internalNginx.resolveGeoAccess(geoSettings, host, nice_host_type);
+			host.geo_access_enabled = geoAccess.enabled;
+			host.geo_access_mode = geoAccess.mode;
+			host.geo_access_countries = geoAccess.countries;
+			if (nice_host_type === "stream") {
+				host.geo_access_variable = internalNginx.getStreamGeoAccessVariable(host.id);
+			}
+		}
 
 		try {
 			const configText = await renderEngine.parseAndRender(template, host);
@@ -579,6 +671,90 @@ const internalNginx = {
 
 		try {
 			const configText = await renderEngine.parseAndRender(template, { zones: zones });
+			fs.writeFileSync(filename, configText, { encoding: "utf8" });
+		} catch (err) {
+			throw new errs.ConfigurationError(err.message);
+		}
+	},
+	generateGeoConfig: async () => {
+		const geoSettings = await internalNginx.getGeoSettings();
+		const [proxyHosts, streams] = await Promise.all([
+			proxyHostModel.query().where("is_deleted", 0).andWhere("enabled", 1),
+			streamModel.query().where("is_deleted", 0).andWhere("enabled", 1),
+		]);
+		const httpGeoEnabled =
+			proxyHosts.length > 0 &&
+			(geoSettings.http_enabled && geoSettings.countries.length > 0
+				? true
+				: proxyHosts.some((host) => internalNginx.resolveGeoAccess(geoSettings, host, "proxy_host").enabled));
+		const streamGeoEnabled =
+			streams.length > 0 &&
+			(geoSettings.stream_enabled && geoSettings.countries.length > 0
+				? true
+				: streams.some((host) => internalNginx.resolveGeoAccess(geoSettings, host, "stream").enabled));
+
+		await internalNginx.generateGeoip2Config("http", geoSettings, httpGeoEnabled);
+		await internalNginx.generateGeoip2Config("stream", geoSettings, streamGeoEnabled);
+		await internalNginx.generateStreamGeoConfig(streams, geoSettings, streamGeoEnabled);
+	},
+	generateGeoip2Config: async (context, geoSettings, enabled) => {
+		const renderEngine = utils.getRenderEngine();
+		const suffix = context === "stream" ? "stream" : "http";
+		const filename = `/etc/nginx/conf.d/include/geoip2_${suffix}.conf`;
+
+		if (!enabled || !geoSettings?.db_path) {
+			fs.writeFileSync(filename, "# GeoIP2 disabled\n", { encoding: "utf8" });
+			return;
+		}
+
+		const template = readTemplate(`geoip2_${suffix}.conf`);
+		try {
+			const configText = await renderEngine.parseAndRender(template, {
+				geoip2_db_path: geoSettings.db_path,
+			});
+			fs.writeFileSync(filename, configText, { encoding: "utf8" });
+		} catch (err) {
+			throw new errs.ConfigurationError(err.message);
+		}
+	},
+	generateStreamGeoConfig: async (streams, geoSettings, enabled) => {
+		const renderEngine = utils.getRenderEngine();
+		const filename = "/etc/nginx/conf.d/include/stream_geo.conf";
+
+		if (!enabled) {
+			fs.writeFileSync(filename, "# Stream GeoIP2 disabled\n", { encoding: "utf8" });
+			return;
+		}
+
+		const streamEntries = [];
+		streams.forEach((stream) => {
+			const geoAccess = internalNginx.resolveGeoAccess(geoSettings, stream, "stream");
+			if (!geoAccess.enabled) {
+				return;
+			}
+			const target = internalNginx.getStreamProxyPassTarget(stream);
+			if (!target) {
+				return;
+			}
+			streamEntries.push({
+				id: stream.id,
+				geo_access_mode: geoAccess.mode,
+				geo_access_countries: geoAccess.countries,
+				geo_access_target: target,
+				geo_access_variable: internalNginx.getStreamGeoAccessVariable(stream.id),
+			});
+		});
+
+		if (!streamEntries.length) {
+			fs.writeFileSync(filename, "# Stream GeoIP2 disabled\n", { encoding: "utf8" });
+			return;
+		}
+
+		const template = readTemplate("stream_geo.conf");
+		try {
+			const configText = await renderEngine.parseAndRender(template, {
+				streams: streamEntries,
+			});
 			fs.writeFileSync(filename, configText, { encoding: "utf8" });
 		} catch (err) {
 			throw new errs.ConfigurationError(err.message);
@@ -769,6 +945,12 @@ const internalNginx = {
 		const configDirs = ["proxy_host", "redirection_host", "dead_host", "stream", "default_host", "default_www"];
 		const rateLimitConfig = "/etc/nginx/conf.d/include/rate_limit.conf";
 		const rateLimitBackup = `${backupRoot}/rate_limit.conf`;
+		const geoHttpConfig = "/etc/nginx/conf.d/include/geoip2_http.conf";
+		const geoStreamConfig = "/etc/nginx/conf.d/include/geoip2_stream.conf";
+		const streamGeoConfig = "/etc/nginx/conf.d/include/stream_geo.conf";
+		const geoHttpBackup = `${backupRoot}/geoip2_http.conf`;
+		const geoStreamBackup = `${backupRoot}/geoip2_stream.conf`;
+		const streamGeoBackup = `${backupRoot}/stream_geo.conf`;
 
 		const backupConfigs = () => {
 			fs.mkdirSync(backupRoot, { recursive: true });
@@ -781,6 +963,15 @@ const internalNginx = {
 			});
 			if (fs.existsSync(rateLimitConfig)) {
 				fs.copyFileSync(rateLimitConfig, rateLimitBackup);
+			}
+			if (fs.existsSync(geoHttpConfig)) {
+				fs.copyFileSync(geoHttpConfig, geoHttpBackup);
+			}
+			if (fs.existsSync(geoStreamConfig)) {
+				fs.copyFileSync(geoStreamConfig, geoStreamBackup);
+			}
+			if (fs.existsSync(streamGeoConfig)) {
+				fs.copyFileSync(streamGeoConfig, streamGeoBackup);
 			}
 		};
 
@@ -797,6 +988,15 @@ const internalNginx = {
 			});
 			if (fs.existsSync(rateLimitBackup)) {
 				fs.copyFileSync(rateLimitBackup, rateLimitConfig);
+			}
+			if (fs.existsSync(geoHttpBackup)) {
+				fs.copyFileSync(geoHttpBackup, geoHttpConfig);
+			}
+			if (fs.existsSync(geoStreamBackup)) {
+				fs.copyFileSync(geoStreamBackup, geoStreamConfig);
+			}
+			if (fs.existsSync(streamGeoBackup)) {
+				fs.copyFileSync(streamGeoBackup, streamGeoConfig);
 			}
 		};
 
@@ -867,6 +1067,7 @@ const internalNginx = {
 			}
 
 			await internalNginx.generateRateLimitConfig();
+			await internalNginx.generateGeoConfig();
 			await internalNginx.test();
 			await internalNginx.reloadIfRunning();
 			cleanupBackup();

@@ -53,6 +53,18 @@
 						"proxy_protocol_upstream": {
 							"$ref": "../../../components/stream-object.json#/properties/proxy_protocol_upstream"
 						},
+						"geo_access_override": {
+							"$ref": "../../../components/stream-object.json#/properties/geo_access_override"
+						},
+						"geo_access_enabled": {
+							"$ref": "../../../components/stream-object.json#/properties/geo_access_enabled"
+						},
+						"geo_access_mode": {
+							"$ref": "../../../components/stream-object.json#/properties/geo_access_mode"
+						},
+						"geo_access_countries": {
+							"$ref": "../../../components/stream-object.json#/properties/geo_access_countries"
+						},
 						"certificate_id": {
 							"$ref": "../../../components/stream-object.json#/properties/certificate_id"
 						},

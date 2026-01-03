@@ -80,6 +80,11 @@ const createSetup = ({
 			.select("id")
 			.where({ id: "proxy-protocol" })
 			.first();
+		const geoAccessRow = await settingModel
+			.query()
+			.select("id")
+			.where({ id: "geo-access" })
+			.first();
 
 		if (!row?.id) {
 			await settingModel.query().insert({
@@ -102,6 +107,22 @@ const createSetup = ({
 				},
 			});
 			logger.info("PROXY protocol settings added");
+		}
+		if (!geoAccessRow?.id) {
+			await settingModel.query().insert({
+				id: "geo-access",
+				name: "Geo Access Control",
+				description: "GeoIP2-based access control for proxy hosts and streams",
+				value: "geo-access",
+				meta: {
+					http_enabled: false,
+					stream_enabled: false,
+					db_path: "/data/GeoLite2-Country.mmdb",
+					mode: "allow",
+					countries: [],
+				},
+			});
+			logger.info("Geo access settings added");
 		}
 	};
 

@@ -86,6 +86,23 @@ const sanitizeUpstreamServers = (servers) => {
 		.filter(Boolean);
 };
 
+const sanitizeGeoCountries = (countries) => {
+	if (!Array.isArray(countries)) {
+		return [];
+	}
+	const seen = new Set();
+	const result = [];
+	countries.forEach((country) => {
+		const normalized = `${country || ""}`.trim().toUpperCase();
+		if (!/^[A-Z]{2}$/.test(normalized) || seen.has(normalized)) {
+			return;
+		}
+		seen.add(normalized);
+		result.push(normalized);
+	});
+	return result;
+};
+
 export {
 	sanitizeHeaderValue,
 	sanitizeSecurityHeaders,
@@ -93,4 +110,5 @@ export {
 	hasHeader,
 	isIpAddress,
 	sanitizeUpstreamServers,
+	sanitizeGeoCountries,
 };

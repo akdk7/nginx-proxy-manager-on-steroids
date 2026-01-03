@@ -15,6 +15,8 @@ const boolFields = [
 	"upstream_enabled",
 	"proxy_protocol",
 	"proxy_protocol_upstream",
+	"geo_access_override",
+	"geo_access_enabled",
 ];
 
 class Stream extends Model {
@@ -51,7 +53,7 @@ class Stream extends Model {
 	}
 
 	static get jsonAttributes() {
-		return ["meta", "upstream_servers"];
+		return ["meta", "upstream_servers", "geo_access_countries"];
 	}
 
 	static get relationMappings() {

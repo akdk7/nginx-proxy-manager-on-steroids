@@ -170,6 +170,28 @@
 				}
 			}
 		},
+		"geo_access_override": {
+			"type": "boolean",
+			"example": false
+		},
+		"geo_access_enabled": {
+			"type": "boolean",
+			"example": false
+		},
+		"geo_access_mode": {
+			"type": "string",
+			"enum": ["allow", "deny"],
+			"example": "allow"
+		},
+		"geo_access_countries": {
+			"type": "array",
+			"items": {
+				"type": "string",
+				"minLength": 2,
+				"maxLength": 2
+			},
+			"example": ["DE", "AT"]
+		},
 		"advanced_config": {
 			"type": "string",
 			"example": ""

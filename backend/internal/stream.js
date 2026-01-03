@@ -239,9 +239,10 @@ const internalStream = {
 					})
 					.then(() => {
 						// Delete Nginx Config
-						return internalNginx.deleteConfig("stream", row).then(() => {
-							return internalNginx.reload();
-						});
+						return internalNginx
+							.deleteConfig("stream", row)
+							.then(() => internalNginx.updateGeoConfig())
+							.then(() => internalNginx.reload());
 					})
 					.then(() => {
 						// Add to audit log
@@ -340,9 +341,10 @@ const internalStream = {
 					})
 					.then(() => {
 						// Delete Nginx Config
-						return internalNginx.deleteConfig("stream", row).then(() => {
-							return internalNginx.reload();
-						});
+						return internalNginx
+							.deleteConfig("stream", row)
+							.then(() => internalNginx.updateGeoConfig())
+							.then(() => internalNginx.reload());
 					})
 					.then(() => {
 						// Add to audit log
