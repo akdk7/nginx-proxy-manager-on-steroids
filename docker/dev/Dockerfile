@@ -2,11 +2,15 @@ ARG NGINX_IMAGE=nginxproxymanager/nginx-full:certbot-node
 ARG NGINX_VERSION
 ARG HTTP3_OPENSSL_REPO=https://github.com/quictls/openssl
 ARG HTTP3_OPENSSL_REF=OpenSSL_1_1_1w+quic
+ARG GEOIP2_MODULE_REPO=https://github.com/leev/ngx_http_geoip2_module
+ARG GEOIP2_MODULE_REF
 
 FROM ${NGINX_IMAGE} AS nginx-http3-build
 ARG NGINX_VERSION
 ARG HTTP3_OPENSSL_REPO
 ARG HTTP3_OPENSSL_REF
+ARG GEOIP2_MODULE_REPO
+ARG GEOIP2_MODULE_REF
 
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
@@ -15,6 +19,7 @@ RUN apt-get update \
 		curl \
 		git \
 		libpcre3-dev \
+		libmaxminddb-dev \
 		zlib1g-dev \
 		perl \
 		pkg-config \
@@ -33,6 +38,11 @@ RUN set -eux; \
 		nginx_version="${nginx_version_fallback}"; \
 	fi; \
 	git clone --depth 1 --branch "${HTTP3_OPENSSL_REF}" "${HTTP3_OPENSSL_REPO}" /tmp/nginx-http3/openssl; \
+	if [ -n "${GEOIP2_MODULE_REF}" ]; then \
+		git clone --depth 1 --branch "${GEOIP2_MODULE_REF}" "${GEOIP2_MODULE_REPO}" /tmp/nginx-http3/ngx_http_geoip2_module; \
+	else \
+		git clone --depth 1 "${GEOIP2_MODULE_REPO}" /tmp/nginx-http3/ngx_http_geoip2_module; \
+	fi; \
 	cd "/tmp/nginx-http3/nginx-${nginx_version}"; \
 	./configure \
 		--prefix=/usr \
@@ -62,9 +72,11 @@ RUN set -eux; \
 		--with-stream \
 		--with-stream_ssl_module \
 		--with-stream_ssl_preread_module \
+		--add-dynamic-module=/tmp/nginx-http3/ngx_http_geoip2_module \
 		--with-openssl=/tmp/nginx-http3/openssl \
 		--with-openssl-opt=enable-tls1_3; \
 	make -j"$(nproc)"; \
+	make modules; \
 	make install DESTDIR=/tmp/nginx-http3/install
 
 FROM nginxproxymanager/testca AS testca
@@ -83,7 +95,7 @@ ENV SUPPRESS_NO_CONFIG_WARNING=1 \
 
 RUN echo "fs.file-max = 65535" > /etc/sysctl.conf \
 	&& apt-get update \
-	&& apt-get install -y jq python3-pip logrotate moreutils \
+	&& apt-get install -y jq python3-pip logrotate moreutils libmaxminddb0 \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
@@ -93,6 +105,8 @@ RUN curl -sL https://taskfile.dev/install.sh | sh
 WORKDIR /root
 
 COPY --from=nginx-http3-build /tmp/nginx-http3/install/usr/sbin/nginx /usr/sbin/nginx
+COPY --from=nginx-http3-build /tmp/nginx-http3/install/usr/lib/nginx/modules/ngx_http_geoip2_module.so /usr/lib/nginx/modules/
+COPY --from=nginx-http3-build /tmp/nginx-http3/install/usr/lib/nginx/modules/ngx_stream_geoip2_module.so /usr/lib/nginx/modules/
 COPY rootfs /
 COPY scripts/install-s6 /tmp/install-s6
 RUN rm -f /etc/nginx/conf.d/production.conf \

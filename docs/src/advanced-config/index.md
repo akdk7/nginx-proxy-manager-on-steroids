@@ -222,7 +222,8 @@ For reference, the default configuration can be found [here](https://github.com/
 
 ## Enabling the geoip2 module
 
-To enable the geoip2 module, you can create the custom configuration file `/data/nginx/custom/root_top.conf` and include the following snippet:
+The official NPM images now include the GeoIP2 modules and load them automatically. If you are using a custom
+image or have removed the module load file, create `/data/nginx/custom/root_top.conf` with:
 
 ```
 load_module /usr/lib/nginx/modules/ngx_http_geoip2_module.so;
