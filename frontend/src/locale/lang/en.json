@@ -269,6 +269,8 @@
   "stream.incoming-port": "Incoming Port",
   "streams": "Streams",
   "streams.count": "{count} {count, plural, one {Stream} other {Streams}}",
+  "streams.proxy-protocol": "Expect PROXY protocol",
+  "streams.proxy-protocol-upstream": "Send PROXY protocol to upstream",
   "streams.tcp": "TCP",
   "streams.udp": "UDP",
   "test": "Test",

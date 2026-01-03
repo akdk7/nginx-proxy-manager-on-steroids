@@ -581,6 +581,8 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 							upstreamServers: data?.upstreamServers || [],
 							tcpForwarding: data?.tcpForwarding,
 							udpForwarding: data?.udpForwarding,
+							proxyProtocol: data?.proxyProtocol || false,
+							proxyProtocolUpstream: data?.proxyProtocolUpstream || false,
 							certificateId: data?.certificateId,
 							meta: data?.meta || {},
 						} as any
@@ -829,6 +831,14 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 																								"udpForwarding",
 																								true,
 																							);
+																							setFieldValue(
+																								"proxyProtocol",
+																								false,
+																							);
+																							setFieldValue(
+																								"proxyProtocolUpstream",
+																								false,
+																							);
 																						}
 																					}}
 																				/>
@@ -864,6 +874,64 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 																								true,
 																							);
 																						}
+																					}}
+																				/>
+																			</label>
+																		)}
+																	</Field>
+																</span>
+															</label>
+														</div>
+														<div>
+															<label className="row" htmlFor="proxyProtocol">
+																<span className="col">
+																	<T id="streams.proxy-protocol" />
+																</span>
+																<span className="col-auto">
+																	<Field name="proxyProtocol" type="checkbox">
+																		{({ field }: any) => (
+																			<label className="form-check form-check-single form-switch">
+																				<input
+																					id="proxyProtocol"
+																					className="form-check-input"
+																					type="checkbox"
+																					name={field.name}
+																					checked={field.value}
+																					disabled={!values.tcpForwarding}
+																					onChange={(e: any) => {
+																						setFieldValue(
+																							field.name,
+																							e.target.checked,
+																						);
+																					}}
+																				/>
+																			</label>
+																		)}
+																	</Field>
+																</span>
+															</label>
+														</div>
+														<div>
+															<label className="row" htmlFor="proxyProtocolUpstream">
+																<span className="col">
+																	<T id="streams.proxy-protocol-upstream" />
+																</span>
+																<span className="col-auto">
+																	<Field name="proxyProtocolUpstream" type="checkbox">
+																		{({ field }: any) => (
+																			<label className="form-check form-check-single form-switch">
+																				<input
+																					id="proxyProtocolUpstream"
+																					className="form-check-input"
+																					type="checkbox"
+																					name={field.name}
+																					checked={field.value}
+																					disabled={!values.tcpForwarding}
+																					onChange={(e: any) => {
+																						setFieldValue(
+																							field.name,
+																							e.target.checked,
+																						);
 																					}}
 																				/>
 																			</label>

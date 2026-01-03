@@ -83,6 +83,14 @@
 			"type": "boolean",
 			"example": false
 		},
+		"proxy_protocol": {
+			"type": "boolean",
+			"example": false
+		},
+		"proxy_protocol_upstream": {
+			"type": "boolean",
+			"example": false
+		},
 		"enabled": {
 			"$ref": "../common.json#/properties/enabled"
 		},

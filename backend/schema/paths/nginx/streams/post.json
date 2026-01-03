@@ -47,6 +47,12 @@
 						"udp_forwarding": {
 							"$ref": "../../../components/stream-object.json#/properties/udp_forwarding"
 						},
+						"proxy_protocol": {
+							"$ref": "../../../components/stream-object.json#/properties/proxy_protocol"
+						},
+						"proxy_protocol_upstream": {
+							"$ref": "../../../components/stream-object.json#/properties/proxy_protocol_upstream"
+						},
 						"certificate_id": {
 							"$ref": "../../../components/stream-object.json#/properties/certificate_id"
 						},
@@ -64,6 +70,8 @@
 					"forwarding_port": 8080,
 					"tcp_forwarding": true,
 					"udp_forwarding": false,
+					"proxy_protocol": false,
+					"proxy_protocol_upstream": false,
 					"certificate_id": 0,
 					"meta": {}
 				}
@@ -87,6 +95,8 @@
 								"forwarding_port": 80,
 								"tcp_forwarding": true,
 								"udp_forwarding": false,
+								"proxy_protocol": false,
+								"proxy_protocol_upstream": false,
 								"meta": {
 									"nginx_online": true,
 									"nginx_err": null

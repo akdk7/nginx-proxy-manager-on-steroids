@@ -809,6 +809,12 @@
 	"streams.count": {
 		"defaultMessage": "{count} {count, plural, one {Stream} other {Streams}}"
 	},
+	"streams.proxy-protocol": {
+		"defaultMessage": "Expect PROXY protocol"
+	},
+	"streams.proxy-protocol-upstream": {
+		"defaultMessage": "Send PROXY protocol to upstream"
+	},
 	"streams.tcp": {
 		"defaultMessage": "TCP"
 	},

@@ -262,6 +262,8 @@ export interface Stream {
 	upstreamServers: UpstreamServer[];
 	tcpForwarding: boolean;
 	udpForwarding: boolean;
+	proxyProtocol: boolean;
+	proxyProtocolUpstream: boolean;
 	meta: Record<string, any>;
 	enabled: boolean;
 	certificateId: number;
