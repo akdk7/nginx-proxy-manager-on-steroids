@@ -258,6 +258,7 @@
   "settings.default-site.redirect": "Redirect",
   "settings.proxy-protocol": "PROXY Protocol",
   "settings.proxy-protocol.description": "Ports that should expect the PROXY protocol header for HTTP listeners (keep 80/443 consistent)",
+  "settings.proxy-protocol.notice": "PROXY protocol is negotiated per listener (port/IP), not per host. If multiple hosts share a port, they must all use the same PROXY protocol setting.",
   "settings.proxy-protocol.empty": "No ports configured",
   "settings.proxy-protocol.port": "Port",
   "setup.preamble": "Get started by creating your admin account.",

@@ -148,10 +148,13 @@ export default function ProxyProtocol() {
 								<h3 className="mb-1">
 									<T id="settings.proxy-protocol" />
 								</h3>
-								<div className="text-muted">
-									<T id="settings.proxy-protocol.description" />
-								</div>
+							<div className="text-muted">
+								<T id="settings.proxy-protocol.description" />
 							</div>
+							<Alert variant="warning" className="mt-3">
+								<T id="settings.proxy-protocol.notice" />
+							</Alert>
+						</div>
 							<div className="table-responsive">
 								<table className="table table-vcenter">
 									<thead>

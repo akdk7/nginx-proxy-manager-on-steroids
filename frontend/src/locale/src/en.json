@@ -776,6 +776,9 @@
 	"settings.proxy-protocol.description": {
 		"defaultMessage": "Ports that should expect the PROXY protocol header for HTTP listeners (keep 80/443 consistent)"
 	},
+	"settings.proxy-protocol.notice": {
+		"defaultMessage": "PROXY protocol is negotiated per listener (port/IP), not per host. If multiple hosts share a port, they must all use the same PROXY protocol setting."
+	},
 	"settings.proxy-protocol.empty": {
 		"defaultMessage": "No ports configured"
 	},
