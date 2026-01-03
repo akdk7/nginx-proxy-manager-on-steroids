@@ -43,7 +43,7 @@ RUN set -eux; \
 		nginx_version="${nginx_version_fallback}"; \
 	fi; \
 	git clone --depth 1 --branch "${HTTP3_OPENSSL_REF}" "${HTTP3_OPENSSL_REPO}" /tmp/nginx-http3/openssl; \
-	if [ -n "${GEOIP2_MODULE_REF}" ]; then \
+	if [ -n "${GEOIP2_MODULE_REF:-}" ]; then \
 		git clone --depth 1 --branch "${GEOIP2_MODULE_REF}" "${GEOIP2_MODULE_REPO}" /tmp/nginx-http3/ngx_http_geoip2_module; \
 	else \
 		git clone --depth 1 "${GEOIP2_MODULE_REPO}" /tmp/nginx-http3/ngx_http_geoip2_module; \
