@@ -13,12 +13,12 @@ import { showObjectSuccess } from "src/notifications";
 const validateForwardingHost = validateString(1, 255);
 const validateForwardingPort = validateNumber(1, 65535);
 
-const showStreamModal = (id: number | "new", seed?: Partial<Stream>) => {
-	EasyModal.show(StreamModal, { id, seed });
+const showStreamModal = (streamId: number | "new", seed?: Partial<Stream>) => {
+	EasyModal.show(StreamModal, { streamId, seed });
 };
 
 interface Props extends InnerModalProps {
-	id: number | "new";
+	streamId: number | "new";
 	seed?: Partial<Stream>;
 }
 
@@ -532,15 +532,15 @@ const UpstreamSettings = ({ onRequestForwardHeartbeat }: { onRequestForwardHeart
 	);
 };
 
-const StreamModal = EasyModal.create(({ id, visible, remove, seed }: Props) => {
-	const { data, isLoading, error } = useStream(id);
+const StreamModal = EasyModal.create(({ streamId, visible, remove, seed }: Props) => {
+	const { data, isLoading, error } = useStream(streamId);
 	const { mutate: setStream } = useSetStream();
 	const { data: geoAccessSetting } = useSetting("geo-access");
 	const [errorMsg, setErrorMsg] = useState<ReactNode | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [forwardHeartbeatKey, setForwardHeartbeatKey] = useState(0);
 	const formData =
-		id === "new" && seed && data
+		streamId === "new" && seed && data
 			? {
 					...data,
 					...seed,
@@ -557,7 +557,7 @@ const StreamModal = EasyModal.create(({ id, visible, remove, seed }: Props) => {
 		};
 
 		const { ...payload } = {
-			id: id === "new" ? undefined : id,
+			id: streamId === "new" ? undefined : streamId,
 			...restValues,
 		};
 
@@ -584,7 +584,7 @@ const StreamModal = EasyModal.create(({ id, visible, remove, seed }: Props) => {
 			{isLoading && <Loading noLogo />}
 			{!isLoading && formData && (
 				<Formik
-					key={id === "new" ? `new-${seed?.id ?? "blank"}` : formData?.id}
+					key={streamId === "new" ? `new-${seed?.id ?? "blank"}` : formData?.id}
 					initialValues={
 						{
 							incomingPort: formData?.incomingPort,

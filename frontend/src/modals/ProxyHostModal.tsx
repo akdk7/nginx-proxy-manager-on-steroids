@@ -68,12 +68,12 @@ const validateProxyHost = (values: any) => {
 	return errors;
 };
 
-const showProxyHostModal = (id: number | "new", seed?: Partial<ProxyHost>) => {
-	EasyModal.show(ProxyHostModal, { id, seed });
+const showProxyHostModal = (hostId: number | "new", seed?: Partial<ProxyHost>) => {
+	EasyModal.show(ProxyHostModal, { hostId, seed });
 };
 
 interface Props extends InnerModalProps {
-	id: number | "new";
+	hostId: number | "new";
 	seed?: Partial<ProxyHost>;
 }
 
@@ -502,15 +502,15 @@ const UpstreamSettings = ({ onRequestForwardHeartbeat }: { onRequestForwardHeart
 	);
 };
 
-const ProxyHostModal = EasyModal.create(({ id, visible, remove, seed }: Props) => {
+const ProxyHostModal = EasyModal.create(({ hostId, visible, remove, seed }: Props) => {
 	const { data: currentUser, isLoading: userIsLoading, error: userError } = useUser("me");
-	const { data, isLoading, error } = useProxyHost(id);
+	const { data, isLoading, error } = useProxyHost(hostId);
 	const { mutate: setProxyHost } = useSetProxyHost();
 	const { data: geoAccessSetting } = useSetting("geo-access");
 	const [errorMsg, setErrorMsg] = useState<ReactNode | null>(null);
 	const [forwardHeartbeatKey, setForwardHeartbeatKey] = useState(0);
 	const formData =
-		id === "new" && seed && data
+		hostId === "new" && seed && data
 			? {
 					...data,
 					...seed,
@@ -527,7 +527,7 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove, seed }: Props) =
 		};
 
 		const { ...payload } = {
-			id: id === "new" ? undefined : id,
+			id: hostId === "new" ? undefined : hostId,
 			...restValues,
 			listenPorts: normalizedListenPorts.ports.length ? normalizedListenPorts.ports : defaultListenPorts,
 		};
@@ -555,7 +555,7 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove, seed }: Props) =
 			{isLoading || (userIsLoading && <Loading noLogo />)}
 			{!isLoading && !userIsLoading && formData && currentUser && (
 				<Formik
-					key={id === "new" ? `new-${seed?.id ?? "blank"}` : formData?.id}
+					key={hostId === "new" ? `new-${seed?.id ?? "blank"}` : formData?.id}
 					initialValues={
 						{
 							// Details tab
