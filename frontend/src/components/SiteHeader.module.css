@@ -8,8 +8,68 @@
 }
 
 .comicTag {
-	margin-left: 0.35rem;
-	font-family: "Comic Sans MS", "Comic Sans", cursive;
-	font-size: 0.95rem;
-	font-weight: 700;
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	margin-left: 0.45rem;
+	padding: 0.12rem 0.55rem 0.2rem;
+	font-family: "Comic Sans MS", "Comic Sans", "Marker Felt", "Bradley Hand", cursive;
+	font-size: 0.9rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #2b1600;
+	background: linear-gradient(115deg, #ffe29a 0%, #ff9a4a 52%, #ff5c7a 100%);
+	border: 2px solid #2b1600;
+	border-radius: 999px 999px 12px 999px;
+	box-shadow:
+		0 2px 0 #2b1600,
+		0 6px 12px rgba(0, 0, 0, 0.18);
+	transform: rotate(-4deg);
+	transform-origin: left center;
+	animation: tagPop 0.5s ease-out;
+
+	&::before {
+		content: "";
+		position: absolute;
+		left: 0.5rem;
+		top: -0.25rem;
+		width: 1.2rem;
+		height: 0.35rem;
+		background: rgba(255, 255, 255, 0.75);
+		border-radius: 999px;
+		transform: rotate(-8deg);
+	}
+
+	&::after {
+		content: "";
+		position: absolute;
+		inset: -0.35rem -0.5rem;
+		border: 2px dashed rgba(43, 22, 0, 0.55);
+		border-radius: 999px;
+		transform: rotate(2deg);
+		pointer-events: none;
+	}
+
+	&:hover {
+		transform: rotate(-2deg) scale(1.02);
+	}
+}
+
+@keyframes tagPop {
+	0% {
+		transform: rotate(-8deg) scale(0.85);
+	}
+	65% {
+		transform: rotate(2deg) scale(1.08);
+	}
+	100% {
+		transform: rotate(-4deg) scale(1);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.comicTag {
+		animation: none;
+	}
 }
