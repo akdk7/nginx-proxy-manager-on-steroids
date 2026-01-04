@@ -387,12 +387,15 @@ const internalNginx = {
 	getGeoSettings: async () => {
 		const setting = await settingModel.query().where("id", "geo-access").first();
 		const meta = setting?.meta || {};
+		const httpEnabled = meta.http_enabled ?? meta.httpEnabled;
+		const streamEnabled = meta.stream_enabled ?? meta.streamEnabled;
+		const dbPath = meta.db_path ?? meta.dbPath;
 		return {
-			http_enabled: meta.http_enabled === true || meta.http_enabled === 1,
-			stream_enabled: meta.stream_enabled === true || meta.stream_enabled === 1,
+			http_enabled: httpEnabled === true || httpEnabled === 1,
+			stream_enabled: streamEnabled === true || streamEnabled === 1,
 			mode: normalizeGeoAccessMode(meta.mode),
 			countries: sanitizeGeoCountries(meta.countries),
-			db_path: normalizeGeoDbPath(meta.db_path),
+			db_path: normalizeGeoDbPath(dbPath),
 			presets: sanitizeGeoPresets(meta.presets),
 		};
 	},

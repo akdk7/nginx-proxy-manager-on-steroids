@@ -41,9 +41,9 @@ export default function GeoAccess() {
 			id: "geo-access",
 			value: "geo-access",
 			meta: {
-				httpEnabled: !!values.httpEnabled,
-				streamEnabled: !!values.streamEnabled,
-				dbPath: `${values.dbPath || ""}`.trim(),
+				http_enabled: !!values.httpEnabled,
+				stream_enabled: !!values.streamEnabled,
+				db_path: `${values.dbPath || ""}`.trim(),
 				mode: values.mode || "allow",
 				countries: Array.isArray(values.countries) ? values.countries : [],
 				presets: Array.isArray(values.presets) ? values.presets : [],
@@ -152,9 +152,12 @@ export default function GeoAccess() {
 			enableReinitialize
 			initialValues={
 				{
-					httpEnabled: data?.meta?.httpEnabled || false,
-					streamEnabled: data?.meta?.streamEnabled || false,
-					dbPath: data?.meta?.dbPath || "/data/GeoLite2-Country.mmdb",
+					httpEnabled: data?.meta?.http_enabled ?? data?.meta?.httpEnabled ?? false,
+					streamEnabled: data?.meta?.stream_enabled ?? data?.meta?.streamEnabled ?? false,
+					dbPath:
+						data?.meta?.db_path ??
+						data?.meta?.dbPath ??
+						"/data/GeoLite2-Country.mmdb",
 					mode: data?.meta?.mode || "allow",
 					countries: Array.isArray(data?.meta?.countries) ? data.meta.countries : [],
 					presets: Array.isArray(data?.meta?.presets) ? data.meta.presets : [],
