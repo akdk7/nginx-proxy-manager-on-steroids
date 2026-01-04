@@ -1,0 +1,16 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Frontend lint/test/build
+        run: ./scripts/ci/frontend-build
+      - name: Docker build
+        run: docker buildx build -f docker/Dockerfile --platform linux/amd64 -t nginx-proxy-manager:local --load . --no-cache
