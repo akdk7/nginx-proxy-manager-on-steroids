@@ -29,10 +29,12 @@ const parseDatePeriod = (expression) => {
 	return null;
 };
 
+const isTruthyFlag = (value) => value === 1 || value === "1" || value === true || value === "true";
+
 const convertIntFieldsToBool = (obj, fields) => {
 	fields.forEach((field) => {
 		if (typeof obj[field] !== "undefined") {
-			obj[field] = obj[field] === 1;
+			obj[field] = isTruthyFlag(obj[field]);
 		}
 	});
 	return obj;
@@ -41,7 +43,7 @@ const convertIntFieldsToBool = (obj, fields) => {
 const convertBoolFieldsToInt = (obj, fields) => {
 	fields.forEach((field) => {
 		if (typeof obj[field] !== "undefined") {
-			obj[field] = obj[field] ? 1 : 0;
+			obj[field] = isTruthyFlag(obj[field]) ? 1 : 0;
 		}
 	});
 	return obj;
