@@ -120,12 +120,12 @@ COPY --from=nginx-http3-build /tmp/nginx-http3/install/usr/lib/nginx/modules/ngx
 COPY --from=nginx-http3-build /tmp/nginx-http3/install/usr/lib/nginx/modules/ngx_stream_geoip2_module.so /usr/lib/nginx/modules/
 EXPOSE 80 81 443 443/udp
 
+WORKDIR /app
+COPY backend/package.json backend/yarn.lock /app/
+RUN yarn install --production --frozen-lockfile --non-interactive \
+	&& yarn cache clean
 COPY backend       /app
 COPY frontend/dist /app/frontend
-
-WORKDIR /app
-RUN yarn install \
-	&& yarn cache clean
 
 # add late to limit cache-busting by modifications
 COPY docker/rootfs /
