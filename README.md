@@ -36,6 +36,22 @@ so that the barrier for entry here is low.
 - Advanced Nginx configuration available for super users
 - User management, permissions and audit log
 
+### Feature in on-steroids
+
+- GeoIP2-based Geo Access Control with global and per host/stream rules, country checklist, and presets
+- GeoIP2 diagnostics in the UI plus bundled modules that auto-load in the official image
+- Stream load balancing with upstream pools and policies
+- Stream PROXY protocol support and per-stream access/error logs
+- Heartbeat checks for proxy hosts and streams with status badges
+- Rate limiting for proxy hosts and locations
+- Security header presets and optional upstream mTLS
+- Configurable PROXY protocol per listener port
+- HTTP/3/QUIC support with automatic disable when the module is unavailable
+- Logs UI and generated Nginx config viewer
+- Dashboard widgets for host status, certificate expiry, and recent activity
+- German locale with translated help docs
+- Hardened CORS and upload limits
+
 
 ## Hosting your home network
 
