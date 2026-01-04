@@ -18,6 +18,20 @@ import { MANAGE, STREAMS } from "src/modules/Permissions";
 import { showObjectSuccess } from "src/notifications";
 import Table from "./Table";
 
+const getIncomingPorts = (stream: Stream) =>
+	Array.isArray(stream.incomingPorts) && stream.incomingPorts.length
+		? stream.incomingPorts
+		: Number.isFinite(stream.incomingPort) && stream.incomingPort > 0
+			? [stream.incomingPort]
+			: [];
+
+const getForwardingPorts = (stream: Stream) =>
+	Array.isArray(stream.forwardingPorts) && stream.forwardingPorts.length
+		? stream.forwardingPorts
+		: Number.isFinite(stream.forwardingPort) && stream.forwardingPort > 0
+			? [stream.forwardingPort]
+			: [];
+
 export default function TableWrapper() {
 	const queryClient = useQueryClient();
 	const [search, setSearch] = useState("");
@@ -25,20 +39,6 @@ export default function TableWrapper() {
 	const [heartbeatsLoading, setHeartbeatsLoading] = useState(false);
 	const [heartbeatRefreshIds, setHeartbeatRefreshIds] = useState<Record<number, boolean>>({});
 	const { isFetching, isLoading, isError, error, data } = useStreams(["owner", "certificate"]);
-
-	const getIncomingPorts = (stream: Stream) =>
-		Array.isArray(stream.incomingPorts) && stream.incomingPorts.length
-			? stream.incomingPorts
-			: Number.isFinite(stream.incomingPort) && stream.incomingPort > 0
-				? [stream.incomingPort]
-				: [];
-
-	const getForwardingPorts = (stream: Stream) =>
-		Array.isArray(stream.forwardingPorts) && stream.forwardingPorts.length
-			? stream.forwardingPorts
-			: Number.isFinite(stream.forwardingPort) && stream.forwardingPort > 0
-				? [stream.forwardingPort]
-				: [];
 
 	const getIncomingPortsLabel = (stream: Stream) => formatPortRanges(getIncomingPorts(stream));
 	const getForwardingPortsLabel = (stream: Stream) => formatPortRanges(getForwardingPorts(stream));
