@@ -866,6 +866,39 @@
 	"settings.geo-access.notice": {
 		"defaultMessage": "Requires the geoip2 module and a mounted GeoLite2 Country database. Stream rules need ngx_stream_geoip2_module loaded."
 	},
+	"settings.geo-access.status.title": {
+		"defaultMessage": "Status"
+	},
+	"settings.geo-access.status.checked": {
+		"defaultMessage": "Checked: {date}"
+	},
+	"settings.geo-access.status.http-module": {
+		"defaultMessage": "HTTP module"
+	},
+	"settings.geo-access.status.stream-module": {
+		"defaultMessage": "Stream module"
+	},
+	"settings.geo-access.status.database": {
+		"defaultMessage": "GeoLite2 database"
+	},
+	"settings.geo-access.status.path": {
+		"defaultMessage": "Path: {path}"
+	},
+	"settings.geo-access.status.ok": {
+		"defaultMessage": "OK"
+	},
+	"settings.geo-access.status.missing": {
+		"defaultMessage": "Missing"
+	},
+	"settings.geo-access.status.invalid": {
+		"defaultMessage": "Invalid"
+	},
+	"settings.geo-access.status.not-loaded": {
+		"defaultMessage": "Not loaded"
+	},
+	"settings.geo-access.status.unknown": {
+		"defaultMessage": "Unknown"
+	},
 	"settings.geo-access.http": {
 		"defaultMessage": "Enable for Proxy Hosts (HTTP)"
 	},

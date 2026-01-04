@@ -33,8 +33,16 @@ const geoAccessModes = ["allow", "deny"];
 const defaultGeoDbPath = "/data/GeoLite2-Country.mmdb";
 let http3SupportCache;
 let http3SupportPromise;
+let geoAccessStatusCache = null;
+let geoAccessStatusPromise;
 const proxyProtocolPortsCache = { ports: [], loadedAt: 0 };
 const defaultListenPorts = ["80", "443"];
+const geoipModuleConfigPath = "/etc/nginx/modules/50-geoip2.conf";
+const geoipHttpModulePath = "/usr/lib/nginx/modules/ngx_http_geoip2_module.so";
+const geoipStreamModulePath = "/usr/lib/nginx/modules/ngx_stream_geoip2_module.so";
+const geoipMetadataMarker = Buffer.from([
+	0xab, 0xcd, 0xef, 0x4d, 0x61, 0x78, 0x4d, 0x69, 0x6e, 0x64, 0x2e, 0x63, 0x6f, 0x6d,
+]);
 
 const normalizeProxyProtocolPorts = (ports) => {
 	if (!Array.isArray(ports)) {
@@ -78,6 +86,79 @@ const normalizeGeoDbPath = (path) => {
 const sanitizeGeoPresetId = (value) => `${value || ""}`.trim();
 
 const sanitizeGeoPresetName = (value) => `${value || ""}`.trim();
+
+const readGeoipModuleConfig = () => {
+	if (!fs.existsSync(geoipModuleConfigPath)) {
+		return { present: false, content: null };
+	}
+	try {
+		return { present: true, content: fs.readFileSync(geoipModuleConfigPath, { encoding: "utf8" }) };
+	} catch (err) {
+		return { present: true, content: null };
+	}
+};
+
+const validateGeoDb = (path) => {
+	const normalized = normalizeGeoDbPath(path);
+	const status = {
+		path: normalized,
+		exists: false,
+		readable: false,
+		valid: false,
+		size: 0,
+	};
+
+	if (!normalized) {
+		return status;
+	}
+
+	let stat;
+	try {
+		stat = fs.statSync(normalized);
+	} catch (err) {
+		return status;
+	}
+
+	if (!stat.isFile()) {
+		status.exists = true;
+		return status;
+	}
+
+	status.exists = true;
+	status.size = stat.size;
+
+	try {
+		fs.accessSync(normalized, fs.constants.R_OK);
+		status.readable = true;
+	} catch (err) {
+		return status;
+	}
+
+	if (stat.size <= 0) {
+		return status;
+	}
+
+	let fd;
+	try {
+		fd = fs.openSync(normalized, "r");
+		const tailSize = Math.min(512, stat.size);
+		const buffer = Buffer.alloc(tailSize);
+		fs.readSync(fd, buffer, 0, tailSize, stat.size - tailSize);
+		status.valid = buffer.indexOf(geoipMetadataMarker) >= 0;
+	} catch (err) {
+		return status;
+	} finally {
+		if (typeof fd === "number") {
+			try {
+				fs.closeSync(fd);
+			} catch (err) {
+				// ignore close errors
+			}
+		}
+	}
+
+	return status;
+};
 
 const sanitizeGeoPresets = (presets) => {
 	if (!Array.isArray(presets)) {
@@ -162,6 +243,64 @@ const internalNginx = {
 	invalidateProxyProtocolPortsCache: () => {
 		proxyProtocolPortsCache.ports = [];
 		proxyProtocolPortsCache.loadedAt = 0;
+	},
+	getGeoAccessStatus: async () => {
+		if (geoAccessStatusCache) {
+			return geoAccessStatusCache;
+		}
+		return internalNginx.refreshGeoAccessStatus();
+	},
+	refreshGeoAccessStatus: async () => {
+		if (geoAccessStatusPromise) {
+			return geoAccessStatusPromise;
+		}
+		geoAccessStatusPromise = (async () => {
+			const geoSettings = await internalNginx.getGeoSettings();
+			const dbStatus = validateGeoDb(geoSettings?.db_path);
+			const moduleConfig = readGeoipModuleConfig();
+			const moduleConfigContent = moduleConfig.content || "";
+			const httpConfigured = moduleConfigContent.includes(geoipHttpModulePath);
+			const streamConfigured = moduleConfigContent.includes(geoipStreamModulePath);
+			const status = {
+				checked_at: new Date().toISOString(),
+				modules: {
+					config_path: geoipModuleConfigPath,
+					config_present: moduleConfig.present,
+					http: {
+						path: geoipHttpModulePath,
+						present: fs.existsSync(geoipHttpModulePath),
+						configured: httpConfigured,
+					},
+					stream: {
+						path: geoipStreamModulePath,
+						present: fs.existsSync(geoipStreamModulePath),
+						configured: streamConfigured,
+					},
+				},
+				database: dbStatus,
+			};
+			geoAccessStatusCache = status;
+			return status;
+		})()
+			.catch((err) => {
+				debug(logger, "GeoIP2 status check failed:", err?.message || err);
+				const status = {
+					checked_at: new Date().toISOString(),
+					modules: {
+						config_path: geoipModuleConfigPath,
+						config_present: false,
+						http: { path: geoipHttpModulePath, present: false, configured: false },
+						stream: { path: geoipStreamModulePath, present: false, configured: false },
+					},
+					database: validateGeoDb(defaultGeoDbPath),
+				};
+				geoAccessStatusCache = status;
+				return status;
+			})
+			.finally(() => {
+				geoAccessStatusPromise = null;
+			});
+		return geoAccessStatusPromise;
 	},
 	/**
 	 * This will:

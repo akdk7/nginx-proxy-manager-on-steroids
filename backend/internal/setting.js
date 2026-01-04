@@ -73,7 +73,14 @@ const internalSetting = {
 					return internalNginx.regenerateAllConfigs().then(() => row);
 				}
 				if (row.id === "geo-access") {
-					return internalNginx.regenerateAllConfigs().then(() => row);
+					return internalNginx
+						.regenerateAllConfigs()
+						.then(() => internalNginx.refreshGeoAccessStatus())
+						.then((status) => {
+							row.meta = row.meta || {};
+							row.meta.status = status;
+							return row;
+						});
 				}
 				return row;
 			});
@@ -93,6 +100,13 @@ const internalSetting = {
 			})
 			.then((row) => {
 				if (row) {
+					if (row.id === "geo-access") {
+						return internalNginx.getGeoAccessStatus().then((status) => {
+							row.meta = row.meta || {};
+							row.meta.status = status;
+							return row;
+						});
+					}
 					return row;
 				}
 				throw new errs.ItemNotFoundError(data.id);

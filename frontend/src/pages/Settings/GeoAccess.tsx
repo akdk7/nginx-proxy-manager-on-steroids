@@ -4,7 +4,7 @@ import { Alert } from "react-bootstrap";
 import { updateProxyHost, updateStream } from "src/api/backend";
 import { Button, CountryChecklist, Loading } from "src/components";
 import { fetchProxyHosts, fetchStreams, useSetSetting, useSetting } from "src/hooks";
-import { intl, T } from "src/locale";
+import { formatDateTime, intl, T } from "src/locale";
 import { showError, showObjectSuccess, showSuccess } from "src/notifications";
 
 type GeoPreset = {
@@ -31,6 +31,50 @@ export default function GeoAccess() {
 	const [applyPresetId, setApplyPresetId] = useState("");
 	const [applyError, setApplyError] = useState<ReactNode | null>(null);
 	const [applyTarget, setApplyTarget] = useState<"proxy-hosts" | "streams" | null>(null);
+	const geoStatus = data?.meta?.status;
+	const checkedAt = geoStatus?.checked_at ? formatDateTime(geoStatus.checked_at) : null;
+
+	const resolveModuleStatus = (moduleStatus: any) => {
+		if (!moduleStatus) {
+			return "unknown";
+		}
+		if (!moduleStatus.present) {
+			return "missing";
+		}
+		if (!moduleStatus.configured) {
+			return "not-loaded";
+		}
+		return "ok";
+	};
+
+	const resolveDbStatus = (dbStatus: any) => {
+		if (!dbStatus) {
+			return "unknown";
+		}
+		if (!dbStatus.exists) {
+			return "missing";
+		}
+		if (!dbStatus.valid) {
+			return "invalid";
+		}
+		return "ok";
+	};
+
+	const renderStatusBadge = (state: string) => {
+		const colors: Record<string, string> = {
+			ok: "bg-success",
+			missing: "bg-danger",
+			invalid: "bg-danger",
+			"not-loaded": "bg-warning",
+			unknown: "bg-secondary",
+		};
+		const color = colors[state] || "bg-secondary";
+		return (
+			<span className={`badge ${color}`}>
+				<T id={`settings.geo-access.status.${state}`} />
+			</span>
+		);
+	};
 
 	const onSubmit = async (values: any, { setSubmitting }: any) => {
 		if (isSubmitting) return;
@@ -183,6 +227,68 @@ export default function GeoAccess() {
 								<T id="settings.geo-access.notice" />
 							</Alert>
 						</div>
+						{geoStatus ? (
+							<div className="mb-4">
+								<h4 className="mb-2">
+									<T id="settings.geo-access.status.title" />
+								</h4>
+								{checkedAt ? (
+									<div className="text-muted small mb-3">
+										<T id="settings.geo-access.status.checked" data={{ date: checkedAt }} />
+									</div>
+								) : null}
+								<div className="row g-3">
+									<div className="col-md-4">
+										<div className="d-flex align-items-center justify-content-between">
+											<span className="fw-semibold">
+												<T id="settings.geo-access.status.http-module" />
+											</span>
+											{renderStatusBadge(resolveModuleStatus(geoStatus.modules?.http))}
+										</div>
+										{geoStatus.modules?.http?.path ? (
+											<div className="text-muted small">
+												<T
+													id="settings.geo-access.status.path"
+													data={{ path: geoStatus.modules.http.path }}
+												/>
+											</div>
+										) : null}
+									</div>
+									<div className="col-md-4">
+										<div className="d-flex align-items-center justify-content-between">
+											<span className="fw-semibold">
+												<T id="settings.geo-access.status.stream-module" />
+											</span>
+											{renderStatusBadge(resolveModuleStatus(geoStatus.modules?.stream))}
+										</div>
+										{geoStatus.modules?.stream?.path ? (
+											<div className="text-muted small">
+												<T
+													id="settings.geo-access.status.path"
+													data={{ path: geoStatus.modules.stream.path }}
+												/>
+											</div>
+										) : null}
+									</div>
+									<div className="col-md-4">
+										<div className="d-flex align-items-center justify-content-between">
+											<span className="fw-semibold">
+												<T id="settings.geo-access.status.database" />
+											</span>
+											{renderStatusBadge(resolveDbStatus(geoStatus.database))}
+										</div>
+										{geoStatus.database?.path ? (
+											<div className="text-muted small">
+												<T
+													id="settings.geo-access.status.path"
+													data={{ path: geoStatus.database.path }}
+												/>
+											</div>
+										) : null}
+									</div>
+								</div>
+							</div>
+						) : null}
 						<div className="row mb-3">
 							<div className="col-md-6">
 								<label className="form-label" htmlFor="geoAccessHttpEnabled">

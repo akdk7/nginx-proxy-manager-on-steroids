@@ -20,6 +20,11 @@ async function appStart() {
 				return internalNginx.regenerateAllConfigs();
 			}
 		})
+		.then(() =>
+			internalNginx.refreshGeoAccessStatus().catch((err) => {
+				logger.warn("GeoIP2 status check failed:", err?.message || err);
+			}),
+		)
 		.then(getCompiledSchema)
 		.then(() => {
 			if (!IP_RANGES_FETCH_ENABLED) {
