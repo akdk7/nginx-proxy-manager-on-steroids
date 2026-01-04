@@ -12,6 +12,126 @@ const omissions = () => {
 	return ["is_deleted", "owner.is_deleted", "certificate.is_deleted"];
 };
 
+const parseStreamPort = (value) => {
+	const parsed = Number.parseInt(`${value ?? ""}`, 10);
+	if (!Number.isFinite(parsed) || parsed < 1 || parsed > 65535) {
+		return null;
+	}
+	return parsed;
+};
+
+const collectStreamPorts = (ports) => {
+	const seen = new Set();
+	const normalized = [];
+	let hasInvalid = false;
+	let hasDuplicates = false;
+	ports.forEach((port) => {
+		const parsed = parseStreamPort(port);
+		if (!parsed) {
+			hasInvalid = true;
+			return;
+		}
+		if (seen.has(parsed)) {
+			hasDuplicates = true;
+			return;
+		}
+		seen.add(parsed);
+		normalized.push(parsed);
+	});
+	return { ports: normalized, hasInvalid, hasDuplicates };
+};
+
+const resolveStreamPorts = (data, fallback, listKey, singleKey) => {
+	const hasList = Object.prototype.hasOwnProperty.call(data, listKey);
+	const hasSingle = Object.prototype.hasOwnProperty.call(data, singleKey);
+	let ports = [];
+	let hasInvalid = false;
+	let hasDuplicates = false;
+
+	if (hasList) {
+		if (!Array.isArray(data[listKey])) {
+			hasInvalid = true;
+		} else {
+			const result = collectStreamPorts(data[listKey]);
+			ports = result.ports;
+			hasInvalid = result.hasInvalid;
+			hasDuplicates = result.hasDuplicates;
+		}
+	}
+
+	if (!ports.length && !hasInvalid && !hasDuplicates && hasSingle) {
+		const parsed = parseStreamPort(data[singleKey]);
+		if (parsed !== null) {
+			ports = [parsed];
+		} else {
+			hasInvalid = true;
+		}
+	}
+
+	if (!ports.length && !hasInvalid && !hasDuplicates && !hasList && !hasSingle && fallback) {
+		const fallbackList = Array.isArray(fallback?.[listKey]) ? fallback[listKey] : [];
+		if (fallbackList.length) {
+			const result = collectStreamPorts(fallbackList);
+			ports = result.ports;
+			hasInvalid = result.hasInvalid;
+			hasDuplicates = result.hasDuplicates;
+		} else {
+			const parsed = parseStreamPort(fallback?.[singleKey]);
+			if (parsed !== null) {
+				ports = [parsed];
+			}
+		}
+	}
+
+	return { ports, hasInvalid, hasDuplicates };
+};
+
+const applyStreamPorts = (data, fallback) => {
+	const hasIncoming =
+		Object.prototype.hasOwnProperty.call(data, "incoming_ports") ||
+		Object.prototype.hasOwnProperty.call(data, "incoming_port");
+	const hasForwarding =
+		Object.prototype.hasOwnProperty.call(data, "forwarding_ports") ||
+		Object.prototype.hasOwnProperty.call(data, "forwarding_port");
+	const hasAny = hasIncoming || hasForwarding;
+	if (!hasAny) {
+		if (!fallback) {
+			throw new errs.ValidationError("error.required");
+		}
+		return;
+	}
+
+	const incoming = resolveStreamPorts(data, fallback, "incoming_ports", "incoming_port");
+	const forwarding = resolveStreamPorts(data, fallback, "forwarding_ports", "forwarding_port");
+
+	if (incoming.hasInvalid || forwarding.hasInvalid) {
+		throw new errs.ValidationError("error.invalid-port");
+	}
+	if (incoming.hasDuplicates || forwarding.hasDuplicates) {
+		throw new errs.ValidationError("error.duplicate-port");
+	}
+	if (!incoming.ports.length || !forwarding.ports.length) {
+		throw new errs.ValidationError("error.required");
+	}
+	const upstreamEnabled = Object.prototype.hasOwnProperty.call(data, "upstream_enabled")
+		? data.upstream_enabled
+		: fallback?.upstream_enabled;
+	if (
+		(upstreamEnabled === true || upstreamEnabled === 1) &&
+		(incoming.ports.length > 1 || forwarding.ports.length > 1)
+	) {
+		throw new errs.ValidationError("error.stream.port-range-upstream");
+	}
+	if (incoming.ports.length !== forwarding.ports.length) {
+		throw new errs.ValidationError("error.stream.port-list-length-mismatch");
+	}
+
+	data.incoming_ports = incoming.ports;
+	data.incoming_port = incoming.ports[0];
+	data.forwarding_ports = forwarding.ports;
+	data.forwarding_port = forwarding.ports[0];
+};
+
 const internalStream = {
 	/**
 	 * @param   {Access}  access
@@ -24,6 +144,8 @@ const internalStream = {
 		if (create_certificate) {
 			delete data.certificate_id;
 		}
+
+		applyStreamPorts(data);
 
 		return access
 			.can("streams:create", data)
@@ -128,6 +250,10 @@ const internalStream = {
 							return row;
 						});
 				}
+				return row;
+			})
+			.then((row) => {
+				applyStreamPorts(thisData, row);
 				return row;
 			})
 			.then((row) => {
@@ -387,7 +513,11 @@ const internalStream = {
 				// Query is used for searching
 				if (typeof search_query === "string" && search_query.length > 0) {
 					query.where(function () {
-						this.where(castJsonIfNeed("incoming_port"), "like", `%${search_query}%`);
+						this.where(castJsonIfNeed("incoming_port"), "like", `%${search_query}%`)
+							.orWhere(castJsonIfNeed("incoming_ports"), "like", `%${search_query}%`)
+							.orWhere(castJsonIfNeed("forwarding_port"), "like", `%${search_query}%`)
+							.orWhere(castJsonIfNeed("forwarding_ports"), "like", `%${search_query}%`)
+							.orWhere("forwarding_host", "like", `%${search_query}%`);
 					});
 				}
 

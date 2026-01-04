@@ -12,6 +12,7 @@ import {
 import { Button, HasPermission, LoadingPage } from "src/components";
 import { useStreams } from "src/hooks";
 import { T } from "src/locale";
+import { formatPortRanges } from "src/modules/PortRanges";
 import { showDeleteConfirmModal, showHelpModal, showStreamModal } from "src/modals";
 import { MANAGE, STREAMS } from "src/modules/Permissions";
 import { showObjectSuccess } from "src/notifications";
@@ -25,25 +26,48 @@ export default function TableWrapper() {
 	const [heartbeatRefreshIds, setHeartbeatRefreshIds] = useState<Record<number, boolean>>({});
 	const { isFetching, isLoading, isError, error, data } = useStreams(["owner", "certificate"]);
 
-	const buildDuplicateSeed = (stream: Stream) => ({
-		incomingPort: stream.incomingPort,
-		forwardingHost: stream.forwardingHost,
-		forwardingPort: stream.forwardingPort,
-		upstreamEnabled: stream.upstreamEnabled,
-		upstreamPolicy: stream.upstreamPolicy,
-		upstreamServers: stream.upstreamServers || [],
-		tcpForwarding: stream.tcpForwarding,
-		udpForwarding: stream.udpForwarding,
-		proxyProtocol: stream.proxyProtocol,
-		proxyProtocolUpstream: stream.proxyProtocolUpstream,
-		geoAccessOverride: stream.geoAccessOverride,
-		geoAccessEnabled: stream.geoAccessEnabled,
-		geoAccessMode: stream.geoAccessMode,
-		geoAccessPreset: stream.geoAccessPreset,
-		geoAccessCountries: Array.isArray(stream.geoAccessCountries) ? stream.geoAccessCountries : [],
-		certificateId: stream.certificateId,
-		meta: {},
-	});
+	const getIncomingPorts = (stream: Stream) =>
+		Array.isArray(stream.incomingPorts) && stream.incomingPorts.length
+			? stream.incomingPorts
+			: Number.isFinite(stream.incomingPort) && stream.incomingPort > 0
+				? [stream.incomingPort]
+				: [];
+
+	const getForwardingPorts = (stream: Stream) =>
+		Array.isArray(stream.forwardingPorts) && stream.forwardingPorts.length
+			? stream.forwardingPorts
+			: Number.isFinite(stream.forwardingPort) && stream.forwardingPort > 0
+				? [stream.forwardingPort]
+				: [];
+
+	const getIncomingPortsLabel = (stream: Stream) => formatPortRanges(getIncomingPorts(stream));
+	const getForwardingPortsLabel = (stream: Stream) => formatPortRanges(getForwardingPorts(stream));
+
+	const buildDuplicateSeed = (stream: Stream) => {
+		const incomingPorts = getIncomingPorts(stream);
+		const forwardingPorts = getForwardingPorts(stream);
+		return {
+			incomingPort: incomingPorts[0] || stream.incomingPort,
+			incomingPorts,
+			forwardingHost: stream.forwardingHost,
+			forwardingPort: forwardingPorts[0] || stream.forwardingPort,
+			forwardingPorts,
+			upstreamEnabled: stream.upstreamEnabled,
+			upstreamPolicy: stream.upstreamPolicy,
+			upstreamServers: stream.upstreamServers || [],
+			tcpForwarding: stream.tcpForwarding,
+			udpForwarding: stream.udpForwarding,
+			proxyProtocol: stream.proxyProtocol,
+			proxyProtocolUpstream: stream.proxyProtocolUpstream,
+			geoAccessOverride: stream.geoAccessOverride,
+			geoAccessEnabled: stream.geoAccessEnabled,
+			geoAccessMode: stream.geoAccessMode,
+			geoAccessPreset: stream.geoAccessPreset,
+			geoAccessCountries: Array.isArray(stream.geoAccessCountries) ? stream.geoAccessCountries : [],
+			certificateId: stream.certificateId,
+			meta: {},
+		};
+	};
 
 	const heartbeatTargets = useMemo(() => {
 		if (!data?.length) {
@@ -53,10 +77,11 @@ export default function TableWrapper() {
 			.filter((stream) => stream.enabled)
 			.map((stream) => {
 				const upstream = stream.upstreamEnabled && stream.upstreamServers?.length ? stream.upstreamServers[0] : null;
+				const forwardingPort = getForwardingPorts(stream)[0] || stream.forwardingPort;
 				return {
 					id: stream.id,
 					forwardingHost: upstream?.host || stream.forwardingHost,
-					forwardingPort: upstream?.port || stream.forwardingPort,
+					forwardingPort: upstream?.port || forwardingPort,
 					tcpForwarding: stream.tcpForwarding,
 					udpForwarding: stream.udpForwarding,
 				};
@@ -129,13 +154,14 @@ export default function TableWrapper() {
 		}
 		const upstream =
 			stream.upstreamEnabled && stream.upstreamServers?.length ? stream.upstreamServers[0] : null;
+		const forwardingPort = getForwardingPorts(stream)[0] || stream.forwardingPort;
 		setHeartbeatRefreshIds((prev) => ({ ...prev, [id]: true }));
 		try {
 			const results = await checkStreamHeartbeats([
 				{
 					id: stream.id,
 					forwardingHost: upstream?.host || stream.forwardingHost,
-					forwardingPort: upstream?.port || stream.forwardingPort,
+					forwardingPort: upstream?.port || forwardingPort,
 					tcpForwarding: stream.tcpForwarding,
 					udpForwarding: stream.udpForwarding,
 				},
@@ -159,8 +185,11 @@ export default function TableWrapper() {
 	let filtered = null;
 	if (search && data) {
 		filtered = data?.filter((item) => {
+			const portLabel = getIncomingPortsLabel(item);
+			const forwardLabel = getForwardingPortsLabel(item);
 			return (
-				`${item.incomingPort}`.includes(search) ||
+				portLabel.includes(search) ||
+				forwardLabel.includes(search) ||
 				`${item.forwardingPort}`.includes(search) ||
 				item.forwardingHost.includes(search)
 			);

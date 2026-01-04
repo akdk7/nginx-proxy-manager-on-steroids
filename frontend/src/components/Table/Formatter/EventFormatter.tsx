@@ -2,6 +2,7 @@ import { IconArrowsCross, IconBolt, IconBoltOff, IconDisc, IconLock, IconShield,
 import cn from "classnames";
 import type { AuditLog } from "src/api/backend";
 import { formatDateTime, T } from "src/locale";
+import { formatPortRanges } from "src/modules/PortRanges";
 
 const getEventValue = (event: AuditLog) => {
 	switch (event.objectType) {
@@ -13,6 +14,9 @@ const getEventValue = (event: AuditLog) => {
 		case "dead-host":
 			return event.meta?.domainNames?.join(", ") || "N/A";
 		case "stream":
+			if (Array.isArray(event.meta?.incomingPorts) && event.meta.incomingPorts.length) {
+				return formatPortRanges(event.meta.incomingPorts);
+			}
 			return event.meta?.incomingPort || "N/A";
 		case "certificate":
 			return event.meta?.domainNames?.join(", ") || event.meta?.niceName || "N/A";

@@ -26,11 +26,17 @@
 						"incoming_port": {
 							"$ref": "../../../components/stream-object.json#/properties/incoming_port"
 						},
+						"incoming_ports": {
+							"$ref": "../../../components/stream-object.json#/properties/incoming_ports"
+						},
 						"forwarding_host": {
 							"$ref": "../../../components/stream-object.json#/properties/forwarding_host"
 						},
 						"forwarding_port": {
 							"$ref": "../../../components/stream-object.json#/properties/forwarding_port"
+						},
+						"forwarding_ports": {
+							"$ref": "../../../components/stream-object.json#/properties/forwarding_ports"
 						},
 						"upstream_enabled": {
 							"$ref": "../../../components/stream-object.json#/properties/upstream_enabled"

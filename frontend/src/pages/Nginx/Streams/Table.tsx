@@ -19,8 +19,29 @@ import {
 } from "src/components";
 import { TableLayout } from "src/components/Table/TableLayout";
 import { intl, T } from "src/locale";
+import { formatPortRanges } from "src/modules/PortRanges";
 import { showNginxConfigModal } from "src/modals";
 import { MANAGE, STREAMS } from "src/modules/Permissions";
+
+const formatIncomingPorts = (stream: Stream) => {
+	const ports =
+		Array.isArray(stream.incomingPorts) && stream.incomingPorts.length
+			? stream.incomingPorts
+			: Number.isFinite(stream.incomingPort) && stream.incomingPort > 0
+				? [stream.incomingPort]
+				: [];
+	return formatPortRanges(ports) || "-";
+};
+
+const formatForwardingPorts = (stream: Stream) => {
+	const ports =
+		Array.isArray(stream.forwardingPorts) && stream.forwardingPorts.length
+			? stream.forwardingPorts
+			: Number.isFinite(stream.forwardingPort) && stream.forwardingPort > 0
+				? [stream.forwardingPort]
+				: [];
+	return formatPortRanges(ports) || "-";
+};
 
 interface Props {
 	data: Stream[];
@@ -68,7 +89,7 @@ export default function Table({
 				header: intl.formatMessage({ id: "column.incoming-port" }),
 				cell: (info: any) => {
 					const value = info.getValue();
-					return <ValueWithDateFormatter value={value.incomingPort} createdOn={value.createdOn} />;
+					return <ValueWithDateFormatter value={formatIncomingPorts(value)} createdOn={value.createdOn} />;
 				},
 			}),
 			columnHelper.accessor((row: any) => row, {
@@ -76,7 +97,7 @@ export default function Table({
 				header: intl.formatMessage({ id: "column.destination" }),
 				cell: (info: any) => {
 					const value = info.getValue();
-					return `${value.forwardingHost}:${value.forwardingPort}`;
+					return `${value.forwardingHost}:${formatForwardingPorts(value)}`;
 				},
 			}),
 			columnHelper.accessor((row: any) => row, {

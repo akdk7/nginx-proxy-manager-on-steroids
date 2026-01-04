@@ -53,7 +53,7 @@ class Stream extends Model {
 	}
 
 	static get jsonAttributes() {
-		return ["meta", "upstream_servers", "geo_access_countries"];
+		return ["meta", "upstream_servers", "geo_access_countries", "incoming_ports", "forwarding_ports"];
 	}
 
 	static get relationMappings() {

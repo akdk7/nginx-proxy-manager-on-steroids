@@ -3,6 +3,7 @@ import Popover from "react-bootstrap/Popover";
 import type { DeadHost, ProxyHost, RedirectionHost, Stream } from "src/api/backend";
 import { TrueFalseFormatter } from "src/components";
 import { T } from "src/locale";
+import { formatPortRanges } from "src/modules/PortRanges";
 
 const getSection = (title: string, items: ProxyHost[] | RedirectionHost[] | DeadHost[]) => {
 	if (items.length === 0) {
@@ -28,6 +29,15 @@ const getSectionStream = (items: Stream[]) => {
 	if (items.length === 0) {
 		return null;
 	}
+	const formatForwardingPorts = (stream: Stream) => {
+		const ports =
+			Array.isArray(stream.forwardingPorts) && stream.forwardingPorts.length
+				? stream.forwardingPorts
+				: Number.isFinite(stream.forwardingPort) && stream.forwardingPort > 0
+					? [stream.forwardingPort]
+					: [];
+		return formatPortRanges(ports) || "-";
+	};
 	return (
 		<>
 			<div>
@@ -37,7 +47,7 @@ const getSectionStream = (items: Stream[]) => {
 			</div>
 			{items.map((stream) => (
 				<div key={stream.id} className="ms-1">
-					{stream.forwardingHost}:{stream.forwardingPort}
+					{stream.forwardingHost}:{formatForwardingPorts(stream)}
 				</div>
 			))}
 		</>

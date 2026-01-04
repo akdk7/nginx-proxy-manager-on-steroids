@@ -76,6 +76,88 @@ const normalizeListenPorts = (ports, fallbackPorts = defaultListenPorts) => {
 	return normalized.length ? normalized : [...fallbackPorts];
 };
 
+const collectStreamPortList = (ports) => {
+	const rawPorts =
+		typeof ports === "string" ? ports.split(",") : Array.isArray(ports) ? ports : [];
+	const normalized = [];
+	const seen = new Set();
+	let hasInvalid = false;
+	let hasDuplicates = false;
+	rawPorts.forEach((port) => {
+		const parsed = Number.parseInt(`${port}`, 10);
+		if (!Number.isFinite(parsed) || parsed < 1 || parsed > 65535) {
+			hasInvalid = true;
+			return;
+		}
+		if (seen.has(parsed)) {
+			hasDuplicates = true;
+			return;
+		}
+		seen.add(parsed);
+		normalized.push(`${parsed}`);
+	});
+	return { ports: normalized, hasInvalid, hasDuplicates };
+};
+
+const normalizeStreamPorts = (ports, incomingPort) => {
+	const result = collectStreamPortList(ports);
+	if (result.ports.length) {
+		return result.ports;
+	}
+	const fallback = Number.parseInt(`${incomingPort}`, 10);
+	if (Number.isFinite(fallback) && fallback >= 1 && fallback <= 65535) {
+		return [`${fallback}`];
+	}
+	return [];
+};
+
+const collectStreamPortNumbers = (ports, fallbackPort) => {
+	const result = collectStreamPortList(ports);
+	let normalized = result.ports.map((port) => Number.parseInt(port, 10)).filter(Number.isFinite);
+	if (!normalized.length) {
+		const fallback = Number.parseInt(`${fallbackPort}`, 10);
+		if (Number.isFinite(fallback) && fallback >= 1 && fallback <= 65535) {
+			normalized = [fallback];
+		}
+	}
+	return { ports: normalized, hasInvalid: result.hasInvalid, hasDuplicates: result.hasDuplicates };
+};
+
+const getStreamPortMapVariable = (id) => `stream_target_${id}`;
+
+const buildStreamPortMap = (host) => {
+	if (!host?.id) {
+		return null;
+	}
+	const incoming = collectStreamPortNumbers(host.incoming_ports, host.incoming_port);
+	const forwarding = collectStreamPortNumbers(host.forwarding_ports, host.forwarding_port);
+	if (incoming.hasInvalid || forwarding.hasInvalid || incoming.hasDuplicates || forwarding.hasDuplicates) {
+		return null;
+	}
+	if (!incoming.ports.length || !forwarding.ports.length) {
+		return null;
+	}
+	if (incoming.ports.length !== forwarding.ports.length || incoming.ports.length <= 1) {
+		return null;
+	}
+	const entries = [];
+	for (let i = 0; i < incoming.ports.length; i += 1) {
+		const target = formatStreamTarget(host.forwarding_host, forwarding.ports[i]);
+		if (!target) {
+			return null;
+		}
+		entries.push({ incoming_port: incoming.ports[i], target });
+	}
+	if (!entries.length) {
+		return null;
+	}
+	return {
+		variable: getStreamPortMapVariable(host.id),
+		default_target: entries[0].target,
+		entries,
+	};
+};
+
 const normalizeGeoAccessMode = (mode) => (geoAccessModes.includes(mode) ? mode : "allow");
 
 const normalizeGeoDbPath = (path) => {
@@ -574,6 +656,10 @@ const internalNginx = {
 		const upstreamEnabled = host.upstream_enabled === 1 || host.upstream_enabled === true;
 		const upstreamServers = sanitizeUpstreamServers(host.upstream_servers);
 		const hasExplicitUpstream = upstreamEnabled && upstreamServers.length > 0;
+		const portMap = buildStreamPortMap(host);
+		if (portMap && !upstreamEnabled) {
+			return `$${portMap.variable}`;
+		}
 		const needsStreamUpstream =
 			!hasExplicitUpstream &&
 			typeof host.forwarding_host === "string" &&
@@ -695,9 +781,11 @@ const internalNginx = {
 		const upstreamEnabled = host.upstream_enabled === 1 || host.upstream_enabled === true;
 		const upstreamServers = sanitizeUpstreamServers(host.upstream_servers);
 		const hasExplicitUpstream = upstreamEnabled && upstreamServers.length > 0;
+		const streamPortMap = nice_host_type === "stream" ? buildStreamPortMap(host) : null;
 		const needsStreamUpstream =
 			nice_host_type === "stream" &&
 			!hasExplicitUpstream &&
+			!streamPortMap &&
 			typeof host.forwarding_host === "string" &&
 			host.forwarding_host.trim() &&
 			!isIpAddress(host.forwarding_host.trim());
@@ -758,6 +846,12 @@ const internalNginx = {
 		host.proxy_protocol_ports = await internalNginx.getProxyProtocolPorts();
 		host.proxy_protocol_enabled = host.proxy_protocol_ports.some((port) => host.listen_ports.includes(port));
 		const http3Requested = host.http3_support === 1 || host.http3_support === true;
+
+		if (nice_host_type === "stream") {
+			host.incoming_ports = normalizeStreamPorts(host.incoming_ports, host.incoming_port);
+			host.incoming_port = host.incoming_ports[0] || host.incoming_port;
+			host.stream_proxy_pass_target = internalNginx.getStreamProxyPassTarget(host);
+		}
 		host.http3_enabled = http3Requested && hasCertificate && host.listen_ports_ssl.includes("443");
 
 		// Set the IPv6 setting for the host
@@ -901,13 +995,19 @@ const internalNginx = {
 		const renderEngine = utils.getRenderEngine();
 		const filename = "/etc/nginx/conf.d/include/stream_geo.conf";
 
-		if (!enabled) {
-			fs.writeFileSync(filename, "# Stream GeoIP2 disabled\n", { encoding: "utf8" });
-			return;
-		}
-
 		const streamEntries = [];
+		const streamPortMaps = [];
 		streams.forEach((stream) => {
+			const upstreamEnabled = stream.upstream_enabled === 1 || stream.upstream_enabled === true;
+			const portMap = buildStreamPortMap(stream);
+			if (portMap && !upstreamEnabled) {
+				streamPortMaps.push({
+					id: stream.id,
+					stream_port_map_variable: portMap.variable,
+					stream_port_map_default: portMap.default_target,
+					stream_port_map: portMap.entries,
+				});
+			}
 			const geoAccess = internalNginx.resolveGeoAccess(geoSettings, stream, "stream");
 			if (!geoAccess.enabled) {
 				return;
@@ -925,7 +1025,7 @@ const internalNginx = {
 			});
 		});
 
-		if (!streamEntries.length) {
+		if (!streamEntries.length && !streamPortMaps.length) {
 			fs.writeFileSync(filename, "# Stream GeoIP2 disabled\n", { encoding: "utf8" });
 			return;
 		}
@@ -934,6 +1034,7 @@ const internalNginx = {
 		try {
 			const configText = await renderEngine.parseAndRender(template, {
 				streams: streamEntries,
+				stream_port_maps: streamPortMaps,
 			});
 			fs.writeFileSync(filename, configText, { encoding: "utf8" });
 		} catch (err) {

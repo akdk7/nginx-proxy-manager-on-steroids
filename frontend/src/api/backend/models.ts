@@ -260,8 +260,10 @@ export interface Stream {
 	modifiedOn: string;
 	ownerUserId: number;
 	incomingPort: number;
+	incomingPorts?: number[];
 	forwardingHost: string;
 	forwardingPort: number;
+	forwardingPorts?: number[];
 	upstreamEnabled: boolean;
 	upstreamPolicy: string;
 	upstreamServers: UpstreamServer[];

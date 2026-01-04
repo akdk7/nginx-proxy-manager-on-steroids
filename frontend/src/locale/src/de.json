@@ -380,6 +380,18 @@
 	"error.invalid-port": {
 		"defaultMessage": "Ungültiger Port"
 	},
+	"error.stream.port-list.invalid": {
+		"defaultMessage": "Ungültiger Eintrag #{index}: {value}"
+	},
+	"error.stream.port-list-length-mismatch": {
+		"defaultMessage": "Eingangs- und Ausgangsliste müssen gleich viele Einträge haben ({incoming} vs {outgoing})."
+	},
+	"error.stream.port-range-length-mismatch": {
+		"defaultMessage": "Bereich {index} muss dieselbe Länge haben ({incoming} vs {outgoing})."
+	},
+	"error.stream.port-range-upstream": {
+		"defaultMessage": "Port-Bereiche werden bei aktivierten Upstreams nicht unterstützt."
+	},
 	"error.geo-access.countries-required": {
 		"defaultMessage": "Wähle mindestens ein Land für die Allowlist aus"
 	},
@@ -1001,8 +1013,23 @@
 	"stream.forward-host": {
 		"defaultMessage": "Ziel-Host"
 	},
+	"stream.forward-port.help": {
+		"defaultMessage": "Kommagetrennte Ports oder Bereiche wie 8000-8010."
+	},
+	"stream.forward-port.placeholder": {
+		"defaultMessage": "z. B. 80 oder 8000-8010, 9000"
+	},
 	"stream.incoming-port": {
 		"defaultMessage": "Eingangsport"
+	},
+	"stream.incoming-port.help": {
+		"defaultMessage": "Kommagetrennte Ports oder Bereiche wie 8000-8010."
+	},
+	"stream.incoming-port.placeholder": {
+		"defaultMessage": "z. B. 8080 oder 8000-8010, 9000"
+	},
+	"stream.port-list.matching-hint": {
+		"defaultMessage": "Anzahl der Einträge und Bereichslängen müssen den Eingangsports entsprechen."
 	},
 	"streams": {
 		"defaultMessage": "Streams"

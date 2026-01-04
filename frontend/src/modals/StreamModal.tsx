@@ -7,11 +7,18 @@ import { checkStreamHeartbeats, type Stream, type StreamHeartbeatResult } from "
 import { Button, CountryChecklist, Loading, SSLCertificateField, SSLOptionsFields } from "src/components";
 import { useSetStream, useSetting, useStream } from "src/hooks";
 import { intl, T } from "src/locale";
-import { validateNumber, validateString } from "src/modules/Validations";
+import { formatPortRanges, parsePortRanges, parsePortSegments } from "src/modules/PortRanges";
+import { validateString } from "src/modules/Validations";
 import { showObjectSuccess } from "src/notifications";
 
 const validateForwardingHost = validateString(1, 255);
-const validateForwardingPort = validateNumber(1, 65535);
+const getPrimaryPort = (value: string) => {
+	const parsed = parsePortRanges(value);
+	if (parsed.hasInvalid) {
+		return null;
+	}
+	return parsed.ports[0] ?? null;
+};
 
 const showStreamModal = (streamId: number | "new", seed?: Partial<Stream>) => {
 	EasyModal.show(StreamModal, { streamId, seed });
@@ -42,7 +49,8 @@ const ForwardStreamHeartbeatCheck = ({
 		const upstreamServers = Array.isArray(values.upstreamServers) ? values.upstreamServers : [];
 		const selectedHost = values.upstreamEnabled && upstreamServers.length ? upstreamServers[0] : null;
 		const forwardingHost = `${selectedHost?.host || values.forwardingHost || ""}`.trim();
-		const forwardingPort = Number.parseInt(`${selectedHost?.port || values.forwardingPort || ""}`, 10);
+		const fallbackPort = getPrimaryPort(values.forwardingPorts);
+		const forwardingPort = Number.parseInt(`${selectedHost?.port ?? fallbackPort ?? ""}`, 10);
 		const tcpForwarding = !!values.tcpForwarding;
 		const udpForwarding = !!values.udpForwarding;
 
@@ -105,7 +113,7 @@ const ForwardStreamHeartbeatCheck = ({
 		};
 	}, [
 		values.forwardingHost,
-		values.forwardingPort,
+		values.forwardingPorts,
 		values.tcpForwarding,
 		values.udpForwarding,
 		values.upstreamEnabled,
@@ -173,10 +181,11 @@ const UpstreamSettings = ({ onRequestForwardHeartbeat }: { onRequestForwardHeart
 		if (values.forwardingHost !== nextHost) {
 			setFieldValue("forwardingHost", nextHost);
 		}
-		if (values.forwardingPort !== nextPort) {
-			setFieldValue("forwardingPort", nextPort);
+		const currentPort = getPrimaryPort(values.forwardingPorts) ?? 0;
+		if (currentPort !== nextPort) {
+			setFieldValue("forwardingPorts", nextPort ? formatPortRanges([nextPort]) : "");
 		}
-	}, [servers, setFieldValue, values.forwardingHost, values.forwardingPort, values.upstreamEnabled]);
+	}, [servers, setFieldValue, values.forwardingHost, values.forwardingPorts, values.upstreamEnabled]);
 
 	useEffect(() => {
 		void upstreamRefresh;
@@ -319,11 +328,12 @@ const UpstreamSettings = ({ onRequestForwardHeartbeat }: { onRequestForwardHeart
 
 	const handleToggle = (checked: boolean) => {
 		setFieldValue("upstreamEnabled", checked);
-		if (checked && servers.length === 0 && values.forwardingHost && values.forwardingPort) {
+		const fallbackPort = getPrimaryPort(values.forwardingPorts);
+		if (checked && servers.length === 0 && values.forwardingHost && fallbackPort) {
 			setFieldValue("upstreamServers", [
 				{
 					host: values.forwardingHost,
-					port: Number.parseInt(`${values.forwardingPort}`, 10) || 80,
+					port: fallbackPort,
 					weight: 1,
 					maxFails: 0,
 					failTimeout: 0,
@@ -551,14 +561,19 @@ const StreamModal = EasyModal.create(({ streamId, visible, remove, seed }: Props
 		if (isSubmitting) return;
 		setIsSubmitting(true);
 		setErrorMsg(null);
-		const restValues = {
-			...values,
-			geoAccessCountries: Array.isArray(values.geoAccessCountries) ? values.geoAccessCountries : [],
-		};
+		const { incomingPorts: incomingPortsInput, forwardingPorts: forwardingPortsInput, ...restValues } = values;
+		const incomingPorts = parsePortRanges(incomingPortsInput).ports;
+		const forwardingPorts = parsePortRanges(forwardingPortsInput).ports;
+		const geoAccessCountries = Array.isArray(values.geoAccessCountries) ? values.geoAccessCountries : [];
 
 		const { ...payload } = {
 			id: streamId === "new" ? undefined : streamId,
 			...restValues,
+			incomingPort: incomingPorts[0],
+			incomingPorts,
+			forwardingPort: forwardingPorts[0],
+			forwardingPorts,
+			geoAccessCountries,
 		};
 
 		setStream(payload, {
@@ -587,9 +602,21 @@ const StreamModal = EasyModal.create(({ streamId, visible, remove, seed }: Props
 					key={streamId === "new" ? `new-${seed?.id ?? "blank"}` : formData?.id}
 					initialValues={
 						{
-							incomingPort: formData?.incomingPort,
+							incomingPorts: formatPortRanges(
+								Array.isArray(formData?.incomingPorts) && formData.incomingPorts.length
+									? formData.incomingPorts
+									: Number.isFinite(formData?.incomingPort) && formData.incomingPort > 0
+										? [formData.incomingPort]
+										: [],
+							),
 							forwardingHost: formData?.forwardingHost,
-							forwardingPort: formData?.forwardingPort,
+							forwardingPorts: formatPortRanges(
+								Array.isArray(formData?.forwardingPorts) && formData.forwardingPorts.length
+									? formData.forwardingPorts
+									: Number.isFinite(formData?.forwardingPort) && formData.forwardingPort > 0
+										? [formData.forwardingPort]
+										: [],
+							),
 							upstreamEnabled: formData?.upstreamEnabled || false,
 							upstreamPolicy: formData?.upstreamPolicy || "round_robin",
 							upstreamServers: formData?.upstreamServers || [],
@@ -610,6 +637,26 @@ const StreamModal = EasyModal.create(({ streamId, visible, remove, seed }: Props
 					}
 					validate={(values: any) => {
 						const errors: Record<string, string> = {};
+						const incoming = parsePortSegments(values.incomingPorts);
+						const outgoing = parsePortSegments(values.forwardingPorts);
+						const hasPortRanges =
+							incoming.ports.length > 1 ||
+							outgoing.ports.length > 1 ||
+							incoming.segments.length > 1 ||
+							outgoing.segments.length > 1;
+
+						if (incoming.invalidTokens.length) {
+							const invalid = incoming.invalidTokens[0];
+							errors.incomingPorts = intl.formatMessage(
+								{ id: "error.stream.port-list.invalid" },
+								{ index: invalid.index, value: invalid.token },
+							);
+						} else if (!incoming.hasValue || incoming.ports.length === 0) {
+							errors.incomingPorts = intl.formatMessage({ id: "error.required" });
+						} else if (incoming.hasDuplicates) {
+							errors.incomingPorts = intl.formatMessage({ id: "error.duplicate-port" });
+						}
+
 						if (values.upstreamEnabled) {
 							const servers = Array.isArray(values.upstreamServers) ? values.upstreamServers : [];
 							const hasValidServer = servers.some((server: any) => {
@@ -619,6 +666,42 @@ const StreamModal = EasyModal.create(({ streamId, visible, remove, seed }: Props
 							});
 							if (!hasValidServer) {
 								errors.upstreamServers = "error.upstream-required";
+							}
+							if (hasPortRanges) {
+								errors.forwardingPorts = intl.formatMessage({ id: "error.stream.port-range-upstream" });
+							}
+						} else {
+							if (outgoing.invalidTokens.length) {
+								const invalid = outgoing.invalidTokens[0];
+								errors.forwardingPorts = intl.formatMessage(
+									{ id: "error.stream.port-list.invalid" },
+									{ index: invalid.index, value: invalid.token },
+								);
+							} else if (!outgoing.hasValue || outgoing.ports.length === 0) {
+								errors.forwardingPorts = intl.formatMessage({ id: "error.required" });
+							} else if (outgoing.hasDuplicates) {
+								errors.forwardingPorts = intl.formatMessage({ id: "error.duplicate-port" });
+							}
+
+							if (!errors.incomingPorts && !errors.forwardingPorts) {
+								if (incoming.segments.length !== outgoing.segments.length) {
+									errors.forwardingPorts = intl.formatMessage(
+										{ id: "error.stream.port-list-length-mismatch" },
+										{ incoming: incoming.segments.length, outgoing: outgoing.segments.length },
+									);
+								} else {
+									for (let i = 0; i < incoming.segments.length; i += 1) {
+										const inSeg = incoming.segments[i];
+										const outSeg = outgoing.segments[i];
+										if (inSeg.ports.length !== outSeg.ports.length) {
+											errors.forwardingPorts = intl.formatMessage(
+												{ id: "error.stream.port-range-length-mismatch" },
+												{ index: i + 1, incoming: inSeg.token, outgoing: outSeg.token },
+											);
+											break;
+										}
+									}
+								}
 							}
 						}
 						const geoState = values.geoAccessOverride
@@ -641,11 +724,11 @@ const StreamModal = EasyModal.create(({ streamId, visible, remove, seed }: Props
 							submitCount > 0 && errors
 								? Object.keys(errors).map((key) => {
 										switch (key) {
-											case "incomingPort":
+											case "incomingPorts":
 												return intl.formatMessage({ id: "stream.incoming-port" });
 											case "forwardingHost":
 												return intl.formatMessage({ id: "stream.forward-host" });
-											case "forwardingPort":
+											case "forwardingPorts":
 												return intl.formatMessage({ id: "host.forward-port" });
 											case "upstreamServers":
 												return intl.formatMessage({ id: "host.upstream" });
@@ -672,334 +755,319 @@ const StreamModal = EasyModal.create(({ streamId, visible, remove, seed }: Props
 
 						return (
 							<Form noValidate>
-							<Modal.Header closeButton>
-								<Modal.Title>
-									<T id={data?.id ? "object.edit" : "object.add"} tData={{ object: "stream" }} />
-								</Modal.Title>
-							</Modal.Header>
-							<Modal.Body className="p-0">
-								<Alert variant="danger" show={!!errorMsg} onClose={() => setErrorMsg(null)} dismissible>
-									{errorMsg}
-								</Alert>
+								<Modal.Header closeButton>
+									<Modal.Title>
+										<T id={data?.id ? "object.edit" : "object.add"} tData={{ object: "stream" }} />
+									</Modal.Title>
+								</Modal.Header>
+								<Modal.Body className="p-0">
+									<Alert
+										variant="danger"
+										show={!!errorMsg}
+										onClose={() => setErrorMsg(null)}
+										dismissible
+									>
+										{errorMsg}
+									</Alert>
 
-								<div className="card m-0 border-0">
-									<div className="card-header">
-										<ul className="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">
-											<li className="nav-item" role="presentation">
-												<a
-													href="#tab-details"
-													className="nav-link active"
-													data-bs-toggle="tab"
-													aria-selected="true"
-													role="tab"
-												>
-													<T id="column.details" />
-												</a>
-											</li>
-											<li className="nav-item" role="presentation">
-												<a
-													href="#tab-geo-access"
-													className="nav-link"
-													data-bs-toggle="tab"
-													aria-selected="false"
-													tabIndex={-1}
-													role="tab"
-												>
-													<T id="host.geo-access" />
-												</a>
-											</li>
-											<li className="nav-item" role="presentation">
-												<a
-													href="#tab-ssl"
-													className="nav-link"
-													data-bs-toggle="tab"
-													aria-selected="false"
-													tabIndex={-1}
-													role="tab"
-												>
-													<T id="column.ssl" />
-												</a>
-											</li>
-										</ul>
-									</div>
-									<div className="card-body">
-										{submitCount > 0 && Object.keys(errors).length ? (
-											<Alert variant="warning">
-												{errorSummary ? (
-													<T id="error.fix-validation-fields" tData={{ fields: errorSummary }} />
-												) : (
-													<T id="error.fix-validation" />
-												)}
-											</Alert>
-										) : null}
-										<div className="tab-content">
-											<div className="tab-pane active show" id="tab-details" role="tabpanel">
-												<Field name="incomingPort" validate={validateNumber(1, 65535)}>
-													{({ field, form }: any) => (
-														<div className="mb-3">
-															<label className="form-label" htmlFor="incomingPort">
-																<T id="stream.incoming-port" />
-															</label>
-															<input
-																id="incomingPort"
-																type="number"
-																min={1}
-																max={65535}
-																className={`form-control ${
-																	form.errors.incomingPort &&
-																	(form.touched.incomingPort || form.submitCount > 0)
-																		? "is-invalid"
-																		: ""
-																}`}
-																required
-																placeholder="eg: 8080"
-																{...field}
-															/>
-															{form.errors.incomingPort ? (
-																<div className="invalid-feedback">
-																	{form.errors.incomingPort &&
-																	(form.touched.incomingPort || form.submitCount > 0)
-																		? form.errors.incomingPort
-																		: null}
-																</div>
-															) : null}
-														</div>
+									<div className="card m-0 border-0">
+										<div className="card-header">
+											<ul className="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">
+												<li className="nav-item" role="presentation">
+													<a
+														href="#tab-details"
+														className="nav-link active"
+														data-bs-toggle="tab"
+														aria-selected="true"
+														role="tab"
+													>
+														<T id="column.details" />
+													</a>
+												</li>
+												<li className="nav-item" role="presentation">
+													<a
+														href="#tab-geo-access"
+														className="nav-link"
+														data-bs-toggle="tab"
+														aria-selected="false"
+														tabIndex={-1}
+														role="tab"
+													>
+														<T id="host.geo-access" />
+													</a>
+												</li>
+												<li className="nav-item" role="presentation">
+													<a
+														href="#tab-ssl"
+														className="nav-link"
+														data-bs-toggle="tab"
+														aria-selected="false"
+														tabIndex={-1}
+														role="tab"
+													>
+														<T id="column.ssl" />
+													</a>
+												</li>
+											</ul>
+										</div>
+										<div className="card-body">
+											{submitCount > 0 && Object.keys(errors).length ? (
+												<Alert variant="warning">
+													{errorSummary ? (
+														<T id="error.fix-validation-fields" tData={{ fields: errorSummary }} />
+													) : (
+														<T id="error.fix-validation" />
 													)}
-												</Field>
-												<div className="row">
-													<div className="col-md-8">
-														<Field
-															name="forwardingHost"
-															validate={(value: string) =>
-																values.upstreamEnabled ? undefined : validateForwardingHost(value)
-															}
-														>
-															{({ field, form }: any) => (
-																<div className="mb-3">
-																	<label
-																		className="form-label"
-																		htmlFor="forwardingHost"
-																	>
-																		<T id="stream.forward-host" />
-																	</label>
-																	<input
-																		id="forwardingHost"
-																		type="text"
-																		className={`form-control ${
-																			form.errors.forwardingHost &&
-																			(form.touched.forwardingHost || form.submitCount > 0)
-																				? "is-invalid"
-																				: ""
-																		}`}
-																		required
-																		placeholder="example.com or 10.0.0.1 or 2001:db8:3333:4444:5555:6666:7777:8888"
-																		{...field}
-																		disabled={form.values.upstreamEnabled}
-																	/>
-																	{form.errors.forwardingHost ? (
-																		<div className="invalid-feedback">
-																			{form.errors.forwardingHost &&
-																			(form.touched.forwardingHost || form.submitCount > 0)
-																				? form.errors.forwardingHost
-																				: null}
-																		</div>
-																	) : null}
+												</Alert>
+											) : null}
+											<div className="tab-content">
+												<div className="tab-pane active show" id="tab-details" role="tabpanel">
+													<Field name="incomingPorts">
+														{({ field, form }: any) => (
+															<div className="mb-3">
+																<label className="form-label" htmlFor="incomingPorts">
+																	<T id="stream.incoming-port" />
+																</label>
+																<input
+																	id="incomingPorts"
+																	type="text"
+																	className={`form-control ${
+																		form.errors.incomingPorts &&
+																		(form.touched.incomingPorts || form.submitCount > 0)
+																			? "is-invalid"
+																			: ""
+																	}`}
+																	required
+																	placeholder={intl.formatMessage({
+																		id: "stream.incoming-port.placeholder",
+																	})}
+																	{...field}
+																/>
+																{form.errors.incomingPorts ? (
+																	<div className="invalid-feedback">
+																		{form.errors.incomingPorts &&
+																		(form.touched.incomingPorts || form.submitCount > 0)
+																			? form.errors.incomingPorts
+																			: null}
+																	</div>
+																) : null}
+																<div className="text-secondary small mt-1">
+																	<T id="stream.incoming-port.help" />
 																</div>
-															)}
-														</Field>
-													</div>
-													<div className="col-md-4">
-														<Field
-															name="forwardingPort"
-															validate={(value: string) =>
-																values.upstreamEnabled ? undefined : validateForwardingPort(value)
-															}
-														>
-															{({ field, form }: any) => (
-																<div className="mb-3">
-																	<label
-																		className="form-label"
-																		htmlFor="forwardingPort"
-																	>
-																		<T id="host.forward-port" />
-																	</label>
-																	<input
-																		id="forwardingPort"
-																		type="number"
-																		min={1}
-																		max={65535}
-																		className={`form-control ${
-																			form.errors.forwardingPort &&
-																			(form.touched.forwardingPort || form.submitCount > 0)
-																				? "is-invalid"
-																				: ""
-																		}`}
-																		required
-																		placeholder="eg: 8081"
-																		{...field}
-																		disabled={form.values.upstreamEnabled}
-																	/>
-																	{form.errors.forwardingPort ? (
-																		<div className="invalid-feedback">
-																			{form.errors.forwardingPort &&
-																			(form.touched.forwardingPort || form.submitCount > 0)
-																				? form.errors.forwardingPort
-																				: null}
+															</div>
+														)}
+													</Field>
+													<div className="row">
+														<div className="col-md-8">
+															<Field
+																name="forwardingHost"
+																validate={(value: string) =>
+																	values.upstreamEnabled ? undefined : validateForwardingHost(value)
+																}
+															>
+																{({ field, form }: any) => (
+																	<div className="mb-3">
+																		<label className="form-label" htmlFor="forwardingHost">
+																			<T id="stream.forward-host" />
+																		</label>
+																		<input
+																			id="forwardingHost"
+																			type="text"
+																			className={`form-control ${
+																				form.errors.forwardingHost &&
+																				(form.touched.forwardingHost ||
+																					form.submitCount > 0)
+																					? "is-invalid"
+																					: ""
+																			}`}
+																			required
+																			placeholder="example.com or 10.0.0.1 or 2001:db8:3333:4444:5555:6666:7777:8888"
+																			{...field}
+																			disabled={form.values.upstreamEnabled}
+																		/>
+																		{form.errors.forwardingHost ? (
+																			<div className="invalid-feedback">
+																				{form.errors.forwardingHost &&
+																				(form.touched.forwardingHost ||
+																					form.submitCount > 0)
+																					? form.errors.forwardingHost
+																					: null}
+																			</div>
+																		) : null}
+																	</div>
+																)}
+															</Field>
+														</div>
+														<div className="col-md-4">
+															<Field name="forwardingPorts">
+																{({ field, form }: any) => (
+																	<div className="mb-3">
+																		<label className="form-label" htmlFor="forwardingPorts">
+																			<T id="host.forward-port" />
+																		</label>
+																		<input
+																			id="forwardingPorts"
+																			type="text"
+																			className={`form-control ${
+																				form.errors.forwardingPorts &&
+																				(form.touched.forwardingPorts ||
+																					form.submitCount > 0)
+																					? "is-invalid"
+																					: ""
+																			}`}
+																			required
+																			placeholder={intl.formatMessage({
+																				id: "stream.forward-port.placeholder",
+																			})}
+																			{...field}
+																			disabled={form.values.upstreamEnabled}
+																		/>
+																		{form.errors.forwardingPorts ? (
+																			<div className="invalid-feedback">
+																				{form.errors.forwardingPorts &&
+																				(form.touched.forwardingPorts ||
+																					form.submitCount > 0)
+																					? form.errors.forwardingPorts
+																					: null}
+																			</div>
+																		) : null}
+																		<div className="text-secondary small mt-1">
+																			<T id="stream.forward-port.help" />
 																		</div>
-																	) : null}
-																</div>
-															)}
-														</Field>
-											</div>
-									</div>
-									<ForwardStreamHeartbeatCheck
-										refreshKey={forwardHeartbeatKey}
-										onRefresh={() => setForwardHeartbeatKey((prev) => prev + 1)}
-									/>
-									<UpstreamSettings
-										onRequestForwardHeartbeat={() => setForwardHeartbeatKey((prev) => prev + 1)}
-									/>
-									<div className="my-3">
-										<h3 className="py-2">
-											<T id="host.flags.protocols" />
-													</h3>
-													<div className="divide-y">
-														<div>
-															<label className="row" htmlFor="tcpForwarding">
-																<span className="col">
-																	<T id="streams.tcp" />
-																</span>
-																<span className="col-auto">
-																	<Field name="tcpForwarding" type="checkbox">
-																		{({ field }: any) => (
-																			<label className="form-check form-check-single form-switch">
-																				<input
-																					id="tcpForwarding"
-																					className="form-check-input"
-																					type="checkbox"
-																					name={field.name}
-																					checked={field.value}
-																					onChange={(e: any) => {
-																						setFieldValue(
-																							field.name,
-																							e.target.checked,
-																						);
-																						if (!e.target.checked) {
-																							setFieldValue(
-																								"udpForwarding",
-																								true,
-																							);
-																							setFieldValue(
-																								"proxyProtocol",
-																								false,
-																							);
-																							setFieldValue(
-																								"proxyProtocolUpstream",
-																								false,
-																							);
-																						}
-																					}}
-																				/>
-																			</label>
-																		)}
-																	</Field>
-																</span>
-															</label>
-														</div>
-														<div>
-															<label className="row" htmlFor="udpForwarding">
-																<span className="col">
-																	<T id="streams.udp" />
-																</span>
-																<span className="col-auto">
-																	<Field name="udpForwarding" type="checkbox">
-																		{({ field }: any) => (
-																			<label className="form-check form-check-single form-switch">
-																				<input
-																					id="udpForwarding"
-																					className="form-check-input"
-																					type="checkbox"
-																					name={field.name}
-																					checked={field.value}
-																					onChange={(e: any) => {
-																						setFieldValue(
-																							field.name,
-																							e.target.checked,
-																						);
-																						if (!e.target.checked) {
-																							setFieldValue(
-																								"tcpForwarding",
-																								true,
-																							);
-																						}
-																					}}
-																				/>
-																			</label>
-																		)}
-																	</Field>
-																</span>
-															</label>
-														</div>
-														<div>
-															<label className="row" htmlFor="proxyProtocol">
-																<span className="col">
-																	<T id="streams.proxy-protocol" />
-																</span>
-																<span className="col-auto">
-																	<Field name="proxyProtocol" type="checkbox">
-																		{({ field }: any) => (
-																			<label className="form-check form-check-single form-switch">
-																				<input
-																					id="proxyProtocol"
-																					className="form-check-input"
-																					type="checkbox"
-																					name={field.name}
-																					checked={field.value}
-																					disabled={!values.tcpForwarding}
-																					onChange={(e: any) => {
-																						setFieldValue(
-																							field.name,
-																							e.target.checked,
-																						);
-																					}}
-																				/>
-																			</label>
-																		)}
-																	</Field>
-																</span>
-															</label>
-														</div>
-														<div>
-															<label className="row" htmlFor="proxyProtocolUpstream">
-																<span className="col">
-																	<T id="streams.proxy-protocol-upstream" />
-																</span>
-																<span className="col-auto">
-																	<Field name="proxyProtocolUpstream" type="checkbox">
-																		{({ field }: any) => (
-																			<label className="form-check form-check-single form-switch">
-																				<input
-																					id="proxyProtocolUpstream"
-																					className="form-check-input"
-																					type="checkbox"
-																					name={field.name}
-																					checked={field.value}
-																					disabled={!values.tcpForwarding}
-																					onChange={(e: any) => {
-																						setFieldValue(
-																							field.name,
-																							e.target.checked,
-																						);
-																					}}
-																				/>
-																			</label>
-																		)}
-																	</Field>
-																</span>
-															</label>
+																		<div className="text-secondary small">
+																			<T id="stream.port-list.matching-hint" />
+																		</div>
+																	</div>
+																)}
+															</Field>
 														</div>
 													</div>
-												</div>
+													<ForwardStreamHeartbeatCheck
+														refreshKey={forwardHeartbeatKey}
+														onRefresh={() => setForwardHeartbeatKey((prev) => prev + 1)}
+													/>
+													<UpstreamSettings
+														onRequestForwardHeartbeat={() =>
+															setForwardHeartbeatKey((prev) => prev + 1)
+														}
+													/>
+													<div className="my-3">
+														<h3 className="py-2">
+															<T id="host.flags.protocols" />
+														</h3>
+														<div className="divide-y">
+															<div>
+																<label className="row" htmlFor="tcpForwarding">
+																	<span className="col">
+																		<T id="streams.tcp" />
+																	</span>
+																	<span className="col-auto">
+																		<Field name="tcpForwarding" type="checkbox">
+																			{({ field }: any) => (
+																				<label className="form-check form-check-single form-switch">
+																					<input
+																						id="tcpForwarding"
+																						className="form-check-input"
+																						type="checkbox"
+																						name={field.name}
+																						checked={field.value}
+																						onChange={(e: any) => {
+																							setFieldValue(field.name, e.target.checked);
+																							if (!e.target.checked) {
+																								setFieldValue("udpForwarding", true);
+																								setFieldValue("proxyProtocol", false);
+																								setFieldValue("proxyProtocolUpstream", false);
+																							}
+																						}}
+																					/>
+																				</label>
+																			)}
+																		</Field>
+																	</span>
+																</label>
+															</div>
+															<div>
+																<label className="row" htmlFor="udpForwarding">
+																	<span className="col">
+																		<T id="streams.udp" />
+																	</span>
+																	<span className="col-auto">
+																		<Field name="udpForwarding" type="checkbox">
+																			{({ field }: any) => (
+																				<label className="form-check form-check-single form-switch">
+																					<input
+																						id="udpForwarding"
+																						className="form-check-input"
+																						type="checkbox"
+																						name={field.name}
+																						checked={field.value}
+																						onChange={(e: any) => {
+																							setFieldValue(field.name, e.target.checked);
+																							if (!e.target.checked) {
+																								setFieldValue("tcpForwarding", true);
+																							}
+																						}}
+																					/>
+																				</label>
+																			)}
+																		</Field>
+																	</span>
+																</label>
+															</div>
+															<div>
+																<label className="row" htmlFor="proxyProtocol">
+																	<span className="col">
+																		<T id="streams.proxy-protocol" />
+																	</span>
+																	<span className="col-auto">
+																		<Field name="proxyProtocol" type="checkbox">
+																			{({ field }: any) => (
+																				<label className="form-check form-check-single form-switch">
+																					<input
+																						id="proxyProtocol"
+																						className="form-check-input"
+																						type="checkbox"
+																						name={field.name}
+																						checked={field.value}
+																						disabled={!values.tcpForwarding}
+																						onChange={(e: any) => {
+																							setFieldValue(field.name, e.target.checked);
+																						}}
+																					/>
+																				</label>
+																			)}
+																		</Field>
+																	</span>
+																</label>
+															</div>
+															<div>
+																<label className="row" htmlFor="proxyProtocolUpstream">
+																	<span className="col">
+																		<T id="streams.proxy-protocol-upstream" />
+																	</span>
+																	<span className="col-auto">
+																		<Field name="proxyProtocolUpstream" type="checkbox">
+																			{({ field }: any) => (
+																				<label className="form-check form-check-single form-switch">
+																					<input
+																						id="proxyProtocolUpstream"
+																						className="form-check-input"
+																						type="checkbox"
+																						name={field.name}
+																						checked={field.value}
+																						disabled={!values.tcpForwarding}
+																						onChange={(e: any) => {
+																							setFieldValue(field.name, e.target.checked);
+																						}}
+																					/>
+																				</label>
+																			)}
+																		</Field>
+																	</span>
+																</label>
+															</div>
+														</div>
+													</div>
 											</div>
 											<div className="tab-pane" id="tab-geo-access" role="tabpanel">
 												<div className="mb-4">
