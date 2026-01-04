@@ -3,7 +3,7 @@ import { Field, Form, Formik, useFormikContext } from "formik";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Alert } from "react-bootstrap";
 import Modal from "react-bootstrap/Modal";
-import { checkStreamHeartbeats, type StreamHeartbeatResult } from "src/api/backend";
+import { checkStreamHeartbeats, type Stream, type StreamHeartbeatResult } from "src/api/backend";
 import { Button, CountryChecklist, Loading, SSLCertificateField, SSLOptionsFields } from "src/components";
 import { useSetStream, useSetting, useStream } from "src/hooks";
 import { intl, T } from "src/locale";
@@ -13,12 +13,13 @@ import { showObjectSuccess } from "src/notifications";
 const validateForwardingHost = validateString(1, 255);
 const validateForwardingPort = validateNumber(1, 65535);
 
-const showStreamModal = (id: number | "new") => {
-	EasyModal.show(StreamModal, { id });
+const showStreamModal = (id: number | "new", seed?: Partial<Stream>) => {
+	EasyModal.show(StreamModal, { id, seed });
 };
 
 interface Props extends InnerModalProps {
 	id: number | "new";
+	seed?: Partial<Stream>;
 }
 
 const ForwardStreamHeartbeatCheck = ({
@@ -531,13 +532,20 @@ const UpstreamSettings = ({ onRequestForwardHeartbeat }: { onRequestForwardHeart
 	);
 };
 
-const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
+const StreamModal = EasyModal.create(({ id, visible, remove, seed }: Props) => {
 	const { data, isLoading, error } = useStream(id);
 	const { mutate: setStream } = useSetStream();
 	const { data: geoAccessSetting } = useSetting("geo-access");
 	const [errorMsg, setErrorMsg] = useState<ReactNode | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [forwardHeartbeatKey, setForwardHeartbeatKey] = useState(0);
+	const formData =
+		id === "new" && seed && data
+			? {
+					...data,
+					...seed,
+				}
+			: data;
 
 	const onSubmit = async (values: any, { setSubmitting }: any) => {
 		if (isSubmitting) return;
@@ -574,27 +582,30 @@ const StreamModal = EasyModal.create(({ id, visible, remove }: Props) => {
 				</Alert>
 			)}
 			{isLoading && <Loading noLogo />}
-			{!isLoading && data && (
+			{!isLoading && formData && (
 				<Formik
+					key={id === "new" ? `new-${seed?.id ?? "blank"}` : formData?.id}
 					initialValues={
 						{
-							incomingPort: data?.incomingPort,
-							forwardingHost: data?.forwardingHost,
-							forwardingPort: data?.forwardingPort,
-							upstreamEnabled: data?.upstreamEnabled || false,
-							upstreamPolicy: data?.upstreamPolicy || "round_robin",
-							upstreamServers: data?.upstreamServers || [],
-							tcpForwarding: data?.tcpForwarding,
-							udpForwarding: data?.udpForwarding,
-							proxyProtocol: data?.proxyProtocol || false,
-							proxyProtocolUpstream: data?.proxyProtocolUpstream || false,
-							geoAccessOverride: data?.geoAccessOverride || false,
-							geoAccessEnabled: data?.geoAccessEnabled || false,
-							geoAccessMode: data?.geoAccessMode || "allow",
-							geoAccessPreset: data?.geoAccessPreset || "",
-							geoAccessCountries: Array.isArray(data?.geoAccessCountries) ? data.geoAccessCountries : [],
-							certificateId: data?.certificateId,
-							meta: data?.meta || {},
+							incomingPort: formData?.incomingPort,
+							forwardingHost: formData?.forwardingHost,
+							forwardingPort: formData?.forwardingPort,
+							upstreamEnabled: formData?.upstreamEnabled || false,
+							upstreamPolicy: formData?.upstreamPolicy || "round_robin",
+							upstreamServers: formData?.upstreamServers || [],
+							tcpForwarding: formData?.tcpForwarding,
+							udpForwarding: formData?.udpForwarding,
+							proxyProtocol: formData?.proxyProtocol || false,
+							proxyProtocolUpstream: formData?.proxyProtocolUpstream || false,
+							geoAccessOverride: formData?.geoAccessOverride || false,
+							geoAccessEnabled: formData?.geoAccessEnabled || false,
+							geoAccessMode: formData?.geoAccessMode || "allow",
+							geoAccessPreset: formData?.geoAccessPreset || "",
+							geoAccessCountries: Array.isArray(formData?.geoAccessCountries)
+								? formData.geoAccessCountries
+								: [],
+							certificateId: formData?.certificateId,
+							meta: formData?.meta || {},
 						} as any
 					}
 					validate={(values: any) => {

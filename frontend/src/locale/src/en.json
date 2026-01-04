@@ -50,6 +50,9 @@
 	"action.download": {
 		"defaultMessage": "Download"
 	},
+	"action.duplicate": {
+		"defaultMessage": "Duplicate"
+	},
 	"action.edit": {
 		"defaultMessage": "Edit"
 	},

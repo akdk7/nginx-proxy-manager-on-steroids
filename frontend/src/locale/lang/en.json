@@ -16,6 +16,7 @@
   "action.delete": "Delete",
   "action.disable": "Disable",
   "action.download": "Download",
+  "action.duplicate": "Duplicate",
   "action.edit": "Edit",
   "action.enable": "Enable",
   "action.permissions": "Permissions",

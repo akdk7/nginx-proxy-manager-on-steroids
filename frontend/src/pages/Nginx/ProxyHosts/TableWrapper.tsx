@@ -2,7 +2,13 @@ import { IconHelp, IconSearch } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import Alert from "react-bootstrap/Alert";
-import { checkProxyHostHeartbeats, deleteProxyHost, toggleProxyHost, type ProxyHostHeartbeatResult } from "src/api/backend";
+import {
+	checkProxyHostHeartbeats,
+	deleteProxyHost,
+	toggleProxyHost,
+	type ProxyHost,
+	type ProxyHostHeartbeatResult,
+} from "src/api/backend";
 import { Button, HasPermission, LoadingPage } from "src/components";
 import { useProxyHosts } from "src/hooks";
 import { T } from "src/locale";
@@ -18,6 +24,41 @@ export default function TableWrapper() {
 	const [heartbeatsLoading, setHeartbeatsLoading] = useState(false);
 	const [heartbeatRefreshIds, setHeartbeatRefreshIds] = useState<Record<number, boolean>>({});
 	const { isFetching, isLoading, isError, error, data } = useProxyHosts(["owner", "access_list", "certificate"]);
+
+	const buildDuplicateSeed = (host: ProxyHost) => ({
+		domainNames: host.domainNames,
+		forwardScheme: host.forwardScheme,
+		forwardHost: host.forwardHost,
+		forwardPort: host.forwardPort,
+		listenPorts: host.listenPorts,
+		accessListId: host.accessListId,
+		cachingEnabled: host.cachingEnabled,
+		blockExploits: host.blockExploits,
+		rateLimitEnabled: host.rateLimitEnabled,
+		rateLimitRps: host.rateLimitRps,
+		rateLimitBurst: host.rateLimitBurst,
+		rateLimitNodelay: host.rateLimitNodelay,
+		upstreamEnabled: host.upstreamEnabled,
+		upstreamPolicy: host.upstreamPolicy,
+		upstreamServers: host.upstreamServers || [],
+		upstreamSslCertificateId: host.upstreamSslCertificateId,
+		securityHeaders: host.securityHeaders || [],
+		geoAccessOverride: host.geoAccessOverride,
+		geoAccessEnabled: host.geoAccessEnabled,
+		geoAccessMode: host.geoAccessMode,
+		geoAccessPreset: host.geoAccessPreset,
+		geoAccessCountries: Array.isArray(host.geoAccessCountries) ? host.geoAccessCountries : [],
+		allowWebsocketUpgrade: host.allowWebsocketUpgrade,
+		locations: host.locations || [],
+		certificateId: host.certificateId,
+		sslForced: host.sslForced,
+		http2Support: host.http2Support,
+		http3Support: host.http3Support,
+		hstsEnabled: host.hstsEnabled,
+		hstsSubdomains: host.hstsSubdomains,
+		advancedConfig: host.advancedConfig,
+		meta: {},
+	});
 
 	const heartbeatTargets = useMemo(() => {
 		if (!data?.length) {
@@ -199,6 +240,7 @@ export default function TableWrapper() {
 						})
 					}
 					onDisableToggle={handleDisableToggle}
+					onDuplicate={(host: ProxyHost) => showProxyHostModal("new", buildDuplicateSeed(host))}
 					onNew={() => showProxyHostModal("new")}
 				/>
 			</div>

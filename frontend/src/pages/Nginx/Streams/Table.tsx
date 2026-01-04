@@ -1,4 +1,11 @@
-import { IconDotsVertical, IconEdit, IconFileText, IconPower, IconTrash } from "@tabler/icons-react";
+import {
+	IconCopy,
+	IconDotsVertical,
+	IconEdit,
+	IconFileText,
+	IconPower,
+	IconTrash,
+} from "@tabler/icons-react";
 import { createColumnHelper, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useMemo } from "react";
 import type { Stream, StreamHeartbeatResult } from "src/api/backend";
@@ -22,6 +29,7 @@ interface Props {
 	onEdit?: (id: number) => void;
 	onDelete?: (id: number) => void;
 	onDisableToggle?: (id: number, enabled: boolean) => void;
+	onDuplicate?: (stream: Stream) => void;
 	onNew?: () => void;
 	onHeartbeatRefresh?: (id: number) => void;
 	heartbeats?: Record<number, StreamHeartbeatResult>;
@@ -35,6 +43,7 @@ export default function Table({
 	onEdit,
 	onDelete,
 	onDisableToggle,
+	onDuplicate,
 	onNew,
 	onHeartbeatRefresh,
 	heartbeats,
@@ -185,6 +194,17 @@ export default function Table({
 										href="#"
 										onClick={(e) => {
 											e.preventDefault();
+											onDuplicate?.(info.row.original);
+										}}
+									>
+										<IconCopy size={16} />
+										<T id="action.duplicate" />
+									</a>
+									<a
+										className="dropdown-item"
+										href="#"
+										onClick={(e) => {
+											e.preventDefault();
 											onDisableToggle?.(info.row.original.id, !info.row.original.enabled);
 										}}
 									>
@@ -218,6 +238,7 @@ export default function Table({
 			onEdit,
 			onDisableToggle,
 			onDelete,
+			onDuplicate,
 			onHeartbeatRefresh,
 			heartbeats,
 			heartbeatsLoading,

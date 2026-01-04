@@ -5,7 +5,7 @@ import { Field, Form, Formik, useFormikContext } from "formik";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-bootstrap";
 import Modal from "react-bootstrap/Modal";
-import type { ProxyHostHeartbeatResult } from "src/api/backend";
+import type { ProxyHost, ProxyHostHeartbeatResult } from "src/api/backend";
 import {
 	AccessField,
 	Button,
@@ -68,12 +68,13 @@ const validateProxyHost = (values: any) => {
 	return errors;
 };
 
-const showProxyHostModal = (id: number | "new") => {
-	EasyModal.show(ProxyHostModal, { id });
+const showProxyHostModal = (id: number | "new", seed?: Partial<ProxyHost>) => {
+	EasyModal.show(ProxyHostModal, { id, seed });
 };
 
 interface Props extends InnerModalProps {
 	id: number | "new";
+	seed?: Partial<ProxyHost>;
 }
 
 const ForwardHeartbeatCheck = ({
@@ -501,13 +502,20 @@ const UpstreamSettings = ({ onRequestForwardHeartbeat }: { onRequestForwardHeart
 	);
 };
 
-const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
+const ProxyHostModal = EasyModal.create(({ id, visible, remove, seed }: Props) => {
 	const { data: currentUser, isLoading: userIsLoading, error: userError } = useUser("me");
 	const { data, isLoading, error } = useProxyHost(id);
 	const { mutate: setProxyHost } = useSetProxyHost();
 	const { data: geoAccessSetting } = useSetting("geo-access");
 	const [errorMsg, setErrorMsg] = useState<ReactNode | null>(null);
 	const [forwardHeartbeatKey, setForwardHeartbeatKey] = useState(0);
+	const formData =
+		id === "new" && seed && data
+			? {
+					...data,
+					...seed,
+				}
+			: data;
 
 	const onSubmit = async (values: any, { setSubmitting }: any) => {
 		setErrorMsg(null);
@@ -545,47 +553,51 @@ const ProxyHostModal = EasyModal.create(({ id, visible, remove }: Props) => {
 				</Alert>
 			)}
 			{isLoading || (userIsLoading && <Loading noLogo />)}
-			{!isLoading && !userIsLoading && data && currentUser && (
+			{!isLoading && !userIsLoading && formData && currentUser && (
 				<Formik
-					key={id === "new" ? "new" : data?.id}
+					key={id === "new" ? `new-${seed?.id ?? "blank"}` : formData?.id}
 					initialValues={
 						{
 							// Details tab
-							domainNames: data?.domainNames || [],
-							forwardScheme: data?.forwardScheme || "http",
-							forwardHost: data?.forwardHost || "",
-							forwardPort: data?.forwardPort || undefined,
-							listenPorts: (data?.listenPorts?.length ? data.listenPorts : defaultListenPorts).join(", "),
-							accessListId: data?.accessListId || 0,
-							cachingEnabled: data?.cachingEnabled || false,
-							blockExploits: data?.blockExploits || false,
-							rateLimitEnabled: data?.rateLimitEnabled || false,
-							rateLimitRps: data?.rateLimitRps || 0,
-							rateLimitBurst: data?.rateLimitBurst || 0,
-							rateLimitNodelay: data?.rateLimitNodelay || false,
-							upstreamEnabled: data?.upstreamEnabled || false,
-							upstreamPolicy: data?.upstreamPolicy || "round_robin",
-							upstreamServers: data?.upstreamServers || [],
-							upstreamSslCertificateId: data?.upstreamSslCertificateId || 0,
-							securityHeaders: data?.securityHeaders || [],
-							geoAccessOverride: data?.geoAccessOverride || false,
-							geoAccessEnabled: data?.geoAccessEnabled || false,
-							geoAccessMode: data?.geoAccessMode || "allow",
-							geoAccessPreset: data?.geoAccessPreset || "",
-							geoAccessCountries: Array.isArray(data?.geoAccessCountries) ? data.geoAccessCountries : [],
-							allowWebsocketUpgrade: data?.allowWebsocketUpgrade || false,
+							domainNames: formData?.domainNames || [],
+							forwardScheme: formData?.forwardScheme || "http",
+							forwardHost: formData?.forwardHost || "",
+							forwardPort: formData?.forwardPort || undefined,
+							listenPorts: (formData?.listenPorts?.length ? formData.listenPorts : defaultListenPorts).join(
+								", ",
+							),
+							accessListId: formData?.accessListId || 0,
+							cachingEnabled: formData?.cachingEnabled || false,
+							blockExploits: formData?.blockExploits || false,
+							rateLimitEnabled: formData?.rateLimitEnabled || false,
+							rateLimitRps: formData?.rateLimitRps || 0,
+							rateLimitBurst: formData?.rateLimitBurst || 0,
+							rateLimitNodelay: formData?.rateLimitNodelay || false,
+							upstreamEnabled: formData?.upstreamEnabled || false,
+							upstreamPolicy: formData?.upstreamPolicy || "round_robin",
+							upstreamServers: formData?.upstreamServers || [],
+							upstreamSslCertificateId: formData?.upstreamSslCertificateId || 0,
+							securityHeaders: formData?.securityHeaders || [],
+							geoAccessOverride: formData?.geoAccessOverride || false,
+							geoAccessEnabled: formData?.geoAccessEnabled || false,
+							geoAccessMode: formData?.geoAccessMode || "allow",
+							geoAccessPreset: formData?.geoAccessPreset || "",
+							geoAccessCountries: Array.isArray(formData?.geoAccessCountries)
+								? formData.geoAccessCountries
+								: [],
+							allowWebsocketUpgrade: formData?.allowWebsocketUpgrade || false,
 							// Locations tab
-							locations: data?.locations || [],
+							locations: formData?.locations || [],
 							// SSL tab
-							certificateId: data?.certificateId || 0,
-							sslForced: data?.sslForced || false,
-							http2Support: data?.http2Support || false,
-							http3Support: data?.http3Support || false,
-							hstsEnabled: data?.hstsEnabled || false,
-							hstsSubdomains: data?.hstsSubdomains || false,
+							certificateId: formData?.certificateId || 0,
+							sslForced: formData?.sslForced || false,
+							http2Support: formData?.http2Support || false,
+							http3Support: formData?.http3Support || false,
+							hstsEnabled: formData?.hstsEnabled || false,
+							hstsSubdomains: formData?.hstsSubdomains || false,
 							// Advanced tab
-							advancedConfig: data?.advancedConfig || "",
-							meta: data?.meta || {},
+							advancedConfig: formData?.advancedConfig || "",
+							meta: formData?.meta || {},
 						} as any
 					}
 					validate={validateProxyHost}

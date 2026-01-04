@@ -2,7 +2,13 @@ import { IconHelp, IconSearch } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import Alert from "react-bootstrap/Alert";
-import { checkStreamHeartbeats, deleteStream, toggleStream, type StreamHeartbeatResult } from "src/api/backend";
+import {
+	checkStreamHeartbeats,
+	deleteStream,
+	toggleStream,
+	type Stream,
+	type StreamHeartbeatResult,
+} from "src/api/backend";
 import { Button, HasPermission, LoadingPage } from "src/components";
 import { useStreams } from "src/hooks";
 import { T } from "src/locale";
@@ -18,6 +24,26 @@ export default function TableWrapper() {
 	const [heartbeatsLoading, setHeartbeatsLoading] = useState(false);
 	const [heartbeatRefreshIds, setHeartbeatRefreshIds] = useState<Record<number, boolean>>({});
 	const { isFetching, isLoading, isError, error, data } = useStreams(["owner", "certificate"]);
+
+	const buildDuplicateSeed = (stream: Stream) => ({
+		incomingPort: stream.incomingPort,
+		forwardingHost: stream.forwardingHost,
+		forwardingPort: stream.forwardingPort,
+		upstreamEnabled: stream.upstreamEnabled,
+		upstreamPolicy: stream.upstreamPolicy,
+		upstreamServers: stream.upstreamServers || [],
+		tcpForwarding: stream.tcpForwarding,
+		udpForwarding: stream.udpForwarding,
+		proxyProtocol: stream.proxyProtocol,
+		proxyProtocolUpstream: stream.proxyProtocolUpstream,
+		geoAccessOverride: stream.geoAccessOverride,
+		geoAccessEnabled: stream.geoAccessEnabled,
+		geoAccessMode: stream.geoAccessMode,
+		geoAccessPreset: stream.geoAccessPreset,
+		geoAccessCountries: Array.isArray(stream.geoAccessCountries) ? stream.geoAccessCountries : [],
+		certificateId: stream.certificateId,
+		meta: {},
+	});
 
 	const heartbeatTargets = useMemo(() => {
 		if (!data?.length) {
@@ -203,6 +229,7 @@ export default function TableWrapper() {
 						})
 					}
 					onDisableToggle={handleDisableToggle}
+					onDuplicate={(stream: Stream) => showStreamModal("new", buildDuplicateSeed(stream))}
 					onNew={() => showStreamModal("new")}
 				/>
 			</div>
