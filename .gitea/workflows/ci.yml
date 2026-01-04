@@ -14,3 +14,4 @@ jobs:
         run: ./scripts/ci/frontend-build
       - name: Docker build
         run: docker buildx build -f docker/Dockerfile --platform linux/amd64 -t nginx-proxy-manager:local --load . --no-cache
+
