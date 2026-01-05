@@ -78,8 +78,12 @@ jobs:
             DOCKERHUB_USERNAME="${DOCKERHUB_AUTH%%:*}"
             DOCKERHUB_TOKEN="${DOCKERHUB_AUTH#*:}"
           else
-            echo "Docker Hub secret must be in the format 'username:token'."
-            exit 1
+            DOCKERHUB_TOKEN="${DOCKERHUB_AUTH}"
+            DOCKERHUB_USERNAME="${DOCKER_IMAGE%%/*}"
+            if [[ -z "${DOCKERHUB_USERNAME}" || "${DOCKERHUB_USERNAME}" == "${DOCKER_IMAGE}" ]]; then
+              echo "Unable to infer Docker Hub username. Use 'username:token' format."
+              exit 1
+            fi
           fi
           echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
       - name: Docker build & push
