@@ -28,7 +28,9 @@ const router = express.Router({
  * GET /api
  */
 router.get("/", async (_, res /*, next*/) => {
-	const version = pjson.version.split("-").shift().split(".");
+	const rawVersion = pjson.version;
+	const baseVersion = rawVersion.split("-")[0];
+	const [major, minor, revision] = baseVersion.split(".");
 	const setup = await isSetup();
 	const http3Supported = await internalNginx.isHttp3Supported();
 
@@ -39,9 +41,10 @@ router.get("/", async (_, res /*, next*/) => {
 			http3_supported: http3Supported,
 		},
 		version: {
-			major: Number.parseInt(version.shift(), 10),
-			minor: Number.parseInt(version.shift(), 10),
-			revision: Number.parseInt(version.shift(), 10),
+			major: Number.parseInt(major, 10),
+			minor: Number.parseInt(minor, 10),
+			revision: Number.parseInt(revision, 10),
+			raw: rawVersion,
 		},
 	});
 });

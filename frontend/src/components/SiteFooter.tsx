@@ -4,7 +4,16 @@ import { T } from "src/locale";
 export function SiteFooter() {
 	const health = useHealth();
 
-	const getVersion = () => {
+	const getVersionLabel = () => {
+		if (!health.data) {
+			return "";
+		}
+		const v = health.data.version;
+		const baseVersion = `${v.major}.${v.minor}.${v.revision}`;
+		return `v${v.raw ?? baseVersion}`;
+	};
+
+	const getVersionTag = () => {
 		if (!health.data) {
 			return "";
 		}
@@ -46,13 +55,13 @@ export function SiteFooter() {
 							</li>
 							<li className="list-inline-item">
 								<a
-									href={`https://github.com/NginxProxyManager/nginx-proxy-manager/releases/tag/${getVersion()}`}
+									href={`https://github.com/NginxProxyManager/nginx-proxy-manager/releases/tag/${getVersionTag()}`}
 									className="link-secondary"
 									target="_blank"
 									rel="noopener"
 								>
 									{" "}
-									{getVersion()}{" "}
+									{getVersionLabel()}{" "}
 								</a>
 							</li>
 						</ul>

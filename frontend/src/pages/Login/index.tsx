@@ -38,7 +38,8 @@ export default function Login() {
 			return "";
 		}
 		const v = health.data.version;
-		return `v${v.major}.${v.minor}.${v.revision}`;
+		const baseVersion = `${v.major}.${v.minor}.${v.revision}`;
+		return `v${v.raw ?? baseVersion}`;
 	};
 
 	return (

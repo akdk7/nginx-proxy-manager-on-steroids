@@ -2,6 +2,7 @@ export interface AppVersion {
 	major: number;
 	minor: number;
 	revision: number;
+	raw?: string;
 }
 
 export interface UserPermissions {
