@@ -70,6 +70,7 @@ The build publishes multiple tags:
 
 - This project is a fork of the original upstream. The UI and core workflows
   remain familiar, while the fork adds advanced features.
+- Portions of this fork were developed with AI assistance.
 - For build instructions and deeper docs, see the GitHub repo.
 
 ## License
