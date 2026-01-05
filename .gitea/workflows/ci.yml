@@ -120,40 +120,24 @@ jobs:
             latest_json=""
           fi
           if [[ -n "${latest_json}" ]]; then
-            last_tag="$(python3 - <<'PY'
-import json, sys
-data = json.load(sys.stdin)
-print(data.get("tag_name", ""))
-PY
-            <<< "${latest_json}")"
+            last_tag="$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("tag_name",""))' \
+              <<< "${latest_json}")"
           fi
           if [[ -n "${last_tag}" ]]; then
             ref_json="$(curl -fsSL -H "Authorization: token ${GITHUB_TOKEN}" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${GITHUB_REPO}/git/ref/tags/${last_tag}" || true)"
             if [[ -n "${ref_json}" ]]; then
-              last_type="$(python3 - <<'PY'
-import json, sys
-data = json.load(sys.stdin)
-print(data.get("object", {}).get("type", ""))
-PY
-              <<< "${ref_json}")"
-              last_sha="$(python3 - <<'PY'
-import json, sys
-data = json.load(sys.stdin)
-print(data.get("object", {}).get("sha", ""))
-PY
-              <<< "${ref_json}")"
+              last_type="$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("object", {}).get("type",""))' \
+                <<< "${ref_json}")"
+              last_sha="$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("object", {}).get("sha",""))' \
+                <<< "${ref_json}")"
               if [[ "${last_type}" == "tag" && -n "${last_sha}" ]]; then
                 tag_json="$(curl -fsSL -H "Authorization: token ${GITHUB_TOKEN}" \
                   -H "Accept: application/vnd.github+json" \
                   "https://api.github.com/repos/${GITHUB_REPO}/git/tags/${last_sha}" || true)"
-                last_sha="$(python3 - <<'PY'
-import json, sys
-data = json.load(sys.stdin)
-print(data.get("object", {}).get("sha", ""))
-PY
-                <<< "${tag_json}")"
+                last_sha="$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("object", {}).get("sha",""))' \
+                  <<< "${tag_json}")"
               fi
             fi
           fi
