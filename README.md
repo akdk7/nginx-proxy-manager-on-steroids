@@ -1,3 +1,5 @@
+![Nginx Proxy Manager on Steroids](assets/logo.png)
+
 ## Important notice
 
 This project is a fork of the original github repo [nginx-proxy-manager](https://github.com/NginxProxyManager/nginx-proxy-manager).
@@ -82,4 +84,3 @@ When your docker container is running, connect to it on port `81` for the admin 
 Sometimes this can take a little bit because of the entropy of keys.
 
 [http://127.0.0.1:81](http://127.0.0.1:81)
-
