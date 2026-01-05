@@ -6,6 +6,7 @@ on:
 
 env:
   DOCKER_IMAGE: akdk7/nginx-proxy-manager-on-steroids
+  GITHUB_REPO: akdk7/nginx-proxy-manager-on-steroids
 
 jobs:
   build:
@@ -99,3 +100,114 @@ jobs:
             -t "${IMAGE}:${BASE_VERSION}" \
             -t "${IMAGE}:latest" \
             --push . --no-cache
+      - name: Prepare GitHub release notes
+        id: gh_release_notes
+        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        env:
+          GITHUB_REPO: ${{ env.GITHUB_REPO }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < .version)"
+          tag="v${version}"
+          last_tag=""
+          last_sha=""
+          if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+            latest_json="$(curl -fsSL -H "Authorization: token ${GITHUB_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" || true)"
+          else
+            latest_json=""
+          fi
+          if [[ -n "${latest_json}" ]]; then
+            last_tag="$(python3 - <<'PY'
+import json, sys
+data = json.load(sys.stdin)
+print(data.get("tag_name", ""))
+PY
+            <<< "${latest_json}")"
+          fi
+          if [[ -n "${last_tag}" ]]; then
+            ref_json="$(curl -fsSL -H "Authorization: token ${GITHUB_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPO}/git/ref/tags/${last_tag}" || true)"
+            if [[ -n "${ref_json}" ]]; then
+              last_type="$(python3 - <<'PY'
+import json, sys
+data = json.load(sys.stdin)
+print(data.get("object", {}).get("type", ""))
+PY
+              <<< "${ref_json}")"
+              last_sha="$(python3 - <<'PY'
+import json, sys
+data = json.load(sys.stdin)
+print(data.get("object", {}).get("sha", ""))
+PY
+              <<< "${ref_json}")"
+              if [[ "${last_type}" == "tag" && -n "${last_sha}" ]]; then
+                tag_json="$(curl -fsSL -H "Authorization: token ${GITHUB_TOKEN}" \
+                  -H "Accept: application/vnd.github+json" \
+                  "https://api.github.com/repos/${GITHUB_REPO}/git/tags/${last_sha}" || true)"
+                last_sha="$(python3 - <<'PY'
+import json, sys
+data = json.load(sys.stdin)
+print(data.get("object", {}).get("sha", ""))
+PY
+                <<< "${tag_json}")"
+              fi
+            fi
+          fi
+          if [[ -n "${last_sha}" ]] && git cat-file -e "${last_sha}^{commit}" 2>/dev/null; then
+            header="Changes since ${last_tag}"
+            notes="$(git log "${last_sha}..HEAD" --pretty=format:'- %s (%h)')"
+          else
+            header="Recent changes"
+            notes="$(git log -n 50 --pretty=format:'- %s (%h)')"
+          fi
+          if [[ -z "${notes}" ]]; then
+            notes="- No changes detected."
+          fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          {
+            echo "body<<'EOF'"
+            echo "${header}"
+            echo
+            echo "${notes}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+      - name: Create GitHub release
+        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        env:
+          GITHUB_REPO: ${{ env.GITHUB_REPO }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          TAG_NAME: ${{ steps.gh_release_notes.outputs.tag }}
+          RELEASE_BODY: ${{ steps.gh_release_notes.outputs.body }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${GITHUB_TOKEN}" ]]; then
+            echo "Missing GitHub release token (RELEASE_TOKEN)."
+            exit 1
+          fi
+          if curl -fsSL -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPO}/releases/tags/${TAG_NAME}" >/dev/null; then
+            echo "GitHub release ${TAG_NAME} already exists. Skipping."
+            exit 0
+          fi
+          payload="$(python3 - <<'PY'
+import json, os
+data = {
+  "tag_name": os.environ["TAG_NAME"],
+  "name": os.environ["TAG_NAME"],
+  "body": os.environ["RELEASE_BODY"],
+  "draft": False,
+  "prerelease": False
+}
+print(json.dumps(data))
+PY
+          )"
+          curl -fsSL -X POST \
+            -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPO}/releases" \
+            -d "${payload}"
