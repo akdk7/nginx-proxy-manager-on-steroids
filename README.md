@@ -1,33 +1,10 @@
-<p align="center">
-	<img src="https://nginxproxymanager.com/github.png">
-	<br><br>
-	<img src="https://img.shields.io/badge/version-2.13.1-green.svg?style=for-the-badge">
-	<a href="https://hub.docker.com/repository/docker/jc21/nginx-proxy-manager">
-		<img src="https://img.shields.io/docker/stars/jc21/nginx-proxy-manager.svg?style=for-the-badge">
-	</a>
-	<a href="https://hub.docker.com/repository/docker/jc21/nginx-proxy-manager">
-		<img src="https://img.shields.io/docker/pulls/jc21/nginx-proxy-manager.svg?style=for-the-badge">
-	</a>
-</p>
+## Important notice
 
-This project comes as a pre-built docker image that enables you to easily forward to your websites
-running at home or otherwise, including free SSL, without having to know too much about Nginx or Letsencrypt.
+This project is a fork of the original github repo [nginx-proxy-manager](https://github.com/NginxProxyManager/nginx-proxy-manager).
 
-- [Quick Setup](#quick-setup)
-- [Full Setup](https://nginxproxymanager.com/setup/)
-- [Screenshots](https://nginxproxymanager.com/screenshots/)
+All changes were done by ChatGPT. I simply wanted to find out if it's possible to expand this project with as many features as possible. :)
 
-## Project Goal
-
-I created this project to fill a personal need to provide users with an easy way to accomplish reverse
-proxying hosts with SSL termination and it had to be so easy that a monkey could do it. This goal hasn't changed.
-While there might be advanced options they are optional and the project should be as simple as possible
-so that the barrier for entry here is low.
-
-<a href="https://www.buymeacoffee.com/jc21" target="_blank"><img src="http://public.jc21.com/github/by-me-a-coffee.png" alt="Buy Me A Coffee" style="height: 51px !important;width: 217px !important;" ></a>
-
-
-## Features
+## Features original project
 
 - Beautiful and Secure Admin Interface based on [Tabler](https://tabler.github.io/)
 - Easily create forwarding domains, redirections, streams and 404 hosts without knowing anything about Nginx
@@ -36,11 +13,12 @@ so that the barrier for entry here is low.
 - Advanced Nginx configuration available for super users
 - User management, permissions and audit log
 
-### Feature in on-steroids
+### Feature in nginx-proxy-manager-on-steroids
 
 - GeoIP2-based Geo Access Control with global and per host/stream rules, country checklist, and presets
 - GeoIP2 diagnostics in the UI plus bundled modules that auto-load in the official image
 - Stream load balancing with upstream pools and policies
+- Stream multi-port and port-ranges
 - Stream PROXY protocol support and per-stream access/error logs
 - Heartbeat checks for proxy hosts and streams with status badges
 - Rate limiting for proxy hosts and locations
@@ -53,15 +31,6 @@ so that the barrier for entry here is low.
 - Hardened CORS and upload limits
 
 
-## Hosting your home network
-
-I won't go in to too much detail here but here are the basics for someone new to this self-hosted world.
-
-1. Your home router will have a Port Forwarding section somewhere. Log in and find it
-2. Add port forwarding for port 80 and 443 to the server hosting this project
-3. Configure your domain name details to point to your home, either with a static ip or a service like DuckDNS or [Amazon Route53](https://github.com/jc21/route53-ddns)
-4. Use the Nginx Proxy Manager as your gateway to forward to your other web based services
-
 ## Quick Setup
 
 1. Install Docker and Docker-Compose
@@ -69,12 +38,26 @@ I won't go in to too much detail here but here are the basics for someone new to
 - [Docker Install documentation](https://docs.docker.com/install/)
 - [Docker-Compose Install documentation](https://docs.docker.com/compose/install/)
 
-2. Create a docker-compose.yml file similar to this:
+2. Clone this repo
+
+Create a bash-file build.sh somewhere and put this content into it. Change permission `chmod +x build.sh`. Execute the script `./build.sh`.
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd CHANGE_TO_GIT_REPO
+git pull --ff-only
+./scripts/ci/frontend-build
+docker buildx build -f docker/Dockerfile --platform linux/amd64 -t nginx-proxy-manager:local --load . --no-cache
+```
+
+3. Create a docker-compose.yml file similar to this:
 
 ```yml
 services:
   app:
-    image: 'docker.io/jc21/nginx-proxy-manager:latest'
+    image: 'nginx-proxy-manager:local'
     restart: unless-stopped
     ports:
       - '80:80'
@@ -100,25 +83,3 @@ Sometimes this can take a little bit because of the entropy of keys.
 
 [http://127.0.0.1:81](http://127.0.0.1:81)
 
-
-## Contributing
-
-All are welcome to create pull requests for this project, against the `develop` branch. Official releases are created from the `master` branch.
-
-CI is used in this project. All PR's must pass before being considered. After passing,
-docker builds for PR's are available on dockerhub for manual verifications.
-
-Documentation within the `develop` branch is available for preview at
-[https://develop.nginxproxymanager.com](https://develop.nginxproxymanager.com)
-
-
-### Contributors
-
-Special thanks to [all of our contributors](https://github.com/NginxProxyManager/nginx-proxy-manager/graphs/contributors).
-
-
-## Getting Support
-
-1. [Found a bug?](https://github.com/NginxProxyManager/nginx-proxy-manager/issues)
-2. [Discussions](https://github.com/NginxProxyManager/nginx-proxy-manager/discussions)
-3. [Reddit](https://reddit.com/r/nginxproxymanager)
