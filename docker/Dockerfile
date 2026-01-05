@@ -121,6 +121,7 @@ COPY --from=nginx-http3-build /tmp/nginx-http3/install/usr/lib/nginx/modules/ngx
 EXPOSE 80 81 443 443/udp
 
 WORKDIR /app
+COPY LICENSE /app/LICENSE
 COPY backend/package.json backend/yarn.lock /app/
 RUN yarn install --production --frozen-lockfile --non-interactive \
 	&& yarn cache clean
