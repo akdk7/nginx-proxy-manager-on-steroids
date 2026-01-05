@@ -178,18 +178,7 @@ jobs:
             echo "GitHub release ${TAG_NAME} already exists. Skipping."
             exit 0
           fi
-          payload="$(python3 - <<'PY'
-import json, os
-data = {
-  "tag_name": os.environ["TAG_NAME"],
-  "name": os.environ["TAG_NAME"],
-  "body": os.environ["RELEASE_BODY"],
-  "draft": False,
-  "prerelease": False
-}
-print(json.dumps(data))
-PY
-          )"
+          payload="$(python3 -c 'import json,os; print(json.dumps({"tag_name": os.environ["TAG_NAME"], "name": os.environ["TAG_NAME"], "body": os.environ["RELEASE_BODY"], "draft": False, "prerelease": False}))')"
           curl -fsSL -X POST \
             -H "Authorization: token ${GITHUB_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
