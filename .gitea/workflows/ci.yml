@@ -7,6 +7,7 @@ on:
 env:
   DOCKER_IMAGE: akdk7/nginx-proxy-manager-on-steroids
   GITHUB_REPO: akdk7/nginx-proxy-manager-on-steroids
+  BUILDX_CACHE_DIR: /tmp/.buildx-cache
 
 jobs:
   build:
@@ -42,6 +43,36 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Cache yarn (global)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/yarn
+          key: ${{ runner.os }}-yarn-cache-${{ hashFiles('frontend/yarn.lock', 'backend/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-cache-
+      - name: Cache yarn (frontend)
+        uses: actions/cache@v4
+        with:
+          path: |
+            frontend/node_modules
+          key: ${{ runner.os }}-yarn-frontend-${{ hashFiles('frontend/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-frontend-
+      - name: Cache yarn (backend)
+        uses: actions/cache@v4
+        with:
+          path: |
+            backend/node_modules
+          key: ${{ runner.os }}-yarn-backend-${{ hashFiles('backend/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-backend-
+      - name: Cache buildx
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BUILDX_CACHE_DIR }}
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: Read versions
         id: version_info
         if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
@@ -51,6 +82,42 @@ jobs:
           app_version="$(node -p "require('./backend/package.json').version")"
           echo "base=$base_version" >> "$GITHUB_OUTPUT"
           echo "app=$app_version" >> "$GITHUB_OUTPUT"
+      - name: Validate publish secrets
+        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        env:
+          DOCKERHUB_AUTH: ${{ secrets.nginx_proxy_manager_on_steroids }}
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          missing=0
+          if [[ -z "${DOCKERHUB_AUTH}" ]]; then
+            echo "Missing Docker Hub secret 'nginx_proxy_manager_on_steroids'."
+            missing=1
+          fi
+          if [[ -z "${COSIGN_PRIVATE_KEY}" ]]; then
+            echo "Missing cosign key secret 'COSIGN_PRIVATE_KEY'."
+            missing=1
+          fi
+          if [[ "${GITHUB_REF}" == "refs/heads/main" || "${GITHUB_REF}" == "refs/heads/master" ]]; then
+            if [[ -z "${RELEASE_TOKEN}" ]]; then
+              echo "Missing GitHub release token (RELEASE_TOKEN)."
+              missing=1
+            fi
+          fi
+          if [[ "${missing}" -ne 0 ]]; then
+            exit 1
+          fi
+      - name: Backend lint/test
+        working-directory: backend
+        env:
+          CI: true
+        run: |
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
+          yarn install --frozen-lockfile
+          yarn lint
+          yarn test
       - name: Frontend lint/test/build
         working-directory: frontend
         env:
@@ -63,16 +130,29 @@ jobs:
           yarn lint
           yarn test:ci
           yarn build
+      - name: Upload frontend dist
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          if-no-files-found: warn
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Docker build
-        run: docker buildx build -f docker/Dockerfile --platform linux/amd64 -t nginx-proxy-manager:local --load . --no-cache
+        run: |
+          mkdir -p "${BUILDX_CACHE_DIR}"
+          docker buildx build -f docker/Dockerfile --platform linux/amd64 \
+            --cache-from type=local,src="${BUILDX_CACHE_DIR}" \
+            -t nginx-proxy-manager:local --load .
       - name: Docker login
         if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
         env:
-          DOCKERHUB_AUTH: ${{ secrets.NGINX_PROXY_MANAGER_ON_STEROIDS }}
+          DOCKERHUB_AUTH: ${{ secrets.nginx_proxy_manager_on_steroids }}
         run: |
           set -euo pipefail
           if [[ -z "${DOCKERHUB_AUTH}" ]]; then
-            echo "Missing Docker Hub secret 'NGINX_PROXY_MANAGER_ON_STEROIDS'."
+            echo "Missing Docker Hub secret 'nginx_proxy_manager_on_steroids'."
             exit 1
           fi
           if [[ "${DOCKERHUB_AUTH}" == *:* ]]; then
@@ -88,21 +168,58 @@ jobs:
           fi
           echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
       - name: Docker build & push
+        id: docker_push
         if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
         env:
           IMAGE: ${{ env.DOCKER_IMAGE }}
           BASE_VERSION: ${{ steps.version_info.outputs.base }}
           APP_VERSION: ${{ steps.version_info.outputs.app }}
         run: |
+          mkdir -p "${BUILDX_CACHE_DIR}"
+          metadata_file="/tmp/docker-metadata.json"
           docker buildx build -f docker/Dockerfile --platform linux/amd64 \
             --build-arg BUILD_VERSION="${APP_VERSION}" \
+            --cache-from type=local,src="${BUILDX_CACHE_DIR}" \
+            --cache-to type=local,dest="${BUILDX_CACHE_DIR}-new",mode=max \
+            --metadata-file "${metadata_file}" \
             -t "${IMAGE}:${APP_VERSION}" \
             -t "${IMAGE}:${BASE_VERSION}" \
             -t "${IMAGE}:latest" \
-            --push . --no-cache
+            --push .
+          digest="$(python3 -c 'import json; print(json.load(open("/tmp/docker-metadata.json"))["containerimage.digest"])')"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+      - name: Update buildx cache
+        if: always()
+        run: |
+          if [ -d "${BUILDX_CACHE_DIR}-new" ]; then
+            rm -rf "${BUILDX_CACHE_DIR}"
+            mv "${BUILDX_CACHE_DIR}-new" "${BUILDX_CACHE_DIR}"
+          fi
+      - name: Install cosign
+        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          COSIGN_VERSION="v2.4.1"
+          curl -fsSL "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64" \
+            -o /usr/local/bin/cosign
+          chmod +x /usr/local/bin/cosign
+      - name: Sign image
+        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          IMAGE: ${{ env.DOCKER_IMAGE }}
+          DIGEST: ${{ steps.docker_push.outputs.digest }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${COSIGN_PRIVATE_KEY}" ]]; then
+            echo "Missing cosign key secret 'COSIGN_PRIVATE_KEY'."
+            exit 1
+          fi
+          cosign sign --key env://COSIGN_PRIVATE_KEY "${IMAGE}@${DIGEST}"
       - name: Prepare GitHub release notes
         id: gh_release_notes
-        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         env:
           GITHUB_REPO: ${{ env.GITHUB_REPO }}
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
@@ -148,6 +265,18 @@ jobs:
             header="Recent changes"
             notes="$(git log -n 50 --pretty=format:'- %s (%h)')"
           fi
+          changelog_section=""
+          if [[ -f CHANGELOG.md ]]; then
+            changelog_section="$(awk -v ver="${version}" '
+              $0 ~ "^##[[:space:]]+v?" ver "([[:space:]]|$)" {found=1; next}
+              found && $0 ~ "^##[[:space:]]+" {exit}
+              found {print}
+            ' CHANGELOG.md)"
+          fi
+          if [[ -n "${changelog_section}" ]]; then
+            header="Changelog"
+            notes="${changelog_section}"
+          fi
           if [[ -z "${notes}" ]]; then
             notes="- No changes detected."
           fi
@@ -160,7 +289,7 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
       - name: Create GitHub release
-        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         env:
           GITHUB_REPO: ${{ env.GITHUB_REPO }}
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
