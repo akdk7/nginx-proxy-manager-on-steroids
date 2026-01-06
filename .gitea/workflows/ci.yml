@@ -88,6 +88,7 @@ jobs:
           DOCKERHUB_AUTH: ${{ secrets.nginx_proxy_manager_on_steroids }}
           RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         run: |
           set -euo pipefail
           missing=0
@@ -98,6 +99,11 @@ jobs:
           if [[ -z "${COSIGN_PRIVATE_KEY}" ]]; then
             echo "Missing cosign key secret 'COSIGN_PRIVATE_KEY'."
             missing=1
+          else
+            if [[ "${COSIGN_PRIVATE_KEY}" == *"ENCRYPTED"* && -z "${COSIGN_PASSWORD}" ]]; then
+              echo "COSIGN_PRIVATE_KEY is encrypted but COSIGN_PASSWORD is missing."
+              missing=1
+            fi
           fi
           if [[ "${GITHUB_REF}" == "refs/heads/main" || "${GITHUB_REF}" == "refs/heads/master" ]]; then
             if [[ -z "${RELEASE_TOKEN}" ]]; then
@@ -216,7 +222,7 @@ jobs:
             echo "Missing cosign key secret 'COSIGN_PRIVATE_KEY'."
             exit 1
           fi
-          cosign sign --key env://COSIGN_PRIVATE_KEY "${IMAGE}@${DIGEST}"
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${IMAGE}@${DIGEST}"
       - name: Prepare GitHub release notes
         id: gh_release_notes
         if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')

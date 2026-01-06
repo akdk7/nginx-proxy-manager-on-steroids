@@ -4,7 +4,7 @@ This changelog lists commits authored by akdk7. Only commits with fuller, descri
 messages are included (generic short messages like "Fix" or "Bug" are excluded).
 Commit messages are translated to English.
 
-## 2026-01-06 - 2.13.1-steroids.5
+## 2026-01-06 - 2.13.1-steroids.6
 - Added a Docker Hub focused README with quick start, compose example, tags, and a GitHub link; added an AI assistance note.
 - Introduced fork versioning with a SemVer suffix, exposed the raw version in the health API, and display it in the UI.
 - Expanded CI with Yarn and Buildx caches, backend lint/tests, frontend artifact upload, and fail-fast secret checks.

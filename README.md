@@ -76,3 +76,11 @@ The build publishes multiple tags:
 ## License
 
 MIT
+
+## Verify image signature
+
+This image is signed with cosign. Verify it using the public key:
+
+```bash
+cosign verify --key cosign.pub akdk7/nginx-proxy-manager-on-steroids:TAG
+```
