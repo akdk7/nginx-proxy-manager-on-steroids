@@ -7,7 +7,7 @@ on:
 env:
   DOCKER_IMAGE: akdk7/nginx-proxy-manager-on-steroids
   GITHUB_REPO: akdk7/nginx-proxy-manager-on-steroids
-  BUILDX_CACHE_DIR: /tmp/.buildx-cache
+  BUILDX_CACHE_DIR: /cache/buildx/nginx-proxy-manager-on-steroids
 
 jobs:
   build:
