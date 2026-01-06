@@ -59,14 +59,12 @@ const normalizeProxyProtocolPorts = (ports) => {
 };
 
 const normalizeListenPorts = (ports, fallbackPorts = defaultListenPorts) => {
-	if (typeof ports === "string") {
-		ports = ports.split(",");
-	}
-	if (!Array.isArray(ports)) {
+	const rawPorts = typeof ports === "string" ? ports.split(",") : ports;
+	if (!Array.isArray(rawPorts)) {
 		return [...fallbackPorts];
 	}
 	const uniquePorts = new Set();
-	ports.forEach((port) => {
+	rawPorts.forEach((port) => {
 		const parsed = Number.parseInt(`${port}`, 10);
 		if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 65535) {
 			uniquePorts.add(`${parsed}`);
@@ -175,7 +173,7 @@ const readGeoipModuleConfig = () => {
 	}
 	try {
 		return { present: true, content: fs.readFileSync(geoipModuleConfigPath, { encoding: "utf8" }) };
-	} catch (err) {
+	} catch (_err) {
 		return { present: true, content: null };
 	}
 };
@@ -197,7 +195,7 @@ const validateGeoDb = (path) => {
 	let stat;
 	try {
 		stat = fs.statSync(normalized);
-	} catch (err) {
+	} catch (_err) {
 		return status;
 	}
 
@@ -212,7 +210,7 @@ const validateGeoDb = (path) => {
 	try {
 		fs.accessSync(normalized, fs.constants.R_OK);
 		status.readable = true;
-	} catch (err) {
+	} catch (_err) {
 		return status;
 	}
 
@@ -227,13 +225,13 @@ const validateGeoDb = (path) => {
 		const buffer = Buffer.alloc(tailSize);
 		fs.readSync(fd, buffer, 0, tailSize, stat.size - tailSize);
 		status.valid = buffer.indexOf(geoipMetadataMarker) >= 0;
-	} catch (err) {
+	} catch (_err) {
 		return status;
 	} finally {
 		if (typeof fd === "number") {
 			try {
 				fs.closeSync(fd);
-			} catch (err) {
+			} catch (_err) {
 				// ignore close errors
 			}
 		}
@@ -991,7 +989,7 @@ const internalNginx = {
 			throw new errs.ConfigurationError(err.message);
 		}
 	},
-	generateStreamGeoConfig: async (streams, geoSettings, enabled) => {
+generateStreamGeoConfig: async (streams, geoSettings, _enabled) => {
 		const renderEngine = utils.getRenderEngine();
 		const filename = "/etc/nginx/conf.d/include/stream_geo.conf";
 

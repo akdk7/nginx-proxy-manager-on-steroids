@@ -42,8 +42,8 @@ const collectStreamPorts = (ports) => {
 };
 
 const resolveStreamPorts = (data, fallback, listKey, singleKey) => {
-	const hasList = Object.prototype.hasOwnProperty.call(data, listKey);
-	const hasSingle = Object.prototype.hasOwnProperty.call(data, singleKey);
+	const hasList = Object.hasOwn(data, listKey);
+	const hasSingle = Object.hasOwn(data, singleKey);
 	let ports = [];
 	let hasInvalid = false;
 	let hasDuplicates = false;
@@ -87,12 +87,9 @@ const resolveStreamPorts = (data, fallback, listKey, singleKey) => {
 };
 
 const applyStreamPorts = (data, fallback) => {
-	const hasIncoming =
-		Object.prototype.hasOwnProperty.call(data, "incoming_ports") ||
-		Object.prototype.hasOwnProperty.call(data, "incoming_port");
+	const hasIncoming = Object.hasOwn(data, "incoming_ports") || Object.hasOwn(data, "incoming_port");
 	const hasForwarding =
-		Object.prototype.hasOwnProperty.call(data, "forwarding_ports") ||
-		Object.prototype.hasOwnProperty.call(data, "forwarding_port");
+		Object.hasOwn(data, "forwarding_ports") || Object.hasOwn(data, "forwarding_port");
 	const hasAny = hasIncoming || hasForwarding;
 	if (!hasAny) {
 		if (!fallback) {
@@ -113,7 +110,7 @@ const applyStreamPorts = (data, fallback) => {
 	if (!incoming.ports.length || !forwarding.ports.length) {
 		throw new errs.ValidationError("error.required");
 	}
-	const upstreamEnabled = Object.prototype.hasOwnProperty.call(data, "upstream_enabled")
+	const upstreamEnabled = Object.hasOwn(data, "upstream_enabled")
 		? data.upstream_enabled
 		: fallback?.upstream_enabled;
 	if (
