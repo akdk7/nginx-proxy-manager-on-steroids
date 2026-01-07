@@ -276,6 +276,30 @@ const formatStreamTarget = (host, port) => {
 	return `${targetHost}:${parsedPort}`;
 };
 
+const resolveCertificateFullchainPath = (certificate, certificateId) => {
+	if (!certificate || !certificateId) {
+		return null;
+	}
+	if (certificate.provider === "letsencrypt") {
+		return `/etc/letsencrypt/live/npm-${certificateId}/fullchain.pem`;
+	}
+	return `/data/custom_ssl/npm-${certificateId}/fullchain.pem`;
+};
+
+const hasOcspUri = async (certificate, certificateId) => {
+	const certificatePath = resolveCertificateFullchainPath(certificate, certificateId);
+	if (!certificatePath || !fs.existsSync(certificatePath)) {
+		return false;
+	}
+	try {
+		const result = await utils.execFile("openssl", ["x509", "-in", certificatePath, "-noout", "-ocsp_uri"]);
+		return result.trim().length > 0;
+	} catch (err) {
+		debug(logger, `Failed to read OCSP URI for cert ${certificateId}:`, err.message);
+		return false;
+	}
+};
+
 
 const readTemplate = (name) => {
 	try {
@@ -836,6 +860,9 @@ const internalNginx = {
 			host.hsts_enabled = false;
 			host.hsts_subdomains = false;
 		}
+		host.certificate_has_ocsp = hasCertificate
+			? await hasOcspUri(host.certificate, host.certificate_id)
+			: false;
 
 		const fallbackPorts = hasCertificate ? ["80", "443"] : ["80"];
 		host.listen_ports = normalizeListenPorts(host.listen_ports, fallbackPorts);
