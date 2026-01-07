@@ -59,6 +59,9 @@
 	"action.enable": {
 		"defaultMessage": "Aktivieren"
 	},
+	"action.insert": {
+		"defaultMessage": "Einfügen"
+	},
 	"action.permissions": {
 		"defaultMessage": "Berechtigungen"
 	},
@@ -682,6 +685,39 @@
 	},
 	"nginx-config.placeholder": {
 		"defaultMessage": "# Gib hier deine benutzerdefinierte Nginx-Konfiguration auf eigenes Risiko ein!"
+	},
+	"nginx-config.cheat.title": {
+		"defaultMessage": "Cheat Sheet"
+	},
+	"nginx-config.cheat.subtitle": {
+		"defaultMessage": "Klicke auf ein Snippet, um es am Ende des Feldes einzufügen."
+	},
+	"nginx-config.cheat.hints": {
+		"defaultMessage": "Security-Header und HSTS werden in der UI verwaltet; add_header hier kann sie duplizieren."
+	},
+	"nginx-config.cheat.context.server": {
+		"defaultMessage": "Wird in den Server-Block dieses Hosts eingefügt."
+	},
+	"nginx-config.cheat.context.location": {
+		"defaultMessage": "Wird in diesen Location-Block eingefügt."
+	},
+	"nginx-config.cheat.variables": {
+		"defaultMessage": "Verfügbare Variablen: $forward_scheme, $server, $forward_port, $port."
+	},
+	"nginx-config.cheat.snippet.client-max-body": {
+		"defaultMessage": "Request-Body-Größe begrenzen"
+	},
+	"nginx-config.cheat.snippet.proxy-timeouts": {
+		"defaultMessage": "Proxy-Timeouts"
+	},
+	"nginx-config.cheat.snippet.proxy-buffering-off": {
+		"defaultMessage": "Proxy-Buffering deaktivieren"
+	},
+	"nginx-config.cheat.snippet.proxy-request-buffering-off": {
+		"defaultMessage": "Request-Buffering deaktivieren"
+	},
+	"nginx-config.cheat.snippet.access-log-off": {
+		"defaultMessage": "Access-Log deaktivieren"
 	},
 	"no-permission-error": {
 		"defaultMessage": "Du hast keine Berechtigung, dies anzusehen."

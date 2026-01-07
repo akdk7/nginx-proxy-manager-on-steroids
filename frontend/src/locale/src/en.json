@@ -59,6 +59,9 @@
 	"action.enable": {
 		"defaultMessage": "Enable"
 	},
+	"action.insert": {
+		"defaultMessage": "Insert"
+	},
 	"action.permissions": {
 		"defaultMessage": "Permissions"
 	},
@@ -682,6 +685,39 @@
 	},
 	"nginx-config.placeholder": {
 		"defaultMessage": "# Enter your custom Nginx configuration here at your own risk!"
+	},
+	"nginx-config.cheat.title": {
+		"defaultMessage": "Cheat Sheet"
+	},
+	"nginx-config.cheat.subtitle": {
+		"defaultMessage": "Click a snippet to insert it at the end of the field."
+	},
+	"nginx-config.cheat.hints": {
+		"defaultMessage": "Security Headers and HSTS are managed in the UI; add_header here may duplicate them."
+	},
+	"nginx-config.cheat.context.server": {
+		"defaultMessage": "Inserted into the server block for this host."
+	},
+	"nginx-config.cheat.context.location": {
+		"defaultMessage": "Inserted into this location block."
+	},
+	"nginx-config.cheat.variables": {
+		"defaultMessage": "Available variables: $forward_scheme, $server, $forward_port, $port."
+	},
+	"nginx-config.cheat.snippet.client-max-body": {
+		"defaultMessage": "Limit request body size"
+	},
+	"nginx-config.cheat.snippet.proxy-timeouts": {
+		"defaultMessage": "Proxy timeouts"
+	},
+	"nginx-config.cheat.snippet.proxy-buffering-off": {
+		"defaultMessage": "Disable proxy buffering"
+	},
+	"nginx-config.cheat.snippet.proxy-request-buffering-off": {
+		"defaultMessage": "Disable request buffering"
+	},
+	"nginx-config.cheat.snippet.access-log-off": {
+		"defaultMessage": "Disable access log"
 	},
 	"no-permission-error": {
 		"defaultMessage": "You do not have access to view this."

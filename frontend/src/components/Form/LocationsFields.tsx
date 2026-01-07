@@ -5,6 +5,7 @@ import { useFormikContext } from "formik";
 import { useState } from "react";
 import type { ProxyLocation, SecurityHeader } from "src/api/backend";
 import { intl, T } from "src/locale";
+import { NginxConfigCheatSheet } from "./NginxConfigCheatSheet";
 import { SecurityHeadersFields } from "./SecurityHeadersFields";
 import styles from "./LocationsFields.module.css";
 
@@ -227,6 +228,11 @@ export function LocationsFields({ initialValues, name = "locations" }: Props) {
 										prefix={`location-${idx}-headers`}
 									/>
 								</div>
+								<NginxConfigCheatSheet
+									value={item.advancedConfig}
+									onChange={(nextValue) => handleChange(idx, "advancedConfig", nextValue)}
+									context="location"
+								/>
 								<CodeEditor
 									language="nginx"
 									placeholder={intl.formatMessage({ id: "nginx-config.placeholder" })}
