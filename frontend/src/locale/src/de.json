@@ -690,7 +690,7 @@
 		"defaultMessage": "Cheat Sheet"
 	},
 	"nginx-config.cheat.subtitle": {
-		"defaultMessage": "Klicke auf ein Snippet, um es am Ende des Feldes einzufügen."
+		"defaultMessage": "Klicke auf eine Zeile, um sie am Ende des Feldes einzufügen."
 	},
 	"nginx-config.cheat.hints": {
 		"defaultMessage": "Security-Header und HSTS werden in der UI verwaltet; add_header hier kann sie duplizieren."
@@ -703,6 +703,12 @@
 	},
 	"nginx-config.cheat.variables": {
 		"defaultMessage": "Verfügbare Variablen: $forward_scheme, $server, $forward_port, $port."
+	},
+	"nginx-config.cheat.table.name": {
+		"defaultMessage": "Einstellung"
+	},
+	"nginx-config.cheat.table.snippet": {
+		"defaultMessage": "Snippet"
 	},
 	"nginx-config.cheat.snippet.client-max-body": {
 		"defaultMessage": "Request-Body-Größe begrenzen"

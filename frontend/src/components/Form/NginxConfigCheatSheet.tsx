@@ -1,4 +1,3 @@
-import { Button } from "src/components";
 import { T } from "src/locale";
 
 type CheatContext = "server" | "location";
@@ -79,25 +78,46 @@ export function NginxConfigCheatSheet({
 				<div className="text-muted small mb-3">
 					<T id="nginx-config.cheat.variables" />
 				</div>
-				{SNIPPETS.map((snippet) => (
-					<div key={snippet.id} className="d-flex align-items-start gap-2 mb-2">
-						<div className="flex-grow-1">
-							<div className="text-muted small">
-								<T id={snippet.labelId} />
-							</div>
-							<pre className="mb-0 small">
-								<code>{snippet.snippet.trimEnd()}</code>
-							</pre>
-						</div>
-						<Button
-							size="sm"
-							variant="outline"
-							onClick={() => onChange(appendSnippet(value, snippet.snippet))}
-						>
-							<T id="action.insert" />
-						</Button>
-					</div>
-				))}
+				<div className="table-responsive">
+					<table className="table table-sm table-vcenter table-hover mb-0">
+						<thead>
+							<tr>
+								<th className="text-muted small">
+									<T id="nginx-config.cheat.table.name" />
+								</th>
+								<th className="text-muted small">
+									<T id="nginx-config.cheat.table.snippet" />
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							{SNIPPETS.map((snippet) => (
+								<tr
+									key={snippet.id}
+									onClick={() => onChange(appendSnippet(value, snippet.snippet))}
+									onKeyDown={(event) => {
+										if (event.key === "Enter" || event.key === " ") {
+											event.preventDefault();
+											onChange(appendSnippet(value, snippet.snippet));
+										}
+									}}
+									role="button"
+									tabIndex={0}
+									style={{ cursor: "pointer" }}
+								>
+									<td className="text-muted small">
+										<T id={snippet.labelId} />
+									</td>
+									<td>
+										<pre className="mb-0 small">
+											<code>{snippet.snippet.trimEnd()}</code>
+										</pre>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
 			</div>
 		</details>
 	);
