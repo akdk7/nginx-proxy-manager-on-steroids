@@ -141,7 +141,8 @@ jobs:
         run: |
           corepack enable
           corepack prepare yarn@1.22.22 --activate
-          yarn install --frozen-lockfile
+          yarn config set registry "https://registry.npmjs.org/"
+          yarn install --frozen-lockfile --network-timeout 600000
           yarn lint
           yarn test
       - name: Frontend lint/test/build
@@ -152,7 +153,8 @@ jobs:
         run: |
           corepack enable
           corepack prepare yarn@1.22.22 --activate
-          yarn install --frozen-lockfile
+          yarn config set registry "https://registry.npmjs.org/"
+          yarn install --frozen-lockfile --network-timeout 600000
           yarn lint
           yarn test:ci
           yarn build
