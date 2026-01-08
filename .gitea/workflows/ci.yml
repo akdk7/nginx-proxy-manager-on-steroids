@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - qs
+  workflow_dispatch:
 
 env:
   DOCKER_IMAGE: akdk7/nginx-proxy-manager-on-steroids
@@ -258,6 +259,46 @@ jobs:
           fi
           push_url="${origin_url/\/\//\/\/${GITEA_USER}:${GITEA_PASS}@}"
           git push "${push_url}" Release
+      - name: Trigger Release workflow
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/qs' && steps.version_change.outputs.bumped == 'true'
+        env:
+          RELEASE_MERGE_TOKEN: ${{ secrets.RELEASE_MERGE_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${RELEASE_MERGE_TOKEN}" ]]; then
+            echo "Missing Gitea token secret 'RELEASE_MERGE_TOKEN'."
+            exit 1
+          fi
+          if [[ "${RELEASE_MERGE_TOKEN}" == *:* ]]; then
+            GITEA_TOKEN="${RELEASE_MERGE_TOKEN#*:}"
+          else
+            GITEA_TOKEN="${RELEASE_MERGE_TOKEN}"
+          fi
+          repo="${GITEA_REPOSITORY:-${GITHUB_REPOSITORY:-}}"
+          server_url="${GITEA_SERVER_URL:-${GITHUB_SERVER_URL:-}}"
+          if [[ -z "${repo}" || -z "${server_url}" ]]; then
+            origin_url="$(git remote get-url origin)"
+            if [[ "${origin_url}" == git@*:* ]]; then
+              host="${origin_url#git@}"
+              host="${host%%:*}"
+              repo="${origin_url#git@${host}:}"
+              server_url="https://${host}"
+            elif [[ "${origin_url}" == http*://*/* ]]; then
+              server_url="${origin_url%%/*/*/*}"
+              repo="${origin_url#${server_url}/}"
+            fi
+          fi
+          if [[ -z "${repo}" || -z "${server_url}" ]]; then
+            echo "Unable to determine Gitea server/repository for workflow dispatch."
+            exit 1
+          fi
+          repo="${repo%.git}"
+          api_base="${server_url%/}/api/v1"
+          curl -fsSL -X POST \
+            -H "Authorization: token ${GITEA_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "${api_base}/repos/${repo}/actions/workflows/ci.yml/dispatches" \
+            -d '{"ref":"Release"}'
       - name: Install cosign
         if: github.event_name == 'push' && github.ref == 'refs/heads/Release' && steps.version_change.outputs.changed == 'true'
         run: |
