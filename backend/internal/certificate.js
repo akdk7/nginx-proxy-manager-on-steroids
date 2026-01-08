@@ -648,7 +648,7 @@ const internalCertificate = {
 		}, 10000);
 
 		try {
-			const result = await utils.exec(`openssl pkey -in ${filepath} -check -noout 2>&1 `);
+			const result = await utils.execFile("openssl", ["pkey", "-in", filepath, "-check", "-noout"]);
 			clearTimeout(failTimeout);
 			if (!result.toLowerCase().includes("key is valid")) {
 				throw new error.ValidationError(`Result Validation Error: ${result}`);
@@ -658,7 +658,12 @@ const internalCertificate = {
 		} catch (err) {
 			clearTimeout(failTimeout);
 			fs.unlinkSync(filepath);
-			throw new error.ValidationError(`Certificate Key is not valid (${err.message})`, err);
+			const errorMessageRaw =
+				typeof err?.message === "string" && err.message.trim().length
+					? err.message.trim()
+					: (err?.previous?.stderr || err?.previous?.stdout || "").toString().trim() || "Unknown error";
+			const errorMessage = errorMessageRaw.split("\n")[0].trim() || "Unknown error";
+			throw new error.ValidationError(`Certificate Key is not valid (${errorMessage})`, err);
 		}
 	},
 
