@@ -114,45 +114,99 @@
 								"disabled": {
 									"type": "array",
 									"items": {
-										"type": "object",
-										"additionalProperties": false,
-										"required": ["section", "target", "pattern"],
-										"properties": {
-											"section": {
-												"type": "string",
-												"minLength": 1
+										"oneOf": [
+											{
+												"type": "object",
+												"additionalProperties": false,
+												"required": ["section", "target", "pattern"],
+												"properties": {
+													"section": {
+														"type": "string",
+														"minLength": 1
+													},
+													"target": {
+														"type": "string",
+														"enum": ["query_string", "http_user_agent"]
+													},
+													"pattern": {
+														"type": "string",
+														"minLength": 1
+													}
+												}
 											},
-											"target": {
-												"type": "string",
-												"enum": ["query_string", "http_user_agent"]
-											},
-											"pattern": {
-												"type": "string",
-												"minLength": 1
+											{
+												"type": "object",
+												"additionalProperties": false,
+												"required": ["section", "variable", "operator", "pattern"],
+												"properties": {
+													"section": {
+														"type": "string",
+														"minLength": 1
+													},
+													"variable": {
+														"type": "string",
+														"minLength": 1
+													},
+													"operator": {
+														"type": "string",
+														"enum": ["~", "~*", "!~", "!~*", "=", "!="]
+													},
+													"pattern": {
+														"type": "string",
+														"minLength": 1
+													}
+												}
 											}
-										}
+										]
 									}
 								},
 								"custom": {
 									"type": "array",
 									"items": {
-										"type": "object",
-										"additionalProperties": false,
-										"required": ["section", "target", "pattern"],
-										"properties": {
-											"section": {
-												"type": "string",
-												"minLength": 1
+										"oneOf": [
+											{
+												"type": "object",
+												"additionalProperties": false,
+												"required": ["section", "target", "pattern"],
+												"properties": {
+													"section": {
+														"type": "string",
+														"minLength": 1
+													},
+													"target": {
+														"type": "string",
+														"enum": ["query_string", "http_user_agent"]
+													},
+													"pattern": {
+														"type": "string",
+														"minLength": 1
+													}
+												}
 											},
-											"target": {
-												"type": "string",
-												"enum": ["query_string", "http_user_agent"]
-											},
-											"pattern": {
-												"type": "string",
-												"minLength": 1
+											{
+												"type": "object",
+												"additionalProperties": false,
+												"required": ["section", "variable", "operator", "pattern"],
+												"properties": {
+													"section": {
+														"type": "string",
+														"minLength": 1
+													},
+													"variable": {
+														"type": "string",
+														"minLength": 1
+													},
+													"operator": {
+														"type": "string",
+														"enum": ["~", "~*", "!~", "!~*", "=", "!="]
+													},
+													"pattern": {
+														"type": "string",
+														"minLength": 1
+													}
+												}
 											}
-										}
+										]
 									}
 								}
 							},

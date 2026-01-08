@@ -275,15 +275,33 @@ const slugifySection = (value) => {
 	);
 };
 
+const exploitOperators = ["~", "~*", "!~", "!~*", "=", "!="];
+
 const normalizeExploitPattern = (pattern) => `${pattern || ""}`.replace(/\r?\n/g, " ").trim();
 
+const normalizeExploitVariable = (value) => {
+	const normalized = `${value || ""}`.trim().replace(/^\$/, "");
+	if (!normalized || !/^[a-zA-Z0-9_]+$/.test(normalized)) {
+		return "";
+	}
+	return normalized;
+};
+
+const normalizeExploitOperator = (value) => {
+	const normalized = `${value || ""}`.trim();
+	return exploitOperators.includes(normalized) ? normalized : "~";
+};
+
 const normalizeExploitEntry = (entry) => {
+	const variable = normalizeExploitVariable(entry?.variable ?? entry?.target);
+	const operator = normalizeExploitOperator(entry?.operator);
 	const normalized = {
 		section: slugifySection(entry?.section),
-		target: entry?.target === "http_user_agent" ? "http_user_agent" : "query_string",
+		variable,
+		operator,
 		pattern: normalizeExploitPattern(entry?.pattern),
 	};
-	if (!normalized.pattern) {
+	if (!normalized.pattern || !normalized.variable) {
 		return null;
 	}
 	return normalized;
@@ -294,7 +312,7 @@ const exploitEntryKey = (entry) => {
 	if (!normalized) {
 		return "";
 	}
-	return `${normalized.section}::${normalized.target}::${normalized.pattern}`;
+	return `${normalized.section}::${normalized.variable}::${normalized.operator}::${normalized.pattern}`;
 };
 
 const parseBlockExploitsConfig = (configText) => {
@@ -328,14 +346,14 @@ const parseBlockExploitsConfig = (configText) => {
 			current.variable = setMatch[1];
 			return;
 		}
-		const ruleMatch = /if\s+\(\$(query_string|http_user_agent)\s+~\s+"([^"]+)"\)/.exec(
-			trimmed,
-		);
+		const ruleMatch =
+			/if\s+\(\$(\w+)\s+(=|!=|~\*|~|!~\*|!~)\s+"([^"]+)"\)/.exec(trimmed);
 		if (ruleMatch) {
 			current.entries.push({
 				section: current.id,
-				target: ruleMatch[1],
-				pattern: ruleMatch[2],
+				variable: ruleMatch[1],
+				operator: ruleMatch[2],
+				pattern: ruleMatch[3],
 			});
 		}
 	});
@@ -428,8 +446,13 @@ const renderBlockExploitsConfig = (sections) => {
 		lines.push(`## ${section.title || section.id}`);
 		lines.push(`set $${variable} 0;`, "");
 		section.entries.forEach((entry) => {
+			const variable = normalizeExploitVariable(entry.variable ?? entry.target);
+			if (!variable) {
+				return;
+			}
+			const operator = normalizeExploitOperator(entry.operator);
 			const pattern = normalizeExploitPattern(entry.pattern).replace(/"/g, '\\"');
-			lines.push(`if ($${entry.target} ~ "${pattern}") {`);
+			lines.push(`if ($${variable} ${operator} "${pattern}") {`);
 			lines.push(`\tset $${variable} 1;`);
 			lines.push("}", "");
 		});

@@ -1049,17 +1049,14 @@
 	"settings.block-exploits.pattern": {
 		"defaultMessage": "Pattern"
 	},
+	"settings.block-exploits.variable": {
+		"defaultMessage": "Variable"
+	},
+	"settings.block-exploits.operator": {
+		"defaultMessage": "Operator"
+	},
 	"settings.block-exploits.enabled": {
 		"defaultMessage": "Enabled"
-	},
-	"settings.block-exploits.target": {
-		"defaultMessage": "Target"
-	},
-	"settings.block-exploits.target.query": {
-		"defaultMessage": "Query string"
-	},
-	"settings.block-exploits.target.ua": {
-		"defaultMessage": "User agent"
 	},
 	"settings.block-exploits.add": {
 		"defaultMessage": "Add rule"
@@ -1075,6 +1072,33 @@
 	},
 	"settings.block-exploits.error.quotes": {
 		"defaultMessage": "Double quotes are not allowed in patterns."
+	},
+	"settings.block-exploits.variable.help": {
+		"defaultMessage": "Type any Nginx variable (with or without $)."
+	},
+	"settings.block-exploits.error.variable.required": {
+		"defaultMessage": "Variable is required."
+	},
+	"settings.block-exploits.error.variable.invalid": {
+		"defaultMessage": "Variable name is invalid."
+	},
+	"settings.block-exploits.operator.regex": {
+		"defaultMessage": "Regex (~)"
+	},
+	"settings.block-exploits.operator.regex-insensitive": {
+		"defaultMessage": "Regex (~*, case-insensitive)"
+	},
+	"settings.block-exploits.operator.not-regex": {
+		"defaultMessage": "Not regex (!~)"
+	},
+	"settings.block-exploits.operator.not-regex-insensitive": {
+		"defaultMessage": "Not regex (!~*, case-insensitive)"
+	},
+	"settings.block-exploits.operator.equals": {
+		"defaultMessage": "Equals (=)"
+	},
+	"settings.block-exploits.operator.not-equals": {
+		"defaultMessage": "Not equals (!=)"
 	},
 	"setup.preamble": {
 		"defaultMessage": "Get started by creating your admin account."

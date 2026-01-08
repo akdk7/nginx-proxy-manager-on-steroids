@@ -3,10 +3,10 @@ name: ci
 on:
   push:
     branches:
-      - develop
+      - qa
   pull_request:
     branches:
-      - develop
+      - qs
 
 env:
   DOCKER_IMAGE: akdk7/nginx-proxy-manager-on-steroids
