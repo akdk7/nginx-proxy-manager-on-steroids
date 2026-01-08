@@ -1,6 +1,6 @@
 {
 	"name": "nginx-proxy-manager",
-	"version": "9",
+	"version": "2.13.1-steroids.10",
 	"description": "A beautiful interface for creating Nginx endpoints",
 	"author": "Jamie Curnow <jc@jc21.com>",
 	"license": "MIT",
