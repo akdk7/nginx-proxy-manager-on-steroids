@@ -42,6 +42,22 @@ const extractPrivateKeyBlock = (content) => {
 	return extractPemBlock(content, /-----BEGIN [^-]*PRIVATE KEY-----[\s\S]*?-----END [^-]*PRIVATE KEY-----/m) || content;
 };
 
+const readUploadFileContent = (file) => {
+	if (!file) {
+		return "";
+	}
+	if (typeof file.data === "string" && file.data.length) {
+		return file.data;
+	}
+	if (Buffer.isBuffer(file.data) && file.data.length) {
+		return file.data.toString();
+	}
+	if (file.tempFilePath && fs.existsSync(file.tempFilePath)) {
+		return fs.readFileSync(file.tempFilePath, "utf8");
+	}
+	return "";
+};
+
 const omissions = () => {
 	return ["is_deleted", "owner.is_deleted", "meta.dns_provider_credentials"];
 };
@@ -574,7 +590,10 @@ const internalCertificate = {
 		const files = {};
 		_.map(data.files, (file, name) => {
 			if (internalCertificate.allowedSslFiles.indexOf(name) !== -1) {
-				files[name] = file.data.toString();
+				const content = readUploadFileContent(file);
+				if (content) {
+					files[name] = content;
+				}
 			}
 		});
 
@@ -635,7 +654,10 @@ const internalCertificate = {
 
 		_.map(data.files, (file, name) => {
 			if (internalCertificate.allowedSslFiles.indexOf(name) !== -1) {
-				row.meta[name] = file.data.toString();
+				const content = readUploadFileContent(file);
+				if (content) {
+					row.meta[name] = content;
+				}
 			}
 		});
 
