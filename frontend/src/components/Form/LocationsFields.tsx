@@ -228,11 +228,6 @@ export function LocationsFields({ initialValues, name = "locations" }: Props) {
 										prefix={`location-${idx}-headers`}
 									/>
 								</div>
-								<NginxConfigCheatSheet
-									value={item.advancedConfig}
-									onChange={(nextValue) => handleChange(idx, "advancedConfig", nextValue)}
-									context="location"
-								/>
 								<CodeEditor
 									language="nginx"
 									placeholder={intl.formatMessage({ id: "nginx-config.placeholder" })}
@@ -248,6 +243,11 @@ export function LocationsFields({ initialValues, name = "locations" }: Props) {
 										borderRadius: "0.3rem",
 										minHeight: "170px",
 									}}
+								/>
+								<NginxConfigCheatSheet
+									value={item.advancedConfig}
+									onChange={(nextValue) => handleChange(idx, "advancedConfig", nextValue)}
+									context="location"
 								/>
 							</div>
 						)}
