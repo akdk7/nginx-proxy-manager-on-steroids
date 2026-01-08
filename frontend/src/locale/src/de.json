@@ -164,6 +164,45 @@
 	"certificates.custom.warning": {
 		"defaultMessage": "Schlüsseldateien mit Passphrase werden nicht unterstützt."
 	},
+	"certificates.custom.details": {
+		"defaultMessage": "Zertifikatsdetails"
+	},
+	"certificates.custom.details.certificate": {
+		"defaultMessage": "Zertifikat"
+	},
+	"certificates.custom.details.intermediate": {
+		"defaultMessage": "Zwischenzertifikat"
+	},
+	"certificates.custom.details.cn": {
+		"defaultMessage": "Common Name"
+	},
+	"certificates.custom.details.issuer": {
+		"defaultMessage": "Aussteller"
+	},
+	"certificates.custom.details.valid-from": {
+		"defaultMessage": "Gültig ab"
+	},
+	"certificates.custom.details.valid-to": {
+		"defaultMessage": "Gültig bis"
+	},
+	"certificates.custom.key-match": {
+		"defaultMessage": "Schlüssel passt zum Zertifikat"
+	},
+	"certificates.custom.key-mismatch": {
+		"defaultMessage": "Zertifikatsschlüssel passt nicht zum Zertifikat"
+	},
+	"certificates.custom.status.valid": {
+		"defaultMessage": "Gültig"
+	},
+	"certificates.custom.status.invalid": {
+		"defaultMessage": "Ungültig"
+	},
+	"certificates.custom.status.match": {
+		"defaultMessage": "Passt"
+	},
+	"certificates.custom.status.mismatch": {
+		"defaultMessage": "Passt nicht"
+	},
 	"certificates.expires-in-days": {
 		"defaultMessage": "{days}T"
 	},

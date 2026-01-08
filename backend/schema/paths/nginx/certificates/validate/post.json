@@ -26,14 +26,22 @@
 										"to": 1799479337
 									}
 								},
-								"certificate_key": true
+								"certificate_key": true,
+								"certificate_key_matches": true,
+								"intermediate_certificate": {
+									"cn": "mkcert intermediate",
+									"issuer": "O = mkcert development CA, OU = jc@jc-Laptop.local (John Doe), CN = mkcert jc@jc-Laptop.local (John Doe)",
+									"dates": {
+										"from": 1728458537,
+										"to": 1799479337
+									}
+								}
 							}
 						}
 					},
 					"schema": {
 						"type": "object",
 						"additionalProperties": false,
-						"required": ["certificate", "certificate_key"],
 						"properties": {
 							"certificate": {
 								"type": "object",
@@ -67,7 +75,43 @@
 									}
 								}
 							},
+							"intermediate_certificate": {
+								"type": "object",
+								"additionalProperties": false,
+								"required": ["cn", "issuer", "dates"],
+								"properties": {
+									"cn": {
+										"type": "string",
+										"example": "example.com"
+									},
+									"issuer": {
+										"type": "string",
+										"example": "C = US, O = Let's Encrypt, CN = E5"
+									},
+									"dates": {
+										"type": "object",
+										"additionalProperties": false,
+										"required": ["from", "to"],
+										"properties": {
+											"from": {
+												"type": "integer"
+											},
+											"to": {
+												"type": "integer"
+											}
+										},
+										"example": {
+											"from": 1728448218,
+											"to": 1736224217
+										}
+									}
+								}
+							},
 							"certificate_key": {
+								"type": "boolean",
+								"example": true
+							},
+							"certificate_key_matches": {
 								"type": "boolean",
 								"example": true
 							}

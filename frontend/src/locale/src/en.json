@@ -164,6 +164,45 @@
 	"certificates.custom.warning": {
 		"defaultMessage": "Key files protected with a passphrase are not supported."
 	},
+	"certificates.custom.details": {
+		"defaultMessage": "Certificate Details"
+	},
+	"certificates.custom.details.certificate": {
+		"defaultMessage": "Certificate"
+	},
+	"certificates.custom.details.intermediate": {
+		"defaultMessage": "Intermediate Certificate"
+	},
+	"certificates.custom.details.cn": {
+		"defaultMessage": "Common Name"
+	},
+	"certificates.custom.details.issuer": {
+		"defaultMessage": "Issuer"
+	},
+	"certificates.custom.details.valid-from": {
+		"defaultMessage": "Valid From"
+	},
+	"certificates.custom.details.valid-to": {
+		"defaultMessage": "Valid To"
+	},
+	"certificates.custom.key-match": {
+		"defaultMessage": "Key matches certificate"
+	},
+	"certificates.custom.key-mismatch": {
+		"defaultMessage": "Certificate key does not match certificate"
+	},
+	"certificates.custom.status.valid": {
+		"defaultMessage": "Valid"
+	},
+	"certificates.custom.status.invalid": {
+		"defaultMessage": "Invalid"
+	},
+	"certificates.custom.status.match": {
+		"defaultMessage": "Matches"
+	},
+	"certificates.custom.status.mismatch": {
+		"defaultMessage": "Does not match"
+	},
 	"certificates.expires-in-days": {
 		"defaultMessage": "{days}d"
 	},

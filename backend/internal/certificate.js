@@ -551,7 +551,7 @@ const internalCertificate = {
 	 * @param   {Object}  data.files
 	 * @returns {Promise}
 	 */
-	validate: (data) => {
+	validate: async (data) => {
 		// Put file contents into an object
 		const files = {};
 		_.map(data.files, (file, name) => {
@@ -578,13 +578,20 @@ const internalCertificate = {
 			);
 		});
 
-		return Promise.all(promises).then((files) => {
-			let data = {};
-			_.each(files, (file) => {
-				data = _.assign({}, data, file);
-			});
-			return data;
+		const results = await Promise.all(promises);
+		let resultData = {};
+		_.each(results, (file) => {
+			resultData = _.assign({}, resultData, file);
 		});
+
+		if (files.certificate && files.certificate_key) {
+			resultData.certificate_key_matches = await internalCertificate.checkKeyMatchesCertificate(
+				files.certificate,
+				files.certificate_key,
+			);
+		}
+
+		return resultData;
 	},
 
 	/**
@@ -603,6 +610,9 @@ const internalCertificate = {
 		const validations = await internalCertificate.validate(data);
 		if (typeof validations.certificate === "undefined") {
 			throw new error.ValidationError("Certificate file was not provided");
+		}
+		if (validations.certificate_key_matches === false) {
+			throw new error.ValidationError("certificates.custom.key-mismatch");
 		}
 
 		_.map(data.files, (file, name) => {
@@ -649,6 +659,38 @@ const internalCertificate = {
 			clearTimeout(failTimeout);
 			fs.unlinkSync(filepath);
 			throw new error.ValidationError(`Certificate Key is not valid (${err.message})`, err);
+		}
+	},
+
+	/**
+	 * Checks if the provided private key matches the provided certificate.
+	 *
+	 * @param {String}  certificate    This is the entire cert contents as a string
+	 * @param {String}  privateKey     This is the entire key contents as a string
+	 */
+	checkKeyMatchesCertificate: async (certificate, privateKey) => {
+		let certificatePath = null;
+		let keyPath = null;
+		try {
+			certificatePath = await tempWrite(certificate, "/tmp");
+			keyPath = await tempWrite(privateKey, "/tmp");
+
+			const certKey = await utils.execFile("openssl", ["x509", "-in", certificatePath, "-noout", "-pubkey"]);
+			const keyKey = await utils.execFile("openssl", ["pkey", "-in", keyPath, "-pubout"]);
+
+			const normalizedCertKey = certKey.replace(/\r?\n/g, "\n").trim();
+			const normalizedKeyKey = keyKey.replace(/\r?\n/g, "\n").trim();
+
+			return normalizedCertKey === normalizedKeyKey;
+		} catch (err) {
+			throw new error.ValidationError(`Certificate Key does not match certificate (${err.message})`, err);
+		} finally {
+			if (certificatePath && fs.existsSync(certificatePath)) {
+				fs.unlinkSync(certificatePath);
+			}
+			if (keyPath && fs.existsSync(keyPath)) {
+				fs.unlinkSync(keyPath);
+			}
 		}
 	},
 
