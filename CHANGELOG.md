@@ -4,7 +4,7 @@ This changelog lists commits authored by akdk7. Only commits with fuller, descri
 messages are included (generic short messages like "Fix" or "Bug" are excluded).
 Commit messages are translated to English.
 
-## 2026-01-08
+## 2026-01-08 - 2.13.1-steroids.8
 - Feature: Extended exploit rules with variable + operator support, UI selectors with suggestions, and backend merge into block-exploits.conf. (c0339eb4)
 - Feature: Made the exploit list globally editable under Settings while keeping enforcement tied to per-host "Block Common Exploits". (fe19dd1f)
 - Fix: Added an ACME bypass in Geo Access templates so http-01 challenges are not blocked. (036aa0e2)
