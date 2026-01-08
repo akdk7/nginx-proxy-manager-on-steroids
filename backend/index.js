@@ -21,9 +21,10 @@ async function appStart() {
 			}
 			return internalNginx
 				.generateBlockExploitsConfig()
+				.then(() => internalNginx.generateGeoConfig())
 				.then(() => internalNginx.reloadIfRunning())
 				.catch((err) => {
-					logger.warn("Block exploits config generation failed:", err?.message || err);
+					logger.warn("Startup config generation failed:", err?.message || err);
 				});
 		})
 		.then(() =>
