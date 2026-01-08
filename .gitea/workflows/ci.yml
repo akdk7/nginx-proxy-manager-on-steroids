@@ -2,7 +2,11 @@ name: ci
 
 on:
   push:
+    branches:
+      - Release
   pull_request:
+    branches:
+      - Release
 
 env:
   DOCKER_IMAGE: akdk7/nginx-proxy-manager-on-steroids
