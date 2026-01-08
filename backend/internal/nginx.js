@@ -442,21 +442,21 @@ const renderBlockExploitsConfig = (sections) => {
 		if (!section.entries || section.entries.length === 0) {
 			return;
 		}
-		const variable = getSectionVariable(section);
+		const blockVariable = getSectionVariable(section);
 		lines.push(`## ${section.title || section.id}`);
-		lines.push(`set $${variable} 0;`, "");
+		lines.push(`set $${blockVariable} 0;`, "");
 		section.entries.forEach((entry) => {
-			const variable = normalizeExploitVariable(entry.variable ?? entry.target);
-			if (!variable) {
+			const matchVariable = normalizeExploitVariable(entry.variable ?? entry.target);
+			if (!matchVariable) {
 				return;
 			}
 			const operator = normalizeExploitOperator(entry.operator);
 			const pattern = normalizeExploitPattern(entry.pattern).replace(/"/g, '\\"');
-			lines.push(`if ($${variable} ${operator} "${pattern}") {`);
-			lines.push(`\tset $${variable} 1;`);
+			lines.push(`if ($${matchVariable} ${operator} "${pattern}") {`);
+			lines.push(`\tset $${blockVariable} 1;`);
 			lines.push("}", "");
 		});
-		lines.push(`if ($${variable} = 1) {`);
+		lines.push(`if ($${blockVariable} = 1) {`);
 		lines.push("\treturn 403;");
 		lines.push("}", "");
 		lines.push("");
