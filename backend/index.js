@@ -19,6 +19,12 @@ async function appStart() {
 			if (REGENERATE_NGINX_CONFIGS) {
 				return internalNginx.regenerateAllConfigs();
 			}
+			return internalNginx
+				.generateBlockExploitsConfig()
+				.then(() => internalNginx.reloadIfRunning())
+				.catch((err) => {
+					logger.warn("Block exploits config generation failed:", err?.message || err);
+				});
 		})
 		.then(() =>
 			internalNginx.refreshGeoAccessStatus().catch((err) => {

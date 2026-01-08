@@ -1037,6 +1037,45 @@
 	"settings.geo-access.presets.apply.success": {
 		"defaultMessage": "Preset \"{preset}\" auf {count} {target} angewendet"
 	},
+	"settings.block-exploits": {
+		"defaultMessage": "Exploits blockieren"
+	},
+	"settings.block-exploits.description": {
+		"defaultMessage": "Bearbeite die globale Blockliste, die bei \"Gängige Exploits blockieren\" verwendet wird."
+	},
+	"settings.block-exploits.notice": {
+		"defaultMessage": "Updates aus neuen Container-Images werden mit deinen Änderungen zusammengeführt. Duplikate werden entfernt."
+	},
+	"settings.block-exploits.pattern": {
+		"defaultMessage": "Pattern"
+	},
+	"settings.block-exploits.enabled": {
+		"defaultMessage": "Aktiv"
+	},
+	"settings.block-exploits.target": {
+		"defaultMessage": "Ziel"
+	},
+	"settings.block-exploits.target.query": {
+		"defaultMessage": "Query-String"
+	},
+	"settings.block-exploits.target.ua": {
+		"defaultMessage": "User-Agent"
+	},
+	"settings.block-exploits.add": {
+		"defaultMessage": "Regel hinzufügen"
+	},
+	"settings.block-exploits.empty": {
+		"defaultMessage": "Keine Default-Regeln gefunden."
+	},
+	"settings.block-exploits.custom.empty": {
+		"defaultMessage": "Keine benutzerdefinierten Regeln."
+	},
+	"settings.block-exploits.override": {
+		"defaultMessage": "Überschreiben"
+	},
+	"settings.block-exploits.error.quotes": {
+		"defaultMessage": "Doppelte Anführungszeichen sind in Patterns nicht erlaubt."
+	},
 	"setup.preamble": {
 		"defaultMessage": "Beginne mit dem Erstellen deines Admin-Kontos."
 	},

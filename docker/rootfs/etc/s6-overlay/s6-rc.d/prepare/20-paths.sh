@@ -39,3 +39,11 @@ touch /var/log/nginx/error.log || true
 chmod 777 /var/log/nginx/error.log || true
 chmod -R 777 /var/cache/nginx || true
 chmod 644 /etc/logrotate.d/nginx-proxy-manager
+
+if [ ! -f /data/nginx/block-exploits.conf ]; then
+	if [ -f /etc/nginx/conf.d/include/block-exploits.default.conf ]; then
+		cp /etc/nginx/conf.d/include/block-exploits.default.conf /data/nginx/block-exploits.conf
+	else
+		touch /data/nginx/block-exploits.conf
+	fi
+fi
