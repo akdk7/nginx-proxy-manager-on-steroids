@@ -4,6 +4,21 @@ This changelog lists commits authored by akdk7. Only commits with fuller, descri
 messages are included (generic short messages like "Fix" or "Bug" are excluded).
 Commit messages are translated to English.
 
+## 2026-01-08
+- Feature: Extended exploit rules with variable + operator support, UI selectors with suggestions, and backend merge into block-exploits.conf. (c0339eb4)
+- Feature: Made the exploit list globally editable under Settings while keeping enforcement tied to per-host "Block Common Exploits". (fe19dd1f)
+- Fix: Added an ACME bypass in Geo Access templates so http-01 challenges are not blocked. (036aa0e2)
+- Updated: Adjusted the Biome config schema version to match CLI 2.3.11. (02904943)
+- Updated: Updated Vite to 7.3.1 and refreshed backend/frontend packages. (f06b44c9)
+- Feature: Added a cheat-sheet below the textbox in both the host editor and location editor. (b60a41b5)
+
+## 2026-01-07
+- Updated the cheat-sheet to a compact table layout, removed Insert buttons, and made rows clickable (keyboard-friendly) for snippet insertion. (a84740bb)
+- Made OCSP stapling conditional so ssl_stapling is only set when the certificate has an OCSP responder URL. (cede6225)
+- Added a collapsible cheat-sheet beside Custom Nginx Configuration editors with click-to-insert snippets and context hints. (4f4816f2)
+- Implemented an auth/cookie cache bypass so assets are not served from cache when Authorization/Cookie is present and Set-Cookie responses are not cached. (4234e4d5)
+- Rendered asset caching as its own location with access-list rules to avoid bypassing protected hosts, removed asset includes from custom locations, and added TLS hardening in the cert template. (f885261a)
+
 ## 2026-01-06 - 2.13.1-steroids.7
 - Added a Docker Hub focused README with quick start, compose example, tags, and a GitHub link; added an AI assistance note.
 - Introduced fork versioning with a SemVer suffix, exposed the raw version in the health API, and display it in the UI.
