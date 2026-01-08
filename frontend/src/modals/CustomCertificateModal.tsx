@@ -30,7 +30,7 @@ const CustomCertificateModal = EasyModal.create(({ visible, remove }: InnerModal
 	const [validationResult, setValidationResult] = useState<ValidatedCertificateResponse | null>(null);
 	const validationRequest = useRef(0);
 
-	const buildValidationFormData = (values: any) => {
+	const buildValidationFormData = useCallback((values: any) => {
 		const formData = new FormData();
 		if (values.certificate) {
 			formData.append("certificate", values.certificate);
@@ -42,7 +42,7 @@ const CustomCertificateModal = EasyModal.create(({ visible, remove }: InnerModal
 			formData.append("intermediate_certificate", values.intermediateCertificate);
 		}
 		return formData;
-	};
+	}, []);
 
 	const runValidation = useCallback(async (values: any) => {
 		const hasFiles = values.certificate || values.certificateKey || values.intermediateCertificate;
@@ -74,7 +74,7 @@ const CustomCertificateModal = EasyModal.create(({ visible, remove }: InnerModal
 				setIsValidating(false);
 			}
 		}
-	}, []);
+	}, [buildValidationFormData]);
 
 	const handleFileChange = (form: any, fieldName: string, file: File | null) => {
 		const nextValues = { ...form.values, [fieldName]: file };
