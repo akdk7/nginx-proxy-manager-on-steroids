@@ -385,7 +385,9 @@ const mergeExploitSections = (defaultSections, disabledEntries, customEntries) =
 		entries: [],
 	}));
 	const sectionIndex = new Map();
-	mergedSections.forEach((section, index) => sectionIndex.set(section.id, index));
+	mergedSections.forEach((section, index) => {
+		sectionIndex.set(section.id, index);
+	});
 
 	const existingKeys = new Set();
 	(defaultSections || []).forEach((section) => {
