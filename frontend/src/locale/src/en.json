@@ -164,6 +164,54 @@
 	"certificates.custom.warning": {
 		"defaultMessage": "Key files protected with a passphrase are not supported."
 	},
+	"certificates.custom.details": {
+		"defaultMessage": "Certificate Details"
+	},
+	"certificates.custom.details.certificate": {
+		"defaultMessage": "Certificate"
+	},
+	"certificates.custom.details.intermediate": {
+		"defaultMessage": "Intermediate Certificate"
+	},
+	"certificates.custom.details.cn": {
+		"defaultMessage": "Common Name"
+	},
+	"certificates.custom.details.issuer": {
+		"defaultMessage": "Issuer"
+	},
+	"certificates.custom.details.valid-from": {
+		"defaultMessage": "Valid From"
+	},
+	"certificates.custom.details.valid-to": {
+		"defaultMessage": "Valid To"
+	},
+	"certificates.custom.key-match": {
+		"defaultMessage": "Key matches certificate"
+	},
+	"certificates.custom.key-invalid": {
+		"defaultMessage": "Private key could not be read. Please select the correct key file."
+	},
+	"certificates.custom.key-encrypted": {
+		"defaultMessage": "Encrypted private keys are not supported."
+	},
+	"certificates.custom.key-is-certificate": {
+		"defaultMessage": "Selected file is a certificate, not a private key."
+	},
+	"certificates.custom.key-mismatch": {
+		"defaultMessage": "Certificate key does not match certificate"
+	},
+	"certificates.custom.status.valid": {
+		"defaultMessage": "Valid"
+	},
+	"certificates.custom.status.invalid": {
+		"defaultMessage": "Invalid"
+	},
+	"certificates.custom.status.match": {
+		"defaultMessage": "Matches"
+	},
+	"certificates.custom.status.mismatch": {
+		"defaultMessage": "Does not match"
+	},
 	"certificates.expires-in-days": {
 		"defaultMessage": "{days}d"
 	},
@@ -1036,6 +1084,69 @@
 	},
 	"settings.geo-access.presets.apply.success": {
 		"defaultMessage": "Applied preset \"{preset}\" to {count} {target}"
+	},
+	"settings.block-exploits": {
+		"defaultMessage": "Block Exploits"
+	},
+	"settings.block-exploits.description": {
+		"defaultMessage": "Edit the global blocklist used when \"Block Common Exploits\" is enabled."
+	},
+	"settings.block-exploits.notice": {
+		"defaultMessage": "Updates from new container images are merged with your changes. Duplicates are de-duplicated."
+	},
+	"settings.block-exploits.pattern": {
+		"defaultMessage": "Pattern"
+	},
+	"settings.block-exploits.variable": {
+		"defaultMessage": "Variable"
+	},
+	"settings.block-exploits.operator": {
+		"defaultMessage": "Operator"
+	},
+	"settings.block-exploits.enabled": {
+		"defaultMessage": "Enabled"
+	},
+	"settings.block-exploits.add": {
+		"defaultMessage": "Add rule"
+	},
+	"settings.block-exploits.empty": {
+		"defaultMessage": "No default rules found."
+	},
+	"settings.block-exploits.custom.empty": {
+		"defaultMessage": "No custom rules."
+	},
+	"settings.block-exploits.override": {
+		"defaultMessage": "Override"
+	},
+	"settings.block-exploits.error.quotes": {
+		"defaultMessage": "Double quotes are not allowed in patterns."
+	},
+	"settings.block-exploits.variable.help": {
+		"defaultMessage": "Type any Nginx variable (with or without $)."
+	},
+	"settings.block-exploits.error.variable.required": {
+		"defaultMessage": "Variable is required."
+	},
+	"settings.block-exploits.error.variable.invalid": {
+		"defaultMessage": "Variable name is invalid."
+	},
+	"settings.block-exploits.operator.regex": {
+		"defaultMessage": "Regex (~)"
+	},
+	"settings.block-exploits.operator.regex-insensitive": {
+		"defaultMessage": "Regex (~*, case-insensitive)"
+	},
+	"settings.block-exploits.operator.not-regex": {
+		"defaultMessage": "Not regex (!~)"
+	},
+	"settings.block-exploits.operator.not-regex-insensitive": {
+		"defaultMessage": "Not regex (!~*, case-insensitive)"
+	},
+	"settings.block-exploits.operator.equals": {
+		"defaultMessage": "Equals (=)"
+	},
+	"settings.block-exploits.operator.not-equals": {
+		"defaultMessage": "Not equals (!=)"
 	},
 	"setup.preamble": {
 		"defaultMessage": "Get started by creating your admin account."

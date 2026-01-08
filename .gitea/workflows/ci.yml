@@ -3,10 +3,11 @@ name: ci
 on:
   push:
     branches:
+      - qs
       - Release
   pull_request:
     branches:
-      - Release
+      - qs
 
 env:
   DOCKER_IMAGE: akdk7/nginx-proxy-manager-on-steroids
@@ -29,8 +30,10 @@ jobs:
           BEFORE="${{ github.event.before }}"
           AFTER="${{ github.sha }}"
           changed=false
+          bumped=false
           if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
             changed=true
+            bumped=true
           else
             if command -v rg >/dev/null; then
               if git diff --name-only "$BEFORE" "$AFTER" | rg -q "^\\.version$"; then
@@ -42,7 +45,20 @@ jobs:
               fi
             fi
           fi
+          if [[ "${changed}" == "true" && "${bumped}" == "false" ]]; then
+            before_version="$(git show "${BEFORE}:.version" 2>/dev/null | tr -d '[:space:]' || true)"
+            after_version="$(tr -d '[:space:]' < .version)"
+            if [[ -z "${before_version}" || -z "${after_version}" ]]; then
+              bumped=true
+            elif [[ "${before_version}" != "${after_version}" ]]; then
+              highest="$(printf '%s\n' "${before_version}" "${after_version}" | sort -V | tail -n1)"
+              if [[ "${highest}" == "${after_version}" ]]; then
+                bumped=true
+              fi
+            fi
+          fi
           echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          echo "bumped=$bumped" >> "$GITHUB_OUTPUT"
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -79,7 +95,7 @@ jobs:
             ${{ runner.os }}-buildx-
       - name: Read versions
         id: version_info
-        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/Release' && steps.version_change.outputs.changed == 'true'
         run: |
           set -euo pipefail
           base_version="$(tr -d '[:space:]' < .version)"
@@ -87,7 +103,7 @@ jobs:
           echo "base=$base_version" >> "$GITHUB_OUTPUT"
           echo "app=$app_version" >> "$GITHUB_OUTPUT"
       - name: Validate publish secrets
-        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/Release' && steps.version_change.outputs.changed == 'true'
         env:
           DOCKERHUB_AUTH: ${{ secrets.nginx_proxy_manager_on_steroids }}
           RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
@@ -125,7 +141,8 @@ jobs:
         run: |
           corepack enable
           corepack prepare yarn@1.22.22 --activate
-          yarn install --frozen-lockfile
+          yarn config set registry "https://registry.npmjs.org/"
+          yarn install --frozen-lockfile --network-timeout 600000
           yarn lint
           yarn test
       - name: Frontend lint/test/build
@@ -136,7 +153,8 @@ jobs:
         run: |
           corepack enable
           corepack prepare yarn@1.22.22 --activate
-          yarn install --frozen-lockfile
+          yarn config set registry "https://registry.npmjs.org/"
+          yarn install --frozen-lockfile --network-timeout 600000
           yarn lint
           yarn test:ci
           yarn build
@@ -156,7 +174,7 @@ jobs:
             --cache-from type=local,src="${BUILDX_CACHE_DIR}" \
             -t nginx-proxy-manager:local --load .
       - name: Docker login
-        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/Release' && steps.version_change.outputs.changed == 'true'
         env:
           DOCKERHUB_AUTH: ${{ secrets.nginx_proxy_manager_on_steroids }}
         run: |
@@ -179,7 +197,7 @@ jobs:
           echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
       - name: Docker build & push
         id: docker_push
-        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/Release' && steps.version_change.outputs.changed == 'true'
         env:
           IMAGE: ${{ env.DOCKER_IMAGE }}
           BASE_VERSION: ${{ steps.version_info.outputs.base }}
@@ -205,8 +223,43 @@ jobs:
             rm -rf "${BUILDX_CACHE_DIR}"
             mv "${BUILDX_CACHE_DIR}-new" "${BUILDX_CACHE_DIR}"
           fi
+      - name: Merge qs into Release
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/qs' && steps.version_change.outputs.bumped == 'true'
+        env:
+          RELEASE_MERGE_TOKEN: ${{ secrets.RELEASE_MERGE_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${RELEASE_MERGE_TOKEN}" ]]; then
+            echo "Missing Gitea token secret 'RELEASE_MERGE_TOKEN'."
+            exit 1
+          fi
+          if [[ "${RELEASE_MERGE_TOKEN}" == *:* ]]; then
+            GITEA_USER="${RELEASE_MERGE_TOKEN%%:*}"
+            GITEA_PASS="${RELEASE_MERGE_TOKEN#*:}"
+          else
+            GITEA_USER="${GITHUB_ACTOR:-gitea-actions}"
+            GITEA_PASS="${RELEASE_MERGE_TOKEN}"
+          fi
+          git config user.name "${GITEA_USER}"
+          git config user.email "${GITEA_USER}@users.noreply.local"
+          git fetch origin qs Release
+          git checkout -B Release origin/Release
+          git merge --no-ff origin/qs -m "Merge qs into Release"
+          origin_url="$(git remote get-url origin)"
+          if [[ "${origin_url}" == git@*:* ]]; then
+            host="${origin_url#git@}"
+            host="${host%%:*}"
+            path="${origin_url#git@${host}:}"
+            origin_url="https://${host}/${path}"
+          fi
+          if [[ "${origin_url}" != http*://* ]]; then
+            echo "Unsupported origin URL: ${origin_url}"
+            exit 1
+          fi
+          push_url="${origin_url/\/\//\/\/${GITEA_USER}:${GITEA_PASS}@}"
+          git push "${push_url}" Release
       - name: Install cosign
-        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/Release' && steps.version_change.outputs.changed == 'true'
         run: |
           set -euo pipefail
           COSIGN_VERSION="v2.4.1"
@@ -214,7 +267,7 @@ jobs:
             -o /usr/local/bin/cosign
           chmod +x /usr/local/bin/cosign
       - name: Sign image
-        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/Release' && steps.version_change.outputs.changed == 'true'
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}

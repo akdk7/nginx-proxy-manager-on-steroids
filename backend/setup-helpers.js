@@ -85,6 +85,11 @@ const createSetup = ({
 			.select("id")
 			.where({ id: "geo-access" })
 			.first();
+		const blockExploitsRow = await settingModel
+			.query()
+			.select("id")
+			.where({ id: "block-exploits" })
+			.first();
 
 		if (!row?.id) {
 			await settingModel.query().insert({
@@ -124,6 +129,19 @@ const createSetup = ({
 				},
 			});
 			logger.info("Geo access settings added");
+		}
+		if (!blockExploitsRow?.id) {
+			await settingModel.query().insert({
+				id: "block-exploits",
+				name: "Block Exploits",
+				description: "Global blocklist patterns for common exploits",
+				value: "block-exploits",
+				meta: {
+					disabled: [],
+					custom: [],
+				},
+			});
+			logger.info("Block exploits settings added");
 		}
 	};
 

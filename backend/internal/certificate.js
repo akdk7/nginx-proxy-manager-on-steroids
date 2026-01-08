@@ -24,6 +24,40 @@ const certbotCommand = "certbot";
 const certbotLogsDir = "/data/logs";
 const certbotWorkDir = "/tmp/letsencrypt-lib";
 
+const extractPemBlock = (content, pattern) => {
+	if (typeof content !== "string" || !content.trim()) {
+		return null;
+	}
+	const match = content.match(pattern);
+	return match ? match[0] : null;
+};
+
+const extractCertificateBlock = (content) => {
+	return (
+		extractPemBlock(content, /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/m) || content
+	);
+};
+
+const extractPrivateKeyBlock = (content) => {
+	return extractPemBlock(content, /-----BEGIN [^-]*PRIVATE KEY-----[\s\S]*?-----END [^-]*PRIVATE KEY-----/m) || content;
+};
+
+const readUploadFileContent = (file) => {
+	if (!file) {
+		return "";
+	}
+	if (typeof file.data === "string" && file.data.length) {
+		return file.data;
+	}
+	if (Buffer.isBuffer(file.data) && file.data.length) {
+		return file.data.toString();
+	}
+	if (file.tempFilePath && fs.existsSync(file.tempFilePath)) {
+		return fs.readFileSync(file.tempFilePath, "utf8");
+	}
+	return "";
+};
+
 const omissions = () => {
 	return ["is_deleted", "owner.is_deleted", "meta.dns_provider_credentials"];
 };
@@ -551,12 +585,15 @@ const internalCertificate = {
 	 * @param   {Object}  data.files
 	 * @returns {Promise}
 	 */
-	validate: (data) => {
+	validate: async (data) => {
 		// Put file contents into an object
 		const files = {};
 		_.map(data.files, (file, name) => {
 			if (internalCertificate.allowedSslFiles.indexOf(name) !== -1) {
-				files[name] = file.data.toString();
+				const content = readUploadFileContent(file);
+				if (content) {
+					files[name] = content;
+				}
 			}
 		});
 
@@ -578,13 +615,20 @@ const internalCertificate = {
 			);
 		});
 
-		return Promise.all(promises).then((files) => {
-			let data = {};
-			_.each(files, (file) => {
-				data = _.assign({}, data, file);
-			});
-			return data;
+		const results = await Promise.all(promises);
+		let resultData = {};
+		_.each(results, (file) => {
+			resultData = _.assign({}, resultData, file);
 		});
+
+		if (files.certificate && files.certificate_key) {
+			resultData.certificate_key_matches = await internalCertificate.checkKeyMatchesCertificate(
+				files.certificate,
+				files.certificate_key,
+			);
+		}
+
+		return resultData;
 	},
 
 	/**
@@ -604,10 +648,16 @@ const internalCertificate = {
 		if (typeof validations.certificate === "undefined") {
 			throw new error.ValidationError("Certificate file was not provided");
 		}
+		if (validations.certificate_key_matches === false) {
+			throw new error.ValidationError("certificates.custom.key-mismatch");
+		}
 
 		_.map(data.files, (file, name) => {
 			if (internalCertificate.allowedSslFiles.indexOf(name) !== -1) {
-				row.meta[name] = file.data.toString();
+				const content = readUploadFileContent(file);
+				if (content) {
+					row.meta[name] = content;
+				}
 			}
 		});
 
@@ -630,7 +680,18 @@ const internalCertificate = {
 	 * @param {String}  privateKey    This is the entire key contents as a string
 	 */
 	checkPrivateKey: async (privateKey) => {
-		const filepath = await tempWrite(privateKey, "/tmp");
+		const normalizedKey = typeof privateKey === "string" ? privateKey.trim() : "";
+		if (normalizedKey.includes("BEGIN CERTIFICATE") && !normalizedKey.includes("PRIVATE KEY")) {
+			throw new error.ValidationError("certificates.custom.key-is-certificate");
+		}
+		if (
+			normalizedKey.includes("BEGIN ENCRYPTED PRIVATE KEY") ||
+			normalizedKey.includes("Proc-Type: 4,ENCRYPTED")
+		) {
+			throw new error.ValidationError("certificates.custom.key-encrypted");
+		}
+		const extractedKey = extractPrivateKeyBlock(normalizedKey);
+		const filepath = await tempWrite(extractedKey, "/tmp");
 		const failTimeout = setTimeout(() => {
 			throw new error.ValidationError(
 				"Result Validation Error: Validation timed out. This could be due to the key being passphrase-protected.",
@@ -638,7 +699,7 @@ const internalCertificate = {
 		}, 10000);
 
 		try {
-			const result = await utils.exec(`openssl pkey -in ${filepath} -check -noout 2>&1 `);
+			const result = await utils.execFile("openssl", ["pkey", "-in", filepath, "-check", "-noout"]);
 			clearTimeout(failTimeout);
 			if (!result.toLowerCase().includes("key is valid")) {
 				throw new error.ValidationError(`Result Validation Error: ${result}`);
@@ -648,7 +709,53 @@ const internalCertificate = {
 		} catch (err) {
 			clearTimeout(failTimeout);
 			fs.unlinkSync(filepath);
-			throw new error.ValidationError(`Certificate Key is not valid (${err.message})`, err);
+			const errorMessageRaw =
+				typeof err?.message === "string" && err.message.trim().length
+					? err.message.trim()
+					: (err?.previous?.stderr || err?.previous?.stdout || "").toString().trim() || "Unknown error";
+			const errorMessage = errorMessageRaw.split("\n")[0].trim() || "Unknown error";
+			if (
+				errorMessage.includes("Could not read key") ||
+				errorMessage.includes("unable to load key") ||
+				errorMessage.includes("Unable to load key")
+			) {
+				throw new error.ValidationError("certificates.custom.key-invalid", err);
+			}
+			throw new error.ValidationError(`Certificate Key is not valid (${errorMessage})`, err);
+		}
+	},
+
+	/**
+	 * Checks if the provided private key matches the provided certificate.
+	 *
+	 * @param {String}  certificate    This is the entire cert contents as a string
+	 * @param {String}  privateKey     This is the entire key contents as a string
+	 */
+	checkKeyMatchesCertificate: async (certificate, privateKey) => {
+		let certificatePath = null;
+		let keyPath = null;
+		try {
+			const normalizedCert = typeof certificate === "string" ? certificate : "";
+			const normalizedKey = typeof privateKey === "string" ? privateKey : "";
+			certificatePath = await tempWrite(extractCertificateBlock(normalizedCert), "/tmp");
+			keyPath = await tempWrite(extractPrivateKeyBlock(normalizedKey), "/tmp");
+
+			const certKey = await utils.execFile("openssl", ["x509", "-in", certificatePath, "-noout", "-pubkey"]);
+			const keyKey = await utils.execFile("openssl", ["pkey", "-in", keyPath, "-pubout"]);
+
+			const normalizedCertKey = certKey.replace(/\r?\n/g, "\n").trim();
+			const normalizedKeyKey = keyKey.replace(/\r?\n/g, "\n").trim();
+
+			return normalizedCertKey === normalizedKeyKey;
+		} catch (err) {
+			throw new error.ValidationError(`Certificate Key does not match certificate (${err.message})`, err);
+		} finally {
+			if (certificatePath && fs.existsSync(certificatePath)) {
+				fs.unlinkSync(certificatePath);
+			}
+			if (keyPath && fs.existsSync(keyPath)) {
+				fs.unlinkSync(keyPath);
+			}
 		}
 	},
 
@@ -660,13 +767,17 @@ const internalCertificate = {
 	 * @param {Boolean} [throwExpired]  Throw when the certificate is out of date
 	 */
 	getCertificateInfo: async (certificate, throwExpired) => {
+		let filepath = null;
 		try {
-			const filepath = await tempWrite(certificate, "/tmp");
+			const normalizedCert = typeof certificate === "string" ? certificate : "";
+			filepath = await tempWrite(extractCertificateBlock(normalizedCert), "/tmp");
 			const certData = await internalCertificate.getCertificateInfoFromFile(filepath, throwExpired);
 			fs.unlinkSync(filepath);
 			return certData;
 		} catch (err) {
-			fs.unlinkSync(filepath);
+			if (filepath && fs.existsSync(filepath)) {
+				fs.unlinkSync(filepath);
+			}
 			throw err;
 		}
 	},

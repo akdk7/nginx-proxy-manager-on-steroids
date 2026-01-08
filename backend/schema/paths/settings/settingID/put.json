@@ -14,7 +14,7 @@
 			"schema": {
 				"type": "string",
 				"minLength": 1,
-				"enum": ["default-site", "proxy-protocol", "geo-access"]
+				"enum": ["default-site", "proxy-protocol", "geo-access", "block-exploits"]
 			},
 			"required": true,
 			"description": "Setting ID",
@@ -34,7 +34,7 @@
 						"value": {
 							"type": "string",
 							"minLength": 1,
-							"enum": ["congratulations", "404", "444", "redirect", "html", "ports", "geo-access"],
+							"enum": ["congratulations", "404", "444", "redirect", "html", "ports", "geo-access", "block-exploits"],
 							"example": "html"
 						},
 						"meta": {
@@ -109,6 +109,104 @@
 												}
 											}
 										}
+									}
+								},
+								"disabled": {
+									"type": "array",
+									"items": {
+										"oneOf": [
+											{
+												"type": "object",
+												"additionalProperties": false,
+												"required": ["section", "target", "pattern"],
+												"properties": {
+													"section": {
+														"type": "string",
+														"minLength": 1
+													},
+													"target": {
+														"type": "string",
+														"enum": ["query_string", "http_user_agent"]
+													},
+													"pattern": {
+														"type": "string",
+														"minLength": 1
+													}
+												}
+											},
+											{
+												"type": "object",
+												"additionalProperties": false,
+												"required": ["section", "variable", "operator", "pattern"],
+												"properties": {
+													"section": {
+														"type": "string",
+														"minLength": 1
+													},
+													"variable": {
+														"type": "string",
+														"minLength": 1
+													},
+													"operator": {
+														"type": "string",
+														"enum": ["~", "~*", "!~", "!~*", "=", "!="]
+													},
+													"pattern": {
+														"type": "string",
+														"minLength": 1
+													}
+												}
+											}
+										]
+									}
+								},
+								"custom": {
+									"type": "array",
+									"items": {
+										"oneOf": [
+											{
+												"type": "object",
+												"additionalProperties": false,
+												"required": ["section", "target", "pattern"],
+												"properties": {
+													"section": {
+														"type": "string",
+														"minLength": 1
+													},
+													"target": {
+														"type": "string",
+														"enum": ["query_string", "http_user_agent"]
+													},
+													"pattern": {
+														"type": "string",
+														"minLength": 1
+													}
+												}
+											},
+											{
+												"type": "object",
+												"additionalProperties": false,
+												"required": ["section", "variable", "operator", "pattern"],
+												"properties": {
+													"section": {
+														"type": "string",
+														"minLength": 1
+													},
+													"variable": {
+														"type": "string",
+														"minLength": 1
+													},
+													"operator": {
+														"type": "string",
+														"enum": ["~", "~*", "!~", "!~*", "=", "!="]
+													},
+													"pattern": {
+														"type": "string",
+														"minLength": 1
+													}
+												}
+											}
+										]
 									}
 								}
 							},

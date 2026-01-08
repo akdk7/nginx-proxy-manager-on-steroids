@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { T } from "src/locale";
+import BlockExploits from "./BlockExploits";
 import DefaultSite from "./DefaultSite";
 import GeoAccess from "./GeoAccess";
 import ProxyProtocol from "./ProxyProtocol";
@@ -7,9 +8,9 @@ import ProxyProtocol from "./ProxyProtocol";
 export default function Layout() {
 	// Taken from https://preview.tabler.io/settings.html
 	// Refer to that when updating this content
-	const [activeSection, setActiveSection] = useState<"default-site" | "proxy-protocol" | "geo-access">(
-		"default-site",
-	);
+	const [activeSection, setActiveSection] = useState<
+		"default-site" | "proxy-protocol" | "geo-access" | "block-exploits"
+	>("default-site");
 
 	return (
 		<div className="card mt-4">
@@ -62,6 +63,18 @@ export default function Layout() {
 								>
 									<T id="settings.geo-access" />
 								</a>
+								<a
+									href="#"
+									className={`list-group-item list-group-item-action d-flex align-items-center ${
+										activeSection === "block-exploits" ? "active" : ""
+									}`}
+									onClick={(e) => {
+										e.preventDefault();
+										setActiveSection("block-exploits");
+									}}
+								>
+									<T id="settings.block-exploits" />
+								</a>
 							</div>
 						</div>
 					</div>
@@ -70,8 +83,10 @@ export default function Layout() {
 							<DefaultSite />
 						) : activeSection === "proxy-protocol" ? (
 							<ProxyProtocol />
-						) : (
+						) : activeSection === "geo-access" ? (
 							<GeoAccess />
+						) : (
+							<BlockExploits />
 						)}
 					</div>
 				</div>

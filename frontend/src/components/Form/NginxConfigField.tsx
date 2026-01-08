@@ -20,11 +20,6 @@ export function NginxConfigField({
 					<label htmlFor={id} className="form-label">
 						<T id={label} />
 					</label>
-					<NginxConfigCheatSheet
-						value={field.value}
-						onChange={(nextValue) => form.setFieldValue(field.name, nextValue)}
-						context="server"
-					/>
 					<CodeEditor
 						language="nginx"
 						placeholder={intl.formatMessage({ id: "nginx-config.placeholder" })}
@@ -39,6 +34,11 @@ export function NginxConfigField({
 							backgroundColor: "var(--tblr-bg-surface-dark)",
 						}}
 						{...field}
+					/>
+					<NginxConfigCheatSheet
+						value={field.value}
+						onChange={(nextValue) => form.setFieldValue(field.name, nextValue)}
+						context="server"
 					/>
 				</div>
 			)}

@@ -15,8 +15,24 @@ export interface TokenResponse {
 }
 
 export interface ValidatedCertificateResponse {
-	certificate: Record<string, any>;
-	certificateKey: boolean;
+	certificate?: {
+		cn: string;
+		issuer: string;
+		dates: {
+			from: number;
+			to: number;
+		};
+	};
+	certificateKey?: boolean;
+	certificateKeyMatches?: boolean;
+	intermediateCertificate?: {
+		cn: string;
+		issuer: string;
+		dates: {
+			from: number;
+			to: number;
+		};
+	};
 }
 
 export interface LoginAsTokenResponse extends TokenResponse {

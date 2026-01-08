@@ -82,6 +82,12 @@ const internalSetting = {
 							return row;
 						});
 				}
+				if (row.id === "block-exploits") {
+					return internalNginx
+						.generateBlockExploitsConfig()
+						.then(() => internalNginx.reloadIfRunning())
+						.then(() => row);
+				}
 				return row;
 			});
 	},
@@ -106,6 +112,17 @@ const internalSetting = {
 							row.meta.status = status;
 							return row;
 						});
+					}
+					if (row.id === "block-exploits") {
+						row.meta = row.meta || {};
+						if (!Array.isArray(row.meta.disabled)) {
+							row.meta.disabled = [];
+						}
+						if (!Array.isArray(row.meta.custom)) {
+							row.meta.custom = [];
+						}
+						row.meta.defaults = internalNginx.getBlockExploitsDefaults();
+						return row;
 					}
 					return row;
 				}
