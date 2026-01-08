@@ -188,6 +188,15 @@
 	"certificates.custom.key-match": {
 		"defaultMessage": "Key matches certificate"
 	},
+	"certificates.custom.key-invalid": {
+		"defaultMessage": "Private key could not be read. Please select the correct key file."
+	},
+	"certificates.custom.key-encrypted": {
+		"defaultMessage": "Encrypted private keys are not supported."
+	},
+	"certificates.custom.key-is-certificate": {
+		"defaultMessage": "Selected file is a certificate, not a private key."
+	},
 	"certificates.custom.key-mismatch": {
 		"defaultMessage": "Certificate key does not match certificate"
 	},

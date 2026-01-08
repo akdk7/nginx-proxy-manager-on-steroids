@@ -188,6 +188,15 @@
 	"certificates.custom.key-match": {
 		"defaultMessage": "Schlüssel passt zum Zertifikat"
 	},
+	"certificates.custom.key-invalid": {
+		"defaultMessage": "Privater Schlüssel konnte nicht gelesen werden. Bitte die richtige Schlüsseldatei auswählen."
+	},
+	"certificates.custom.key-encrypted": {
+		"defaultMessage": "Verschlüsselte private Schlüssel werden nicht unterstützt."
+	},
+	"certificates.custom.key-is-certificate": {
+		"defaultMessage": "Die ausgewählte Datei ist ein Zertifikat, kein privater Schlüssel."
+	},
 	"certificates.custom.key-mismatch": {
 		"defaultMessage": "Zertifikatsschlüssel passt nicht zum Zertifikat"
 	},

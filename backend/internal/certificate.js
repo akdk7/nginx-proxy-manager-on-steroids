@@ -24,6 +24,24 @@ const certbotCommand = "certbot";
 const certbotLogsDir = "/data/logs";
 const certbotWorkDir = "/tmp/letsencrypt-lib";
 
+const extractPemBlock = (content, pattern) => {
+	if (typeof content !== "string" || !content.trim()) {
+		return null;
+	}
+	const match = content.match(pattern);
+	return match ? match[0] : null;
+};
+
+const extractCertificateBlock = (content) => {
+	return (
+		extractPemBlock(content, /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/m) || content
+	);
+};
+
+const extractPrivateKeyBlock = (content) => {
+	return extractPemBlock(content, /-----BEGIN [^-]*PRIVATE KEY-----[\s\S]*?-----END [^-]*PRIVATE KEY-----/m) || content;
+};
+
 const omissions = () => {
 	return ["is_deleted", "owner.is_deleted", "meta.dns_provider_credentials"];
 };
@@ -640,7 +658,18 @@ const internalCertificate = {
 	 * @param {String}  privateKey    This is the entire key contents as a string
 	 */
 	checkPrivateKey: async (privateKey) => {
-		const filepath = await tempWrite(privateKey, "/tmp");
+		const normalizedKey = typeof privateKey === "string" ? privateKey.trim() : "";
+		if (normalizedKey.includes("BEGIN CERTIFICATE") && !normalizedKey.includes("PRIVATE KEY")) {
+			throw new error.ValidationError("certificates.custom.key-is-certificate");
+		}
+		if (
+			normalizedKey.includes("BEGIN ENCRYPTED PRIVATE KEY") ||
+			normalizedKey.includes("Proc-Type: 4,ENCRYPTED")
+		) {
+			throw new error.ValidationError("certificates.custom.key-encrypted");
+		}
+		const extractedKey = extractPrivateKeyBlock(normalizedKey);
+		const filepath = await tempWrite(extractedKey, "/tmp");
 		const failTimeout = setTimeout(() => {
 			throw new error.ValidationError(
 				"Result Validation Error: Validation timed out. This could be due to the key being passphrase-protected.",
@@ -663,6 +692,13 @@ const internalCertificate = {
 					? err.message.trim()
 					: (err?.previous?.stderr || err?.previous?.stdout || "").toString().trim() || "Unknown error";
 			const errorMessage = errorMessageRaw.split("\n")[0].trim() || "Unknown error";
+			if (
+				errorMessage.includes("Could not read key") ||
+				errorMessage.includes("unable to load key") ||
+				errorMessage.includes("Unable to load key")
+			) {
+				throw new error.ValidationError("certificates.custom.key-invalid", err);
+			}
 			throw new error.ValidationError(`Certificate Key is not valid (${errorMessage})`, err);
 		}
 	},
@@ -677,8 +713,10 @@ const internalCertificate = {
 		let certificatePath = null;
 		let keyPath = null;
 		try {
-			certificatePath = await tempWrite(certificate, "/tmp");
-			keyPath = await tempWrite(privateKey, "/tmp");
+			const normalizedCert = typeof certificate === "string" ? certificate : "";
+			const normalizedKey = typeof privateKey === "string" ? privateKey : "";
+			certificatePath = await tempWrite(extractCertificateBlock(normalizedCert), "/tmp");
+			keyPath = await tempWrite(extractPrivateKeyBlock(normalizedKey), "/tmp");
 
 			const certKey = await utils.execFile("openssl", ["x509", "-in", certificatePath, "-noout", "-pubkey"]);
 			const keyKey = await utils.execFile("openssl", ["pkey", "-in", keyPath, "-pubout"]);
@@ -707,13 +745,17 @@ const internalCertificate = {
 	 * @param {Boolean} [throwExpired]  Throw when the certificate is out of date
 	 */
 	getCertificateInfo: async (certificate, throwExpired) => {
+		let filepath = null;
 		try {
-			const filepath = await tempWrite(certificate, "/tmp");
+			const normalizedCert = typeof certificate === "string" ? certificate : "";
+			filepath = await tempWrite(extractCertificateBlock(normalizedCert), "/tmp");
 			const certData = await internalCertificate.getCertificateInfoFromFile(filepath, throwExpired);
 			fs.unlinkSync(filepath);
 			return certData;
 		} catch (err) {
-			fs.unlinkSync(filepath);
+			if (filepath && fs.existsSync(filepath)) {
+				fs.unlinkSync(filepath);
+			}
 			throw err;
 		}
 	},
