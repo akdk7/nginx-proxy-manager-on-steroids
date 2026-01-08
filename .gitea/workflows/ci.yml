@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - qs
+      - Release
   pull_request:
     branches:
       - qs
@@ -79,7 +80,7 @@ jobs:
             ${{ runner.os }}-buildx-
       - name: Read versions
         id: version_info
-        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/Release' && steps.version_change.outputs.changed == 'true'
         run: |
           set -euo pipefail
           base_version="$(tr -d '[:space:]' < .version)"
@@ -87,7 +88,7 @@ jobs:
           echo "base=$base_version" >> "$GITHUB_OUTPUT"
           echo "app=$app_version" >> "$GITHUB_OUTPUT"
       - name: Validate publish secrets
-        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/Release' && steps.version_change.outputs.changed == 'true'
         env:
           DOCKERHUB_AUTH: ${{ secrets.nginx_proxy_manager_on_steroids }}
           RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
@@ -156,7 +157,7 @@ jobs:
             --cache-from type=local,src="${BUILDX_CACHE_DIR}" \
             -t nginx-proxy-manager:local --load .
       - name: Docker login
-        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/Release' && steps.version_change.outputs.changed == 'true'
         env:
           DOCKERHUB_AUTH: ${{ secrets.nginx_proxy_manager_on_steroids }}
         run: |
@@ -179,7 +180,7 @@ jobs:
           echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
       - name: Docker build & push
         id: docker_push
-        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/Release' && steps.version_change.outputs.changed == 'true'
         env:
           IMAGE: ${{ env.DOCKER_IMAGE }}
           BASE_VERSION: ${{ steps.version_info.outputs.base }}
@@ -206,7 +207,7 @@ jobs:
             mv "${BUILDX_CACHE_DIR}-new" "${BUILDX_CACHE_DIR}"
           fi
       - name: Install cosign
-        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/Release' && steps.version_change.outputs.changed == 'true'
         run: |
           set -euo pipefail
           COSIGN_VERSION="v2.4.1"
@@ -214,7 +215,7 @@ jobs:
             -o /usr/local/bin/cosign
           chmod +x /usr/local/bin/cosign
       - name: Sign image
-        if: github.event_name == 'push' && steps.version_change.outputs.changed == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/Release' && steps.version_change.outputs.changed == 'true'
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
