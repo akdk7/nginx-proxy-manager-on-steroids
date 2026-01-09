@@ -25,6 +25,8 @@ https://github.com/akdk7/nginx-proxy-manager-on-steroids
 - Dashboard widgets for host status, certificate expiry, and recent activity
 - German locale with translated help docs
 - Hardened CORS and upload limits
+- Edit exploit list
+- CORS settings per Proxy Host
 
 ## Quick start (Docker)
 

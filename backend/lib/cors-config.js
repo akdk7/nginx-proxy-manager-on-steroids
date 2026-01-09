@@ -28,13 +28,11 @@ const normalizeOrigins = (value, fallback) => {
 };
 
 const normalizeHeaderList = (value, fallback, allowEmpty = false) => {
-	if (Array.isArray(value)) {
-		value = value.join(", ");
-	}
-	if (typeof value !== "string") {
+	const raw = Array.isArray(value) ? value.join(", ") : value;
+	if (typeof raw !== "string") {
 		return sanitizeHeaderValue(fallback || "");
 	}
-	const normalized = value
+	const normalized = raw
 		.split(",")
 		.map((part) => part.trim())
 		.filter(Boolean)
