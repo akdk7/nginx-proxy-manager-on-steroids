@@ -87,6 +87,12 @@
 						"security_headers": {
 							"$ref": "../../../components/proxy-host-object.json#/properties/security_headers"
 						},
+						"cors_override": {
+							"$ref": "../../../components/proxy-host-object.json#/properties/cors_override"
+						},
+						"cors": {
+							"$ref": "../../../components/proxy-host-object.json#/properties/cors"
+						},
 						"geo_access_override": {
 							"$ref": "../../../components/proxy-host-object.json#/properties/geo_access_override"
 						},
