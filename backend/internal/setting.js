@@ -2,6 +2,7 @@ import fs from "node:fs";
 import errs from "../lib/error.js";
 import settingModel from "../models/setting.js";
 import internalNginx from "./nginx.js";
+import { getCorsDefaults } from "../lib/cors-config.js";
 
 const internalSetting = {
 	/**
@@ -102,10 +103,22 @@ const internalSetting = {
 		return access
 			.can("settings:get", data.id)
 			.then(() => {
+				if (data.id === "cors-defaults") {
+					return {
+						id: "cors-defaults",
+						name: "CORS Defaults",
+						description: "Resolved CORS defaults from environment",
+						value: "cors-defaults",
+						meta: getCorsDefaults(),
+					};
+				}
 				return settingModel.query().where("id", data.id).first();
 			})
 			.then((row) => {
 				if (row) {
+					if (row.id === "cors-defaults") {
+						return row;
+					}
 					if (row.id === "geo-access") {
 						return internalNginx.getGeoAccessStatus().then((status) => {
 							row.meta = row.meta || {};

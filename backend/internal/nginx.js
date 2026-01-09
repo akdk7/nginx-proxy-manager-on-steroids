@@ -11,6 +11,7 @@ import redirectionHostModel from "../models/redirection_host.js";
 import deadHostModel from "../models/dead_host.js";
 import streamModel from "../models/stream.js";
 import settingModel from "../models/setting.js";
+import { getCorsDefaults, normalizeCorsConfig } from "../lib/cors-config.js";
 import {
 	hasHeader,
 	isIpAddress,
@@ -960,6 +961,7 @@ const internalNginx = {
 			);
 			locationCopy.security_headers = mergeSecurityHeaders(host.security_headers, host.locations[i]?.security_headers);
 			locationCopy.hsts_header_set = hasHeader(locationCopy.security_headers, "Strict-Transport-Security");
+			locationCopy.cors = host.cors;
 			const locationOverridesRateLimit = rateLimitOverrideKeys.some(
 				(key) => typeof host.locations[i][key] !== "undefined",
 			);
@@ -1028,6 +1030,17 @@ const internalNginx = {
 
 		host.security_headers = sanitizeSecurityHeaders(host.security_headers);
 		host.hsts_header_set = hasHeader(host.security_headers, "Strict-Transport-Security");
+		const corsDefaults = getCorsDefaults();
+		const corsOverride = host.cors_override === 1 || host.cors_override === true;
+		const corsConfig = corsOverride ? normalizeCorsConfig(host.cors, corsDefaults) : corsDefaults;
+		if (corsConfig.enabled) {
+			host.cors = {
+				...corsConfig,
+				origin_variable: `$cors_origin_${host.id}`,
+			};
+		} else {
+			host.cors = null;
+		}
 		const upstreamEnabled = host.upstream_enabled === 1 || host.upstream_enabled === true;
 		const upstreamServers = sanitizeUpstreamServers(host.upstream_servers);
 		const hasExplicitUpstream = upstreamEnabled && upstreamServers.length > 0;

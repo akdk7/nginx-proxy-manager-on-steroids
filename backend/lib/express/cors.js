@@ -1,27 +1,29 @@
-const allowedOrigins = (process.env.CORS_ORIGINS || "")
-	.split(",")
-	.map((origin) => origin.trim())
-	.filter(Boolean);
+import { getCorsDefaults } from "../cors-config.js";
 
-const allowAllOrigins = allowedOrigins.includes("*");
-const isOriginAllowed = (origin) => allowAllOrigins || allowedOrigins.includes(origin);
+const corsDefaults = getCorsDefaults();
+const isOriginAllowed = (origin) =>
+	corsDefaults.allow_all_origins || corsDefaults.allow_origins.includes(origin);
 
 export default (req, res, next) => {
 	if (req.headers.origin) {
 		res.set({ Vary: "Origin" });
-		if (!isOriginAllowed(req.headers.origin)) {
+		if (!corsDefaults.enabled || !isOriginAllowed(req.headers.origin)) {
 			next();
 			return;
 		}
-		res.set({
+		const headers = {
 			"Access-Control-Allow-Origin": req.headers.origin,
-			"Access-Control-Allow-Credentials": true,
-			"Access-Control-Allow-Methods": "OPTIONS, GET, POST, PUT, DELETE, PATCH",
-			"Access-Control-Allow-Headers":
-				"Content-Type, Cache-Control, Pragma, Expires, Authorization, X-Dataset-Total, X-Dataset-Offset, X-Dataset-Limit",
-			"Access-Control-Max-Age": 5 * 60,
-			"Access-Control-Expose-Headers": "X-Dataset-Total, X-Dataset-Offset, X-Dataset-Limit",
-		});
+			"Access-Control-Allow-Methods": corsDefaults.allow_methods,
+			"Access-Control-Allow-Headers": corsDefaults.allow_headers,
+			"Access-Control-Max-Age": corsDefaults.max_age,
+		};
+		if (corsDefaults.allow_credentials) {
+			headers["Access-Control-Allow-Credentials"] = true;
+		}
+		if (corsDefaults.expose_headers) {
+			headers["Access-Control-Expose-Headers"] = corsDefaults.expose_headers;
+		}
+		res.set(headers);
 		next();
 	} else {
 		// No origin
