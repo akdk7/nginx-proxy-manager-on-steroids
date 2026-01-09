@@ -181,6 +181,7 @@
   "host.cors.enable": "Aktivieren",
   "host.cors.disable": "Deaktivieren",
   "host.cors.notice": "Überschreibt die globalen CORS-Defaults für diesen Host.",
+  "host.cors.defaults.title": "Globale Defaults",
   "host.cors.origins": "Erlaubte Origins",
   "host.cors.origins.help": "Kommagetrennte Liste oder * für alle. Leer = CORS aus.",
   "host.cors.methods": "Erlaubte Methoden",

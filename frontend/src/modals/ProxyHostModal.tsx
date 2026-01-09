@@ -520,6 +520,7 @@ const ProxyHostModal = EasyModal.create(({ hostId, visible, remove, seed }: Prop
 	const { data, isLoading, error } = useProxyHost(hostId);
 	const { mutate: setProxyHost } = useSetProxyHost();
 	const { data: geoAccessSetting } = useSetting("geo-access");
+	const { data: corsDefaultsSetting } = useSetting("cors-defaults");
 	const [errorMsg, setErrorMsg] = useState<ReactNode | null>(null);
 	const [forwardHeartbeatKey, setForwardHeartbeatKey] = useState(0);
 	const formData =
@@ -668,6 +669,45 @@ const ProxyHostModal = EasyModal.create(({ hostId, visible, remove, seed }: Prop
 							(preset: any) => preset.id === values.geoAccessPreset,
 						);
 						const geoAccessSource = values.geoAccessPreset && selectedPreset ? "preset" : "custom";
+						const corsDefaultsMeta = corsDefaultsSetting?.meta || {};
+						const corsDefaults = {
+							enabled:
+								typeof corsDefaultsMeta.enabled === "boolean"
+									? corsDefaultsMeta.enabled
+									: defaultCorsConfig.enabled ?? true,
+							allowAllOrigins:
+								typeof corsDefaultsMeta.allowAllOrigins === "boolean"
+									? corsDefaultsMeta.allowAllOrigins
+									: false,
+							allowOrigins: Array.isArray(corsDefaultsMeta.allowOrigins)
+								? corsDefaultsMeta.allowOrigins
+								: defaultCorsConfig.allowOrigins || [],
+							allowMethods: corsDefaultsMeta.allowMethods || defaultCorsConfig.allowMethods,
+							allowHeaders: corsDefaultsMeta.allowHeaders || defaultCorsConfig.allowHeaders,
+							exposeHeaders:
+								typeof corsDefaultsMeta.exposeHeaders === "string"
+									? corsDefaultsMeta.exposeHeaders
+									: defaultCorsConfig.exposeHeaders || "",
+							allowCredentials:
+								typeof corsDefaultsMeta.allowCredentials === "boolean"
+									? corsDefaultsMeta.allowCredentials
+									: defaultCorsConfig.allowCredentials ?? false,
+							maxAge:
+								typeof corsDefaultsMeta.maxAge === "number"
+									? corsDefaultsMeta.maxAge
+									: defaultCorsConfig.maxAge ?? 0,
+						};
+						const corsDefaultsOrigins = corsDefaults.allowAllOrigins
+							? "*"
+							: corsDefaults.allowOrigins.length
+								? corsDefaults.allowOrigins.join(", ")
+								: "-";
+						const corsDefaultsEnabledLabel = corsDefaults.enabled ? <T id="enabled" /> : <T id="disabled" />;
+						const corsDefaultsCredentialsLabel = corsDefaults.allowCredentials ? (
+							<T id="enabled" />
+						) : (
+							<T id="disabled" />
+						);
 						const corsState = values.corsOverride
 							? values.cors?.enabled
 								? "enabled"
@@ -1207,6 +1247,62 @@ const ProxyHostModal = EasyModal.create(({ hostId, visible, remove, seed }: Prop
 													<div className="text-muted small mt-2">
 														<T id="host.cors.notice" />
 													</div>
+													<details className="mt-3">
+														<summary className="fw-semibold">
+															<T id="host.cors.defaults.title" />
+														</summary>
+														<div className="small mt-2">
+															<div>
+																<span className="fw-semibold">
+																	<T id="host.cors.state" />
+																	{": "}
+																</span>
+																{corsDefaultsEnabledLabel}
+															</div>
+															<div>
+																<span className="fw-semibold">
+																	<T id="host.cors.origins" />
+																	{": "}
+																</span>
+																{corsDefaultsOrigins}
+															</div>
+															<div>
+																<span className="fw-semibold">
+																	<T id="host.cors.methods" />
+																	{": "}
+																</span>
+																{corsDefaults.allowMethods || "-"}
+															</div>
+															<div>
+																<span className="fw-semibold">
+																	<T id="host.cors.headers" />
+																	{": "}
+																</span>
+																{corsDefaults.allowHeaders || "-"}
+															</div>
+															<div>
+																<span className="fw-semibold">
+																	<T id="host.cors.expose" />
+																	{": "}
+																</span>
+																{corsDefaults.exposeHeaders || "-"}
+															</div>
+															<div>
+																<span className="fw-semibold">
+																	<T id="host.cors.credentials" />
+																	{": "}
+																</span>
+																{corsDefaultsCredentialsLabel}
+															</div>
+															<div>
+																<span className="fw-semibold">
+																	<T id="host.cors.max-age" />
+																	{": "}
+																</span>
+																{Number.isFinite(corsDefaults.maxAge) ? corsDefaults.maxAge : "-"}
+															</div>
+														</div>
+													</details>
 													<div className="row mt-3">
 														<div className="col-md-12">
 															<label className="form-label" htmlFor="corsAllowOrigins">

@@ -181,6 +181,7 @@
   "host.cors.enable": "Enable",
   "host.cors.disable": "Disable",
   "host.cors.notice": "Overrides the global CORS defaults for this host.",
+  "host.cors.defaults.title": "Global defaults",
   "host.cors.origins": "Allowed Origins",
   "host.cors.origins.help": "Comma-separated list or * to allow all. Empty disables CORS.",
   "host.cors.methods": "Allowed Methods",

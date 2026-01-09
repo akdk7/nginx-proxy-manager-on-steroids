@@ -617,6 +617,9 @@
 	"host.cors.notice": {
 		"defaultMessage": "Überschreibt die globalen CORS-Defaults für diesen Host."
 	},
+	"host.cors.defaults.title": {
+		"defaultMessage": "Globale Defaults"
+	},
 	"host.cors.origins": {
 		"defaultMessage": "Erlaubte Origins"
 	},
