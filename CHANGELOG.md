@@ -4,6 +4,9 @@ This changelog lists commits authored by akdk7. Only commits with fuller, descri
 messages are included (generic short messages like "Fix" or "Bug" are excluded).
 Commit messages are translated to English.
 
+## 2026-01-09 - 2.13.1-steroids.12
+- Feature: Added per-proxy-host CORS overrides with global defaults display and Nginx CORS header maps. (CORS)
+
 ## 2026-01-08 - 2.13.1-steroids.10
 - Feature: Extended exploit rules with variable + operator support, UI selectors with suggestions, and backend merge into block-exploits.conf. (c0339eb4)
 - Feature: Made the exploit list globally editable under Settings while keeping enforcement tied to per-host "Block Common Exploits". (fe19dd1f)

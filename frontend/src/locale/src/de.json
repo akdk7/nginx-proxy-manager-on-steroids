@@ -599,6 +599,48 @@
 	"host.geo-access.state": {
 		"defaultMessage": "Überschreiben"
 	},
+	"host.cors": {
+		"defaultMessage": "CORS"
+	},
+	"host.cors.state": {
+		"defaultMessage": "Überschreiben"
+	},
+	"host.cors.inherit": {
+		"defaultMessage": "Globale Defaults verwenden"
+	},
+	"host.cors.enable": {
+		"defaultMessage": "Aktivieren"
+	},
+	"host.cors.disable": {
+		"defaultMessage": "Deaktivieren"
+	},
+	"host.cors.notice": {
+		"defaultMessage": "Überschreibt die globalen CORS-Defaults für diesen Host."
+	},
+	"host.cors.defaults.title": {
+		"defaultMessage": "Globale Defaults"
+	},
+	"host.cors.origins": {
+		"defaultMessage": "Erlaubte Origins"
+	},
+	"host.cors.origins.help": {
+		"defaultMessage": "Kommagetrennte Liste oder * für alle. Leer = CORS aus."
+	},
+	"host.cors.methods": {
+		"defaultMessage": "Erlaubte Methoden"
+	},
+	"host.cors.headers": {
+		"defaultMessage": "Erlaubte Header"
+	},
+	"host.cors.expose": {
+		"defaultMessage": "Expose-Header"
+	},
+	"host.cors.credentials": {
+		"defaultMessage": "Credentials erlauben"
+	},
+	"host.cors.max-age": {
+		"defaultMessage": "Max Age (Sekunden)"
+	},
 	"host.geo-access.inherit": {
 		"defaultMessage": "Globale Einstellungen verwenden"
 	},

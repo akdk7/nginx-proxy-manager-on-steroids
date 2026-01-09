@@ -114,6 +114,16 @@ export interface SecurityHeader {
 	value: string;
 }
 
+export interface CorsConfig {
+	enabled?: boolean;
+	allowOrigins?: string[];
+	allowMethods?: string;
+	allowHeaders?: string;
+	exposeHeaders?: string;
+	allowCredentials?: boolean;
+	maxAge?: number;
+}
+
 export interface UpstreamServer {
 	host: string;
 	port: number;
@@ -159,6 +169,8 @@ export interface ProxyHost {
 	upstreamServers: UpstreamServer[];
 	upstreamSslCertificateId: number;
 	securityHeaders: SecurityHeader[];
+	corsOverride?: boolean;
+	cors?: CorsConfig;
 	geoAccessOverride: boolean;
 	geoAccessEnabled: boolean;
 	geoAccessMode: string;

@@ -27,6 +27,7 @@ const boolFields = [
 	"upstream_enabled",
 	"geo_access_override",
 	"geo_access_enabled",
+	"cors_override",
 ];
 
 class ProxyHost extends Model {
@@ -82,6 +83,7 @@ class ProxyHost extends Model {
 			"locations",
 			"upstream_servers",
 			"security_headers",
+			"cors",
 			"geo_access_countries",
 		];
 	}
