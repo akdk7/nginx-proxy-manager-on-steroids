@@ -4,7 +4,7 @@ This changelog lists commits authored by akdk7. Only commits with fuller, descri
 messages are included (generic short messages like "Fix" or "Bug" are excluded).
 Commit messages are translated to English.
 
-## 2026-01-09 - 2.13.1-steroids.11
+## 2026-01-09 - 2.13.1-steroids.12
 - Feature: Added per-proxy-host CORS overrides with global defaults display and Nginx CORS header maps. (CORS)
 
 ## 2026-01-08 - 2.13.1-steroids.10
