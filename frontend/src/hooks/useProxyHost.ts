@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createProxyHost, getProxyHost, type ProxyHost, updateProxyHost } from "src/api/backend";
+import { defaultCorsConfig } from "src/modules/corsDefaults";
 
 const fetchProxyHost = (id: number | "new") => {
 	if (id === "new") {
@@ -25,6 +26,8 @@ const fetchProxyHost = (id: number | "new") => {
 			upstreamServers: [],
 			upstreamSslCertificateId: 0,
 			securityHeaders: [],
+			corsOverride: false,
+			cors: { ...defaultCorsConfig },
 			geoAccessOverride: false,
 			geoAccessEnabled: false,
 			geoAccessMode: "allow",

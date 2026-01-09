@@ -24,6 +24,7 @@ import { validateUpstreamServers } from "./proxyHostValidation";
 import { useProxyHost, useSetProxyHost, useSetting, useUser } from "src/hooks";
 import { intl, T } from "src/locale";
 import { MANAGE, PROXY_HOSTS } from "src/modules/Permissions";
+import { defaultCorsConfig } from "src/modules/corsDefaults";
 import { validateNumber, validateString } from "src/modules/Validations";
 import { showObjectSuccess } from "src/notifications";
 
@@ -49,6 +50,18 @@ const normalizeListenPortsInput = (value: unknown) => {
 	const uniquePorts = Array.from(new Set<number>(parsedPorts)).sort((a, b) => a - b);
 	return { ports: uniquePorts, hasValue: true };
 };
+
+const parseCorsOriginsInput = (value: string) => {
+	if (!value) {
+		return [];
+	}
+	return value
+		.split(/[\n,]/)
+		.map((origin) => origin.trim())
+		.filter(Boolean);
+};
+
+const formatCorsOrigins = (origins: unknown) => (Array.isArray(origins) ? origins.join(", ") : "");
 
 const validateProxyHost = (values: any) => {
 	const errors = {
@@ -578,6 +591,14 @@ const ProxyHostModal = EasyModal.create(({ hostId, visible, remove, seed }: Prop
 							upstreamServers: formData?.upstreamServers || [],
 							upstreamSslCertificateId: formData?.upstreamSslCertificateId || 0,
 							securityHeaders: formData?.securityHeaders || [],
+							corsOverride: formData?.corsOverride || false,
+							cors: {
+								...defaultCorsConfig,
+								...(formData?.cors || {}),
+								allowOrigins: Array.isArray(formData?.cors?.allowOrigins)
+									? formData.cors.allowOrigins
+									: defaultCorsConfig.allowOrigins,
+							},
 							geoAccessOverride: formData?.geoAccessOverride || false,
 							geoAccessEnabled: formData?.geoAccessEnabled || false,
 							geoAccessMode: formData?.geoAccessMode || "allow",
@@ -647,6 +668,12 @@ const ProxyHostModal = EasyModal.create(({ hostId, visible, remove, seed }: Prop
 							(preset: any) => preset.id === values.geoAccessPreset,
 						);
 						const geoAccessSource = values.geoAccessPreset && selectedPreset ? "preset" : "custom";
+						const corsState = values.corsOverride
+							? values.cors?.enabled
+								? "enabled"
+								: "disabled"
+							: "inherit";
+						const corsOriginsValue = formatCorsOrigins(values.cors?.allowOrigins);
 
 						return (
 							<Form noValidate>
@@ -719,6 +746,18 @@ const ProxyHostModal = EasyModal.create(({ hostId, visible, remove, seed }: Prop
 													role="tab"
 												>
 													<T id="host.headers" />
+												</a>
+											</li>
+											<li className="nav-item" role="presentation">
+												<a
+													href="#tab-cors"
+													className="nav-link"
+													data-bs-toggle="tab"
+													aria-selected="false"
+													tabIndex={-1}
+													role="tab"
+												>
+													<T id="host.cors" />
 												</a>
 											</li>
 											<li className="nav-item" role="presentation">
@@ -1122,6 +1161,173 @@ const ProxyHostModal = EasyModal.create(({ hostId, visible, remove, seed }: Prop
 														onChange={(headers) => setFieldValue("securityHeaders", headers)}
 														prefix="proxy-host-headers"
 													/>
+												</div>
+											</div>
+											<div className="tab-pane" id="tab-cors" role="tabpanel">
+												<div className="mb-3">
+													<h4 className="py-2">
+														<T id="host.cors" />
+													</h4>
+													<div className="row">
+														<div className="col-md-4">
+															<label className="form-label" htmlFor="corsState">
+																<T id="host.cors.state" />
+															</label>
+															<select
+																id="corsState"
+																className="form-control"
+																value={corsState}
+																onChange={(e) => {
+																	const next = e.target.value;
+																	if (next === "inherit") {
+																		setFieldValue("corsOverride", false);
+																		return;
+																	}
+																	const nextCors = {
+																		...defaultCorsConfig,
+																		...(values.cors || {}),
+																	};
+																	nextCors.enabled = next === "enabled";
+																	setFieldValue("corsOverride", true);
+																	setFieldValue("cors", nextCors);
+																}}
+															>
+																<option value="inherit">
+																	<T id="host.cors.inherit" />
+																</option>
+																<option value="enabled">
+																	<T id="host.cors.enable" />
+																</option>
+																<option value="disabled">
+																	<T id="host.cors.disable" />
+																</option>
+															</select>
+														</div>
+													</div>
+													<div className="text-muted small mt-2">
+														<T id="host.cors.notice" />
+													</div>
+													<div className="row mt-3">
+														<div className="col-md-12">
+															<label className="form-label" htmlFor="corsAllowOrigins">
+																<T id="host.cors.origins" />
+															</label>
+															<textarea
+																id="corsAllowOrigins"
+																className="form-control"
+																rows={3}
+																value={corsOriginsValue}
+																disabled={corsState !== "enabled"}
+																onChange={(e) =>
+																	setFieldValue(
+																		"cors.allowOrigins",
+																		parseCorsOriginsInput(e.target.value),
+																	)
+																}
+															/>
+															<div className="form-text">
+																<T id="host.cors.origins.help" />
+															</div>
+														</div>
+													</div>
+													<div className="row mt-3">
+														<div className="col-md-6">
+															<Field name="cors.allowMethods">
+																{({ field }: any) => (
+																	<div className="mb-3">
+																		<label className="form-label" htmlFor="corsAllowMethods">
+																			<T id="host.cors.methods" />
+																		</label>
+																		<input
+																			{...field}
+																			id="corsAllowMethods"
+																			type="text"
+																			className="form-control"
+																			disabled={corsState !== "enabled"}
+																		/>
+																	</div>
+																)}
+															</Field>
+														</div>
+														<div className="col-md-6">
+															<Field name="cors.allowHeaders">
+																{({ field }: any) => (
+																	<div className="mb-3">
+																		<label className="form-label" htmlFor="corsAllowHeaders">
+																			<T id="host.cors.headers" />
+																		</label>
+																		<input
+																			{...field}
+																			id="corsAllowHeaders"
+																			type="text"
+																			className="form-control"
+																			disabled={corsState !== "enabled"}
+																		/>
+																	</div>
+																)}
+															</Field>
+														</div>
+													</div>
+													<div className="row">
+														<div className="col-md-6">
+															<Field name="cors.exposeHeaders">
+																{({ field }: any) => (
+																	<div className="mb-3">
+																		<label className="form-label" htmlFor="corsExposeHeaders">
+																			<T id="host.cors.expose" />
+																		</label>
+																		<input
+																			{...field}
+																			id="corsExposeHeaders"
+																			type="text"
+																			className="form-control"
+																			disabled={corsState !== "enabled"}
+																		/>
+																	</div>
+																)}
+															</Field>
+														</div>
+														<div className="col-md-3">
+															<Field name="cors.maxAge">
+																{({ field }: any) => (
+																	<div className="mb-3">
+																		<label className="form-label" htmlFor="corsMaxAge">
+																			<T id="host.cors.max-age" />
+																		</label>
+																		<input
+																			{...field}
+																			id="corsMaxAge"
+																			type="number"
+																			min={0}
+																			className="form-control"
+																			disabled={corsState !== "enabled"}
+																		/>
+																	</div>
+																)}
+															</Field>
+														</div>
+														<div className="col-md-3">
+															<label
+																className="form-check form-switch mt-4"
+																htmlFor="corsAllowCredentials"
+															>
+																<Field name="cors.allowCredentials" type="checkbox">
+																	{({ field }: any) => (
+																		<input
+																			{...field}
+																			id="corsAllowCredentials"
+																			className="form-check-input"
+																			type="checkbox"
+																			disabled={corsState !== "enabled"}
+																		/>
+																	)}
+																</Field>
+																<span className="form-check-label">
+																	<T id="host.cors.credentials" />
+																</span>
+															</label>
+														</div>
+													</div>
 												</div>
 											</div>
 											<div className="tab-pane" id="tab-upstream-mtls" role="tabpanel">

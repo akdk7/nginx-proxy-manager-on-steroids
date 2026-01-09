@@ -170,6 +170,49 @@
 				}
 			}
 		},
+		"cors_override": {
+			"type": "boolean",
+			"example": false
+		},
+		"cors": {
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+				"enabled": {
+					"type": "boolean"
+				},
+				"allow_origins": {
+					"type": "array",
+					"items": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 2048
+					}
+				},
+				"allow_methods": {
+					"type": "string",
+					"minLength": 1,
+					"maxLength": 512
+				},
+				"allow_headers": {
+					"type": "string",
+					"minLength": 1,
+					"maxLength": 2048
+				},
+				"expose_headers": {
+					"type": "string",
+					"maxLength": 2048
+				},
+				"allow_credentials": {
+					"type": "boolean"
+				},
+				"max_age": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 86400
+				}
+			}
+		},
 		"geo_access_override": {
 			"type": "boolean",
 			"example": false
